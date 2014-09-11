@@ -13,6 +13,7 @@ from oscilloscope import Oscilloscope
 class ScopeFinder:
 
 	rm = visa.ResourceManager() # performs USB polling and finds instruments
+	scopes = []
 
 	def __init__(self):
 
@@ -21,7 +22,6 @@ class ScopeFinder:
 
 		if(self.resources):
 			self.instruments = []
-			self.scopes = []
 			for resource in self.resources:
 				self.instruments.append(self.rm.get_instrument(resource))
 			for ins in self.instruments:

@@ -1,4 +1,6 @@
 from scopeFinder import ScopeFinder
 
-TDS = ScopeFinder().getScopes()[0]
-print(TDS.query("*IDN?"))
+scopes = ScopeFinder().getScopes()
+if scopes:
+	TDS =scopes[0]
+	print(TDS.query("*IDN?"))

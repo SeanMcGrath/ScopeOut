@@ -13,11 +13,12 @@ class Oscilloscope:
 		"""
 		Constructor.
 
-		:VISA: object representing VISA instrument, on which PyVisa can be used.
-		:brand: brand of scope
-		:model: model of scope
-		:serial: serial number of scope
-		:firmware: scope firmware version
+		Parameters:
+			:VISA: object representing VISA instrument, on which PyVisa can be used.
+			:brand: brand of scope
+			:model: model of scope
+			:serial: serial number of scope
+			:firmware: scope firmware version
 		"""
 		self.scope = VISA
 		self.brand = brand
@@ -26,5 +27,36 @@ class Oscilloscope:
 		self.firmware = firmware
 
 	def query(self, command):
-		self.scope.write(command)
+		"""
+		Issues query to scope and returns output.
+
+		Parameters:
+			:command: command to be written to scope.
+
+		:Returns: the output of the scope given in response to command.
+		"""
+
+		try:
+			self.scope.write(command)
+			return self.scope.read()
+		except:
+			print("VISA handle not valid!")
+			pass
+
+	def write(self, toWrite):
+		"""
+		Writes argument to scope.
+
+		Parameters:
+			:toWrite: command to be issued to scope.
+		"""
+
+		self.scope.write(toWrite)
+
+	def read(self):
+		"""
+		Reads one line of scope output.
+
+		:Returns: string of scope output
+		"""
 		return self.scope.read()
