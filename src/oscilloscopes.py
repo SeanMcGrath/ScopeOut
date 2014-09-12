@@ -18,10 +18,6 @@ class GenericOscilloscope:
 
 		Parameters:
 			:VISA: object representing VISA instrument, on which PyVisa can be used.
-			:brand: brand of scope
-			:model: model of scope
-			:serial: serial number of scope
-			:firmware: scope firmware version
 		"""
 		self.scope = VISA
 
@@ -37,7 +33,7 @@ class GenericOscilloscope:
 
 		try:
 			self.scope.write(command)
-			return self.scope.read()
+			return self.scope.read().strip()
 		except:
 			print("VISA handle not valid!")
 			pass
@@ -58,7 +54,7 @@ class GenericOscilloscope:
 
 		:Returns: string of scope output
 		"""
-		return self.scope.read()
+		return self.scope.read().strip()
 
 class TDS2024B(GenericOscilloscope):
 	"""
@@ -69,6 +65,18 @@ class TDS2024B(GenericOscilloscope):
 		"""
 		Constructor.
 
+		Parameters:
+			:VISA: object representing VISA instrument, on which PyVisa can be used.
+			:brand: brand of scope
+			:model: model of scope
+			:serial: serial number of scope
+			:firmware: scope firmware version
 		"""
 
+		GenericOscilloscope.__init__(self,VISA)
+
+		self.make = make
+		self.model = model
+		self.serialNumber = serialNum
+		self.firmwareVersion = firmware
 		

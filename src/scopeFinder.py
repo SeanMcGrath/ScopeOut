@@ -12,25 +12,32 @@ import oscilloscopes
 
 class ScopeFinder:
 
-	rm = visa.ResourceManager() # performs USB polling and finds instruments
-	scopes = []
 
 	def __init__(self):
 		"""Constructor
 		"""
 
-		#  We only want USB scopes
-		self.resources = self.rm.list_resources("USB?*")
+		self.rm = visa.ResourceManager() # performs USB polling and finds instruments
+		self.resources = []
+		self.scopes = []
+
+		try:
+			self.resources = self.rm.list_resources("USB?*") #  We only want USB scopes
+		except visa.VisaIOError:
+			print("No oscilloscopes detected.")
+
 
 		if(self.resources):
 			self.instruments = []
 			for resource in self.resources:
 				self.instruments.append(self.rm.get_instrument(resource))
 			for ins in self.instruments:
-				info = self.query(ins, '*IDN?').split(',')
+				info = self.query(ins, '*IDN?').split(',') # Parse identification string
+
 				if info[1] == 'TDS 2024B': # TDS 2024B oscilloscope
 					info.append(info.pop().split()[1][3:]) # get our identification string into array format
 					self.scopes.append(oscilloscopes.TDS2024B(ins, info[0],info[1],info[2],info[3]))
+				
 				# Support for other scopes to be implemented here!
 
 	def query(self, inst, command):
@@ -41,10 +48,10 @@ class ScopeFinder:
 			:inst: the instrument to be queried.
 			:command: the command to be issued.
 
-		:Returns: the response of inst.
+		:Returns: the response of inst as a string.
 		"""
 		inst.write(command)
-		return inst.read()
+		return inst.read().strip() # strip newline
 
 	def getScopes(self):
 		"""
