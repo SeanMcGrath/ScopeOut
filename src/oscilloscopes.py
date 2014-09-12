@@ -2,14 +2,17 @@
 Oscilloscope
 ================
 
-Class to represent, control, and read out a VISA Oscilloscope.
+Classes to represent, control, and read out VISA Oscilloscopes.
 """
 
 import visa
 
-class Oscilloscope:
+class GenericOscilloscope:
+	"""
+	Object representation of scope of unknown make.
+	"""
 
-	def __init__(self, VISA, brand, model, serial=0, firmware="v0"):
+	def __init__(self, VISA):
 		"""
 		Constructor.
 
@@ -21,10 +24,6 @@ class Oscilloscope:
 			:firmware: scope firmware version
 		"""
 		self.scope = VISA
-		self.brand = brand
-		self.model = model
-		self.serialNumber = serial
-		self.firmware = firmware
 
 	def query(self, command):
 		"""
@@ -60,3 +59,16 @@ class Oscilloscope:
 		:Returns: string of scope output
 		"""
 		return self.scope.read()
+
+class TDS2024B(GenericOscilloscope):
+	"""
+	Class representing Tektronix 2024B.
+	"""
+
+	def __init__(self, VISA, make, model, serialNum, firmware):
+		"""
+		Constructor.
+
+		"""
+
+		
