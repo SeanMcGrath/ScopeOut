@@ -1,5 +1,7 @@
 from scopeFinder import ScopeFinder
 
+print("Initializing...")
+
 scopes = ScopeFinder().getScopes()
 if scopes:
 	TDS = scopes[0]
@@ -11,11 +13,22 @@ if scopes:
 	running = True
 	while running:
 		print(">>",end='')
+		
 		command = input()
+		
 		if command == "exit":
 			running = False
 		elif command == "read":
 			print(TDS.read())
+		elif command == "ID":
+			print(TDS)
+		elif command == "getWave":
+			print(TDS.getWaveform())
+		elif command == "curve":
+			print(TDS.getCurve())
+		elif command == "plot":
+			TDS.plotCurve()
+		
 		else:
 			TDS.write(command)
 			if command[-1] == "?":

@@ -5,7 +5,7 @@ Oscilloscope
 Classes to represent, control, and read out VISA Oscilloscopes.
 """
 
-import visa
+import visa, numpy as np, matplotlib.pyplot as plt
 
 class GenericOscilloscope:
 	"""
@@ -89,13 +89,47 @@ class TDS2024B(GenericOscilloscope):
 		Acquires and stores all encessary parameters for waveform transfer and display.
 		"""
 
-		self.dataSource = self.query("DAT:SOU?")
+		self.dataChannel = self.query("DAT:SOU?")
 		preamble = self.query("WFMP?").split(';')
-		self.BYT_Nr = preamble[0]
-		self.BIT_Nr = preamble[1]
+		self.dataWidth = preamble[0]
+		self.bitsPerPoint = preamble[1]
 		self.encoding = preamble[2]
 		self.binaryFormat = preamble[3]
 		self.sigBit = preamble[4]
-		self.numberOfPoints = preamble[5]
+		self.numberOfPoints = int(preamble[5])
 		self.pointFormat = preamble[7]
+		self.xIncr = preamble[8]
+		self.xZero = preamble[10]
+		self.xUnit = preamble[11]
+		self.yMult = preamble[12]
+		self.yZero = preamble[13]
+		self.yUnit = preamble[14]
+
+	def __str__(self):
+		"""
+		Object to String.
+		"""
+		return "{:s} {:s} Oscilloscope. Serial Number: {:s}. Output on {:s} in {:s} format.".format(self.make,self.model,self.serialNumber,self.dataChannel,self.encoding)
+
+	def getWaveform(self):
+
+		return self.query("WAVF?")
+
+	def getCurve(self):
+
+		self.waveformSetup()
+
+		try:
+			curveData = self.query("CURV?").split(',')
+			curveData = list(map(int,curveData))
+		except:
+			print("Error acquiring waveform data.")
+			pass
+
+		return curveData
+
+	def plotCurve(self):
+
+		plt.plot(self.getCurve())
+		plt.show()
 
