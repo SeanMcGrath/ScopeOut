@@ -34,8 +34,8 @@ class GenericOscilloscope:
 		try:
 			self.scope.write(command)
 			return self.scope.read().strip()
-		except:
-			print("VISA handle not valid!")
+		except Exception:
+			print(Exception)
 			pass
 
 	def write(self, toWrite):
@@ -54,7 +54,10 @@ class GenericOscilloscope:
 
 		:Returns: string of scope output
 		"""
-		return self.scope.read().strip()
+		try:
+			return self.scope.read().strip()
+		except visa.VisaIOError:
+			print("VISA Error: Command timed out.")
 
 class TDS2024B(GenericOscilloscope):
 	"""
@@ -79,4 +82,20 @@ class TDS2024B(GenericOscilloscope):
 		self.model = model
 		self.serialNumber = serialNum
 		self.firmwareVersion = firmware
+		self.waveformSetup()
 		
+	def waveformSetup(self):
+		"""
+		Acquires and stores all encessary parameters for waveform transfer and display.
+		"""
+
+		self.dataSource = self.query("DAT:SOU?")
+		preamble = self.query("WFMP?").split(';')
+		self.BYT_Nr = preamble[0]
+		self.BIT_Nr = preamble[1]
+		self.encoding = preamble[2]
+		self.binaryFormat = preamble[3]
+		self.sigBit = preamble[4]
+		self.numberOfPoints = preamble[5]
+		self.pointFormat = preamble[7]
+
