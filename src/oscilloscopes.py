@@ -91,19 +91,21 @@ class TDS2024B(GenericOscilloscope):
 
 		self.dataChannel = self.query("DAT:SOU?")
 		preamble = self.query("WFMP?").split(';')
-		self.dataWidth = preamble[0]
-		self.bitsPerPoint = preamble[1]
+		self.dataWidth = int(preamble[0])
+		self.bitsPerPoint = int(preamble[1])
 		self.encoding = preamble[2]
 		self.binaryFormat = preamble[3]
 		self.sigBit = preamble[4]
 		self.numberOfPoints = int(preamble[5])
 		self.pointFormat = preamble[7]
 		self.xIncr = float(preamble[8])
-		self.xZero = preamble[10]
-		self.xUnit = preamble[11]
-		self.yMult = preamble[12]
-		self.yZero = preamble[13]
-		self.yUnit = preamble[14]
+		self.xOff = float(preamble[9])
+		self.xZero = float(preamble[10])
+		self.xUnit = preamble[11].strip('"')
+		self.yMult = float(preamble[12])
+		self.yZero = float(preamble[13])
+		self.yOff = float(preamble[14])
+		self.yUnit = preamble[15].strip('"')
 
 	def __str__(self):
 		"""
@@ -122,6 +124,8 @@ class TDS2024B(GenericOscilloscope):
 		try:
 			curveData = self.query("CURV?").split(',')
 			curveData = list(map(int,curveData))
+			for i in range(0,len(curveData)):
+				curveData[i] = self.yZero +self.yMult*(curveData[i]-self.yOff)
 		except AttributeError:
 			print("Error acquiring waveform data.")
 			pass
@@ -134,5 +138,6 @@ class TDS2024B(GenericOscilloscope):
 		xArray = np.arange(0,self.numberOfPoints*self.xIncr,self.xIncr)
 		plt.plot(xArray,curve)
 		plt.title("Waveform Capture")
+		plt.ylabel(self.yUnit)
 		plt.show()
 		return
