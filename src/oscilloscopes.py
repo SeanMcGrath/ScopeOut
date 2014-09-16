@@ -98,7 +98,7 @@ class TDS2024B(GenericOscilloscope):
 		self.sigBit = preamble[4]
 		self.numberOfPoints = int(preamble[5])
 		self.pointFormat = preamble[7]
-		self.xIncr = preamble[8]
+		self.xIncr = float(preamble[8])
 		self.xZero = preamble[10]
 		self.xUnit = preamble[11]
 		self.yMult = preamble[12]
@@ -122,7 +122,7 @@ class TDS2024B(GenericOscilloscope):
 		try:
 			curveData = self.query("CURV?").split(',')
 			curveData = list(map(int,curveData))
-		except:
+		except AttributeError:
 			print("Error acquiring waveform data.")
 			pass
 
@@ -130,6 +130,9 @@ class TDS2024B(GenericOscilloscope):
 
 	def plotCurve(self):
 
-		plt.plot(self.getCurve())
+		curve = self.getCurve()
+		xArray = np.arange(0,self.numberOfPoints*self.xIncr,self.xIncr)
+		plt.plot(xArray,curve)
+		plt.title("Waveform Capture")
 		plt.show()
-
+		return

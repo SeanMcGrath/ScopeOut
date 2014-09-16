@@ -1,6 +1,6 @@
-from scopeFinder import ScopeFinder
-
 print("Initializing...")
+
+from scopeFinder import ScopeFinder
 
 scopes = ScopeFinder().getScopes()
 if scopes:
