@@ -86,7 +86,7 @@ class TDS2024B(GenericOscilloscope):
 		
 	def waveformSetup(self):
 		"""
-		Acquires and stores all encessary parameters for waveform transfer and display.
+		Acquires and stores all necessary parameters for waveform transfer and display.
 		"""
 
 		self.dataChannel = self.query("DAT:SOU?")
@@ -102,6 +102,8 @@ class TDS2024B(GenericOscilloscope):
 		self.xOff = float(preamble[9])
 		self.xZero = float(preamble[10])
 		self.xUnit = preamble[11].strip('"')
+		if self.xUnit == 's':
+			self.xUnit = 'Seconds'
 		self.yMult = float(preamble[12])
 		self.yZero = float(preamble[13])
 		self.yOff = float(preamble[14])
@@ -114,10 +116,23 @@ class TDS2024B(GenericOscilloscope):
 		return "{:s} {:s} Oscilloscope. Serial Number: {:s}. Output on {:s} in {:s} format.".format(self.make,self.model,self.serialNumber,self.dataChannel,self.encoding)
 
 	def getWaveform(self):
+		"""
+		Acquire entire waveform, both preamble and curve data.
 
-		return self.query("WAVF?")
+		:Returns: a semicolon-separated preamble followd by a comma-separated list of raw ADC levels.
+		"""
+		try:
+			return self.query("WAVF?")
+		except AttributeError:
+			print("Error acquiring waveform data.")
+			pass
 
 	def getCurve(self):
+		"""
+		Set up waveform acquisition and get curve data.
+
+		:Returns: a list of voltage values describing a captured waveform.
+		"""
 
 		self.waveformSetup()
 
@@ -126,18 +141,58 @@ class TDS2024B(GenericOscilloscope):
 			curveData = list(map(int,curveData))
 			for i in range(0,len(curveData)):
 				curveData[i] = self.yZero +self.yMult*(curveData[i]-self.yOff)
+			return curveData
+
 		except AttributeError:
 			print("Error acquiring waveform data.")
 			pass
 
-		return curveData
+		
 
 	def plotCurve(self):
+		"""
+		Create and display a pyplot of captured waveform.
+		"""
 
 		curve = self.getCurve()
 		xArray = np.arange(0,self.numberOfPoints*self.xIncr,self.xIncr)
+		unitSet = self.autosetUnits(xArray)
+		xArray = unitSet[0]
+		self.xUnit = unitSet[1] + self.xUnit
+		unitSet = self.autosetUnits(curve)
+		curve = unitSet[0]
+		self.yUnit = unitSet[1] + self.yUnit
 		plt.plot(xArray,curve)
 		plt.title("Waveform Capture")
 		plt.ylabel(self.yUnit)
+		plt.xlabel(self.xUnit)
 		plt.show()
-		return
+
+	def autosetUnits(self, axisArray):
+		"""
+		Set the X units of the pyplot to the correct size based on the values in axisArray.
+
+		Parameters:
+			:axisArray: the array of values representing one dimension of the waveform.
+		"""
+		xMax = np.amax(axisArray)
+		if xMax > 1e-9:
+			prefix = 'n'
+			if xMax > 1e-6:
+				prefix = 'u'
+				if xMax > 1e-3:
+					prefix = 'm'
+					if xMax > 1:
+						prefix = ''
+						return [axisArray,prefix]
+					axisArray = np.multiply(axisArray,1000)
+					return [axisArray,prefix]
+				axisArray = np.multiply(axisArray,1e6)
+				return [axisArray,prefix]
+			axisArray = np.multiply(axisArray,1e9)
+
+		return [axisArray,prefix]
+
+
+
+
