@@ -177,11 +177,11 @@ class TDS2024B(GenericOscilloscope):
 		"""
 		xMax = np.amax(axisArray)
 		if xMax > 1e-9:
-			prefix = 'n'
+			prefix = 'nano'
 			if xMax > 1e-6:
-				prefix = 'u'
+				prefix = 'micro'
 				if xMax > 1e-3:
-					prefix = 'm'
+					prefix = 'milii'
 					if xMax > 1:
 						prefix = ''
 						return [axisArray,prefix]
@@ -193,6 +193,17 @@ class TDS2024B(GenericOscilloscope):
 
 		return [axisArray,prefix]
 
+	def checkTrigger(self):
+		"""
+		Read trigger status of TDS2024B.
+
+		:Returns: a string describing trigger status: {AUTO | READY | TRIGGER}
+		"""
+
+		try:
+			return self.query("TRIG:STATE?")
+		except:
+			pass
 
 
 

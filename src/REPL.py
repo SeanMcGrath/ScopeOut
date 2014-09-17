@@ -1,3 +1,7 @@
+"""
+Rudimentary REPL for interacting with TDS2024B Oscilloscope.
+"""
+
 print("Initializing...")
 
 from scopeFinder import ScopeFinder
@@ -12,23 +16,30 @@ if scopes:
 
 	running = True
 	while running:
-		print(">>",end='')
 		
-		command = input()
+		command = input('>>').lower()
 		
-		if command == "exit":
+		if command  in ["exit",'x']:
 			running = False
-		elif command == "read":
+		elif command in ["read", 'r']:
 			print(TDS.read())
-		elif command == "ID":
+		elif command == "id":
 			print(TDS)
-		elif command == "getWave":
+		elif command in ["getwave",'w']:
 			print(TDS.getWaveform())
-		elif command == "curve":
+		elif command in ["curve",'c']:
 			print(TDS.getCurve())
-		elif command == "plot":
+		elif command in ["plot",'p']:
 			TDS.plotCurve()
-		
+		elif command in ["trigplot",'tp']:
+			print("Waiting for trigger...")
+			trig = TDS.checkTrigger()
+			while trig != "TRIGGER":
+				trig = TDS.checkTrigger()
+
+			print('TRIGGER')
+			TDS.plotCurve()
+
 		else:
 			TDS.write(command)
 			if command[-1] == "?":
