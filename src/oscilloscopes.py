@@ -89,8 +89,8 @@ class TDS2024B(GenericOscilloscope):
 		Acquires and stores all necessary parameters for waveform transfer and display.
 		"""
 
-		self.dataChannel = self.query("DAT:SOU?")
-		preamble = self.query("WFMP?").split(';')
+		self.dataChannel = self.query("DAT:SOU?") 	# get active channel
+		preamble = self.query("WFMP?").split(';')	# get waveform preamble and parse it
 		self.dataWidth = int(preamble[0])
 		self.bitsPerPoint = int(preamble[1])
 		self.encoding = preamble[2]
@@ -147,7 +147,6 @@ class TDS2024B(GenericOscilloscope):
 			print("Error acquiring waveform data.")
 			pass
 
-		
 
 	def plotCurve(self):
 		"""
@@ -177,33 +176,178 @@ class TDS2024B(GenericOscilloscope):
 		"""
 		xMax = np.amax(axisArray)
 		if xMax > 1e-9:
-			prefix = 'nano'
 			if xMax > 1e-6:
-				prefix = 'micro'
 				if xMax > 1e-3:
-					prefix = 'milii'
 					if xMax > 1:
 						prefix = ''
 						return [axisArray,prefix]
+
+					prefix = 'milli'
 					axisArray = np.multiply(axisArray,1000)
 					return [axisArray,prefix]
+
+				prefix = 'micro'
 				axisArray = np.multiply(axisArray,1e6)
 				return [axisArray,prefix]
-			axisArray = np.multiply(axisArray,1e9)
 
+			prefix = 'nano'
+			axisArray = np.multiply(axisArray,1e9)
+			return [axisArray,prefix]
+
+		prefix = ''
 		return [axisArray,prefix]
 
 	def checkTrigger(self):
 		"""
 		Read trigger status of TDS2024B.
 
-		:Returns: a string describing trigger status: {AUTO | READY | TRIGGER}
+		:Returns: a string describing trigger status: {AUTO | READY | TRIGGER | ARMED}
 		"""
 
 		try:
 			return self.query("TRIG:STATE?")
 		except:
 			pass
+
+	def __setParam(self, command):
+		"""
+		Set a scope parameter by issuing a command.
+
+		:Parameters:
+			:command: Full command to set parameter, in string form.
+
+		:Returns: True if setting is successful, false otherwise.
+		"""
+
+		try:
+			self.write(command)
+			return True
+		except AttributeError:
+			return False
+
+	def __getParam(self, command):
+		"""
+		get a scope parameter by issuing a command.
+
+		:Parameters:
+			:command: Full command to set parameter, in string form.
+
+		:Returns: desired Parameter if communication is successful, False otherwise.
+		"""
+
+		try: return self.query(command)
+		except AttributeError: return False
+
+	"""
+	ACQUISITION COMMANDS
+	"""
+
+	def getAcquisitionParams(self):
+		"""
+		:Returns: scope acquisition parameters as a string.
+		"""
+
+		return __getParam("ACQ?")
+
+	def setAcquisitionMode(self, mode):
+		"""
+		Set TDS2024B acquisition mode.
+
+		:Parameters:
+			:mode: Desired mode of scope operation: {SAMPLE | PEAK | AVERAGE}
+
+		:Returns: True if setting is successful, false otherwise.
+		"""
+
+		return self.__setParam("ACQ:MOD " + str(mode))
+
+	def getAcquisitionMode(self):
+		"""
+		:Returns: String naming current acquisition mode.
+		"""
+
+		return self.__getParam("ACQ:MOD?")
+
+	def getNumberOfAcquisitions(self):
+		"""
+		:Returns: the number of acquisitions made.
+		"""
+
+		return self.__getParam('ACQ:NUMAC?')
+
+	def setAcqsForAverage(self, acqs):
+		"""
+		Set the number of acquisitions made to find an average waveform in AVERAGE mode.
+
+		:Parameters:
+			:acqs: desired number of acquisitions per average reading: {4 | 16 | 64 | 128}
+
+		:Returns: True if setting is successful, false otherwise.
+		"""
+
+		if acqs not in [4,16,64,128]: return False
+
+		return self.__setParam("ACQ:NUMAV " +str(acqs))
+
+	def getAcqsForAverage(self):
+		"""
+		:Returns: the current number of acquisitions taken to find an average waveform in AVERAGE mode.
+		"""
+
+		return self.__getParam('ACQ:NUMAV?')
+
+	def setAcqState(self, state):
+		"""
+		Sets the scope's acquisition state.
+
+		:Parameters:
+			:state: a string naming the desired acquisition state: { OFF | ON | RUN | STOP | <NR1> }
+
+		:Returns: True if setting is successful, false otherwise.
+		"""
+
+		return self.__setParam("ACQ:STATE " +str(state))
+
+	def getAcqState(self):
+		"""
+		:Returns: '0' for off, '1' for on.
+		"""
+
+		return self.__getParam("ACQ:STATE?")
+
+	def setAcqStop(self, stop):
+		"""
+		Tells the oscilloscope when to stop taking acquisitions.
+
+		:Returns: True if setting is successful, False otherwise.
+		"""
+
+		return self.__setParam("ACQ:STOPA " +str(stop))
+
+	def getAcqStop(self):
+		"""
+		:Returns: string describing when the scope stops taking acquisitions, or False if this fails.
+		"""
+
+		return self.__getParam("ACQ:STOPA?")
+
+	"""
+	END ACQUISITION COMMANDS
+	"""
+
+	def getAllEvents(self):
+		"""
+		:Returns: all events in the event queue in string format.
+		"""
+
+		return self.__getParam("ALLE?")
+
+
+
+
+
+
+
 
 
 

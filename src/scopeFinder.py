@@ -12,7 +12,6 @@ import oscilloscopes
 
 class ScopeFinder:
 
-
 	def __init__(self):
 		"""Constructor
 		"""
@@ -60,3 +59,5 @@ class ScopeFinder:
 		:Returns: an array of PyVisa instrument objects representing USB oscilloscopes connected to the computer.
 		"""
 		return self.scopes
+
+

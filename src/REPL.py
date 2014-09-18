@@ -40,7 +40,7 @@ if scopes:
 			print('TRIGGER')
 			TDS.plotCurve()
 
-		else:
+		elif command:
 			TDS.write(command)
 			if command[-1] == "?":
 				print(TDS.read())
