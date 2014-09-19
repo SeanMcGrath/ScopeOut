@@ -235,8 +235,8 @@ class TDS2024B(GenericOscilloscope):
 		:Returns: desired Parameter if communication is successful, False otherwise.
 		"""
 
-		try: return self.query(command)
-		except AttributeError: return False
+		try: return self.query(command).strip("'")
+		except Exception: return False
 
 	"""
 	ACQUISITION COMMANDS
@@ -334,6 +334,126 @@ class TDS2024B(GenericOscilloscope):
 	"""
 	END ACQUISITION COMMANDS
 	"""
+
+	"""
+	CALIBRATION COMMANDS
+	"""
+
+	def calibrate(self):
+		"""
+		Perform an internal self-calibration and return result status.
+
+		:Returns: string describing result of calibration.
+		"""
+
+		return self.__getParam("*CAL?")
+
+	def abortCalibrate(self):
+		"""
+		Stops an in-progress factory calibration process.
+
+		:Returns: True if setting is successful, False otherwise.
+		"""
+
+		return self.__setParam("CAL:ABO")
+
+	def continueCalibrate(self):
+		"""
+		Perform the next step in the factory calibration sequence.
+
+		:Returns: True if command is successful, False otherwise.
+		"""
+
+		return self.__setParam("CAL:CONTINUE")
+
+	def factoryCalibrate(self):
+		"""
+		Initialize factory calibration sequence.
+
+		:Returns: True if command is successful, False otherwise.
+		"""
+
+		return self.__setParam("CAL:FAC")
+
+	def internalCalibrate(self):
+		"""
+		Initialize internal calibration sequence.
+
+		:Returns: True if command is successful, False otherwise.
+		"""
+
+		return self.__setParam("CAL:INTERNAL")
+
+	def getCalStatus(self):
+		"""
+		Return PASS or FAIL status of the last self or factory-calibration operation.
+
+		:Returns: "PASS" if last calibration was successful, "FAIL" otherwise.
+		"""
+
+		return self.__getParam("CAL:STATUS?")
+
+	def getDiagnosticResult(self):
+		"""
+		Return diagnostic tests status.
+
+		:Returns: "PASS" if scope passes all diagnostic tests, "FAIL" otherwise.
+		"""
+
+		return self.__getParam("DIA:RESUL:FLA?")
+
+	def getDiagnosticLog(self):
+		"""
+		Return diagnostic test sequence results.
+
+		:Returns: A comma-separated string containing the results of internal diagnostic routines.
+		"""
+
+		return self.__getParam("DIA:RESUL:LOG?").strip()
+
+	def getFirstError(self):
+		"""
+		Returns first message in error log.
+
+		:Returns: a string describing an internal scope error, empty string if error queue is empty.
+		"""
+
+		return self.__getParam("ERRLOG:FIRST?")
+
+	def getNextError(self):
+		"""
+		Returns next message in error log.
+
+		:Returns: a string describing an internal scope error, empty string if error queue is empty.
+		"""
+
+		return self.__getParam("ERRLOG:NEXT?")
+
+	"""
+	END CALIBRATION COMMANDS
+	"""
+
+	"""
+	CURSOR COMMANDS
+	"""
+
+	def getCursor(self):
+		"""
+		Get cursor settings.
+
+		:Returns: comma-separated string containing cursor settings.
+		"""
+
+		return self.__getParam("CURS?")
+
+
+
+
+
+
+
+
+
 
 	def getAllEvents(self):
 		"""
