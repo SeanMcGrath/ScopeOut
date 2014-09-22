@@ -58,6 +58,8 @@ class GenericOscilloscope:
 			return self.scope.read().strip()
 		except visa.VisaIOError:
 			print("VISA Error: Command timed out.")
+		except Exception:
+			print("Error")
 
 class TDS2024B(GenericOscilloscope):
 	"""
@@ -82,6 +84,7 @@ class TDS2024B(GenericOscilloscope):
 		self.model = model
 		self.serialNumber = serialNum
 		self.firmwareVersion = firmware
+		self.waveformSet = False
 		self.waveformSetup()
 		
 	def waveformSetup(self):
@@ -109,6 +112,10 @@ class TDS2024B(GenericOscilloscope):
 			self.yZero = float(preamble[13])
 			self.yOff = float(preamble[14])
 			self.yUnit = preamble[15].strip('"')
+			self.waveformSet = True
+		else: # Selected channel is not active
+			print(self.dataChannel + ' is not active. Issue DAT:SOU to change source channel.')
+			self.waveformSet = False
 
 	def __str__(self):
 		"""
@@ -137,16 +144,17 @@ class TDS2024B(GenericOscilloscope):
 
 		self.waveformSetup()
 
-		try:
-			curveData = self.query("CURV?").split(',')
-			curveData = list(map(int,curveData))
-			for i in range(0,len(curveData)):
-				curveData[i] = self.yZero +self.yMult*(curveData[i]-self.yOff)
-			return curveData
+		if self.waveformSet:
+			try:
+				curveData = self.query("CURV?").split(',')
+				curveData = list(map(int,curveData))
+				for i in range(0,len(curveData)):
+					curveData[i] = self.yZero +self.yMult*(curveData[i]-self.yOff)
+				return curveData
 
-		except AttributeError:
-			print("Error acquiring waveform data.")
-			pass
+			except AttributeError:
+				print("Error acquiring waveform data.")
+				pass
 
 
 	def plotCurve(self):
@@ -155,18 +163,19 @@ class TDS2024B(GenericOscilloscope):
 		"""
 
 		curve = self.getCurve()
-		xArray = np.arange(0,self.numberOfPoints*self.xIncr,self.xIncr)
-		unitSet = self.autosetUnits(xArray)
-		xArray = unitSet[0]
-		self.xUnit = unitSet[1] + self.xUnit
-		unitSet = self.autosetUnits(curve)
-		curve = unitSet[0]
-		self.yUnit = unitSet[1] + self.yUnit
-		plt.plot(xArray,curve)
-		plt.title("Waveform Capture")
-		plt.ylabel(self.yUnit)
-		plt.xlabel(self.xUnit)
-		plt.show()
+		if(self.waveformSet):
+			xArray = np.arange(0,self.numberOfPoints*self.xIncr,self.xIncr)
+			unitSet = self.autosetUnits(xArray)
+			xArray = unitSet[0]
+			self.xUnit = unitSet[1] + self.xUnit
+			unitSet = self.autosetUnits(curve)
+			curve = unitSet[0]
+			self.yUnit = unitSet[1] + self.yUnit
+			plt.plot(xArray,curve)
+			plt.title("Waveform Capture")
+			plt.ylabel(self.yUnit)
+			plt.xlabel(self.xUnit)
+			plt.show()
 
 	def autosetUnits(self, axisArray):
 		"""
@@ -222,7 +231,11 @@ class TDS2024B(GenericOscilloscope):
 
 		try:
 			self.write(command)
-			return True
+			result = int(self.query("*ESR?"))
+			if not result:
+				return True
+			else:
+				return self.eventMessage()
 		except AttributeError:
 			return False
 
@@ -448,13 +461,13 @@ class TDS2024B(GenericOscilloscope):
 		return self.__getParam("CURS?")
 
 
+	"""
+	END CURSOR COMMANDS
+	"""
 
-
-
-
-
-
-
+	"""
+	STATUS AND ERROR COMMANDS
+	"""
 
 	def getAllEvents(self):
 		"""
@@ -462,6 +475,53 @@ class TDS2024B(GenericOscilloscope):
 		"""
 
 		return self.__getParam("ALLE?")
+
+	def isBusy(self):
+		"""
+		Check if the scope is busy.
+
+		:Returns: 0 for not busy, 1 for busy.
+		"""
+
+		return int(self.__getParam("BUSY?"))
+
+	def clearStatus(self):
+		"""
+		Clears scope event queue and status registers.
+
+		:Returns: True if command is successful, False otherwise.
+		"""
+
+		return self.__getParam("*CLS?")
+
+	def eventStatus(self):
+		"""
+		Check event status register.
+
+		:Returns: the integer value held in the ESR.
+		"""
+
+		return int(self.__getParam("*ESR?"))
+
+	def eventCode(self):
+		"""
+		Get code of last event.
+
+		:Returns: integer error code.
+		"""
+
+		return self.__getParam("EVENT?")
+
+	def eventMessage(self):
+		"""
+		Get message associated with last scope event.
+
+		:Returns: event code and event message string, separated by a comma.
+		"""
+
+		return self.__getParam("EVMSG?")
+
+
 
 
 
