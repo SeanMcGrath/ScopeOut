@@ -96,18 +96,19 @@ class TDS2024B(GenericOscilloscope):
 		self.encoding = preamble[2]
 		self.binaryFormat = preamble[3]
 		self.sigBit = preamble[4]
-		self.numberOfPoints = int(preamble[5])
-		self.pointFormat = preamble[7]
-		self.xIncr = float(preamble[8])
-		self.xOff = float(preamble[9])
-		self.xZero = float(preamble[10])
-		self.xUnit = preamble[11].strip('"')
-		if self.xUnit == 's':
-			self.xUnit = 'Seconds'
-		self.yMult = float(preamble[12])
-		self.yZero = float(preamble[13])
-		self.yOff = float(preamble[14])
-		self.yUnit = preamble[15].strip('"')
+		if len(preamble) > 5: # normal operation
+			self.numberOfPoints = int(preamble[5])
+			self.pointFormat = preamble[7]
+			self.xIncr = float(preamble[8])
+			self.xOff = float(preamble[9])
+			self.xZero = float(preamble[10])
+			self.xUnit = preamble[11].strip('"')
+			if self.xUnit == 's':
+				self.xUnit = 'Seconds'
+			self.yMult = float(preamble[12])
+			self.yZero = float(preamble[13])
+			self.yOff = float(preamble[14])
+			self.yUnit = preamble[15].strip('"')
 
 	def __str__(self):
 		"""
