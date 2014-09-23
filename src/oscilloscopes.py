@@ -66,6 +66,10 @@ class TDS2024B(GenericOscilloscope):
 	Class representing Tektronix 2024B.
 	"""
 
+	"""
+	UTILITY METHODS
+	"""
+
 	def __init__(self, VISA, make, model, serialNum, firmware):
 		"""
 		Constructor.
@@ -123,6 +127,39 @@ class TDS2024B(GenericOscilloscope):
 		"""
 		return "{:s} {:s} Oscilloscope. Serial Number: {:s}. Output on {:s} in {:s} format.".format(self.make,self.model,self.serialNumber,self.dataChannel,self.encoding)
 
+	def __setParam(self, command):
+		"""
+		Set a scope parameter by issuing a command.
+
+		:Parameters:
+			:command: Full command to set parameter, in string form.
+
+		:Returns: True if setting is successful, false otherwise.
+		"""
+
+		try:
+			self.write(command)
+			result = int(self.query("*ESR?"))
+			if not result:
+				return True
+			else:
+				return self.eventMessage()
+		except AttributeError:
+			return False
+
+	def __getParam(self, command):
+		"""
+		get a scope parameter by issuing a command.
+
+		:Parameters:
+			:command: Full command to set parameter, in string form.
+
+		:Returns: desired Parameter if communication is successful, False otherwise.
+		"""
+
+		try: return self.query(command).strip("'")
+		except Exception: return False
+
 	def getWaveform(self):
 		"""
 		Acquire entire waveform, both preamble and curve data.
@@ -155,7 +192,6 @@ class TDS2024B(GenericOscilloscope):
 			except AttributeError:
 				print("Error acquiring waveform data.")
 				pass
-
 
 	def plotCurve(self):
 		"""
@@ -214,43 +250,12 @@ class TDS2024B(GenericOscilloscope):
 		:Returns: a string describing trigger status: {AUTO | READY | TRIGGER | ARMED}
 		"""
 
-		try:
-			return self.query("TRIG:STATE?")
-		except:
-			pass
+		return self.__getParam("TRIG:STATE?")
 
-	def __setParam(self, command):
-		"""
-		Set a scope parameter by issuing a command.
-
-		:Parameters:
-			:command: Full command to set parameter, in string form.
-
-		:Returns: True if setting is successful, false otherwise.
-		"""
-
-		try:
-			self.write(command)
-			result = int(self.query("*ESR?"))
-			if not result:
-				return True
-			else:
-				return self.eventMessage()
-		except AttributeError:
-			return False
-
-	def __getParam(self, command):
-		"""
-		get a scope parameter by issuing a command.
-
-		:Parameters:
-			:command: Full command to set parameter, in string form.
-
-		:Returns: desired Parameter if communication is successful, False otherwise.
-		"""
-
-		try: return self.query(command).strip("'")
-		except Exception: return False
+	"""
+	END UTILITY METHODS
+	"""
+	
 
 	"""
 	ACQUISITION COMMANDS
