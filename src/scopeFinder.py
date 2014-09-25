@@ -58,6 +58,9 @@ class ScopeFinder:
 
 		:Returns: an array of PyVisa instrument objects representing USB oscilloscopes connected to the computer.
 		"""
-		return self.scopes
+		if len(self.scopes) > 1:
+			return self.scopes
+		else:
+			return self.scopes[0]
 
 

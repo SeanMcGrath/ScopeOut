@@ -45,7 +45,6 @@ class GenericOscilloscope:
 		Parameters:
 			:toWrite: command to be issued to scope.
 		"""
-
 		self.scope.write(toWrite)
 
 	def read(self):
@@ -90,6 +89,8 @@ class TDS2024B(GenericOscilloscope):
 		self.firmwareVersion = firmware
 		self.waveformSet = False
 		self.waveformSetup()
+		if(self.eventStatus()):
+			print(self.getAllEvents())
 		
 	def waveformSetup(self):
 		"""
@@ -118,7 +119,7 @@ class TDS2024B(GenericOscilloscope):
 			self.yUnit = preamble[15].strip('"')
 			self.waveformSet = True
 		else: # Selected channel is not active
-			print(self.dataChannel + ' is not active. Issue DAT:SOU to change source channel.')
+			print(self.dataChannel + ' is not active. Issue DAT:SOU <CHx> to change source channel.')
 			self.waveformSet = False
 
 	def __str__(self):
@@ -134,7 +135,7 @@ class TDS2024B(GenericOscilloscope):
 		:Parameters:
 			:command: Full command to set parameter, in string form.
 
-		:Returns: True if setting is successful, false otherwise.
+		:Returns: True if setting is successful, descriptive error message if unsuccessful.
 		"""
 
 		try:
@@ -143,9 +144,9 @@ class TDS2024B(GenericOscilloscope):
 			if not result:
 				return True
 			else:
-				return self.eventMessage()
+				return self.eventMessage().split(',')[1].strip('"')
 		except AttributeError:
-			return False
+				return False
 
 	def __getParam(self, command):
 		"""
@@ -158,7 +159,9 @@ class TDS2024B(GenericOscilloscope):
 		"""
 
 		try: return self.query(command).strip("'")
-		except Exception: return False
+		except Exception as err:
+			print(type(err))
+			print(err.args)
 
 	def getWaveform(self):
 		"""
@@ -255,7 +258,6 @@ class TDS2024B(GenericOscilloscope):
 	"""
 	END UTILITY METHODS
 	"""
-	
 
 	"""
 	ACQUISITION COMMANDS
@@ -266,7 +268,7 @@ class TDS2024B(GenericOscilloscope):
 		:Returns: scope acquisition parameters as a string.
 		"""
 
-		return __getParam("ACQ?")
+		return self.__getParam("ACQ?")
 
 	def setAcquisitionMode(self, mode):
 		"""
