@@ -8,7 +8,7 @@ as Oscilloscope objects.
 """
 
 import visa # PyVisa
-import oscilloscopes
+import lib.oscilloscopes
 
 class ScopeFinder:
 
@@ -23,7 +23,7 @@ class ScopeFinder:
 		try:
 			self.resources = self.rm.list_resources("USB?*") #  We only want USB scopes
 		except visa.VisaIOError:
-			print("No oscilloscopes detected.")
+			pass
 
 
 		if(self.resources):
@@ -58,9 +58,14 @@ class ScopeFinder:
 
 		:Returns: an array of PyVisa instrument objects representing USB oscilloscopes connected to the computer.
 		"""
+
 		if len(self.scopes) > 1:
 			return self.scopes
 		else:
-			return self.scopes[0]
+			try:
+				return self.scopes[0]
+			except IndexError:
+				print("No oscilloscopes detected.")
+				return []
 
 
