@@ -1,2 +1,2 @@
-import scopeFinder as sf
-TDS = sf.ScopeFinder().getScopes()
+import lib.scopeUtils as sf
+TDS = sf.ScopeFinder().getScopes()[0]

@@ -6,6 +6,7 @@ Classes to represent, control, and read out VISA Oscilloscopes.
 """
 
 import visa, numpy as np, matplotlib.pyplot as plt
+import queue
 
 class GenericOscilloscope:
 	"""
@@ -88,6 +89,7 @@ class TDS2024B(GenericOscilloscope):
 		self.serialNumber = serialNum
 		self.firmwareVersion = firmware
 		self.waveformSet = False
+		self.waveformQueue = queue.Queue()
 		self.waveformSetup()
 		if(self.eventStatus()):
 			print(self.getAllEvents())
@@ -96,30 +98,31 @@ class TDS2024B(GenericOscilloscope):
 		"""
 		Acquires and stores all necessary parameters for waveform transfer and display.
 		"""
+		self.waveform = {}
 
-		self.dataChannel = self.query("DAT:SOU?") 	# get active channel
+		self.waveform['dataChannel'] = self.query("DAT:SOU?") 	# get active channel
 		preamble = self.query("WFMP?").split(';')	# get waveform preamble and parse it
-		self.dataWidth = int(preamble[0])
-		self.bitsPerPoint = int(preamble[1])
-		self.encoding = preamble[2]
-		self.binaryFormat = preamble[3]
-		self.sigBit = preamble[4]
+		self.waveform['dataWidth']= int(preamble[0])
+		self.waveform['bitsPerPoint'] = int(preamble[1])
+		self.waveform['encoding'] = preamble[2]
+		self.waveform['binaryFormat'] = preamble[3]
+		self.waveform['sigBit'] = preamble[4]
 		if len(preamble) > 5: # normal operation
-			self.numberOfPoints = int(preamble[5])
-			self.pointFormat = preamble[7]
-			self.xIncr = float(preamble[8])
-			self.xOff = float(preamble[9])
-			self.xZero = float(preamble[10])
-			self.xUnit = preamble[11].strip('"')
-			if self.xUnit == 's':
-				self.xUnit = 'Seconds'
-			self.yMult = float(preamble[12])
-			self.yZero = float(preamble[13])
-			self.yOff = float(preamble[14])
-			self.yUnit = preamble[15].strip('"')
+			self.waveform['numberOfPoints'] = int(preamble[5])
+			self.waveform['pointFormat'] = preamble[7].strip('"')
+			self.waveform['xIncr'] = float(preamble[8])
+			self.waveform['xOff'] = float(preamble[9])
+			self.waveform['xZero'] = float(preamble[10])
+			self.waveform['xUnit'] = preamble[11].strip('"')
+			if self.waveform['xUnit'] == 's':
+				self.waveform['xUnit'] = 'Seconds'
+			self.waveform['yMult'] = float(preamble[12])
+			self.waveform['yZero'] = float(preamble[13])
+			self.waveform['yOff'] = float(preamble[14])
+			self.waveform['yUnit'] = preamble[15].strip('"')
 			self.waveformSet = True
 		else: # Selected channel is not active
-			print(self.dataChannel + ' is not active. Issue DAT:SOU <CHx> to change source channel.')
+			print(self.waveform['dataChannel'] + ' is not active. Issue DAT:SOU <CHx> to change source channel.')
 			self.waveformSet = False
 
 	def __str__(self):
@@ -163,18 +166,6 @@ class TDS2024B(GenericOscilloscope):
 			print(type(err))
 			print(err.args)
 
-	def getWaveform(self):
-		"""
-		Acquire entire waveform, both preamble and curve data.
-
-		:Returns: a semicolon-separated preamble followd by a comma-separated list of raw ADC levels.
-		"""
-		try:
-			return self.query("WAVF?")
-		except AttributeError:
-			print("Error acquiring waveform data.")
-			pass
-
 	def getCurve(self):
 		"""
 		Set up waveform acquisition and get curve data.
@@ -189,12 +180,49 @@ class TDS2024B(GenericOscilloscope):
 				curveData = self.query("CURV?").split(',')
 				curveData = list(map(int,curveData))
 				for i in range(0,len(curveData)):
-					curveData[i] = self.yZero +self.yMult*(curveData[i]-self.yOff)
+					curveData[i] = self.waveform['yZero'] +self.waveform['yMult']*(curveData[i]-self.waveform['yOff'])
 				return curveData
 
 			except AttributeError:
 				print("Error acquiring waveform data.")
-				pass
+			pass
+
+	def getXArray(self):
+		"""
+		Get array of x values, scaled properly
+		"""
+		if not self.waveformSet: self.waveformSetup()
+		return np.arange(0,self.waveform['numberOfPoints']*self.waveform['xIncr'],self.waveform['xIncr'])
+
+	def makeWaveform(self):
+		"""
+		Assemble waveform dictionary and enqueue it for readout.
+		"""
+		self.waveformSetup()
+
+		if self.waveformSet:
+			try:
+				curveData = self.query("CURV?").split(',')
+				curveData = list(map(int,curveData))
+				for i in range(0,len(curveData)):
+					curveData[i] = self.waveform['yZero'] +self.waveform['yMult']*(curveData[i]-self.waveform['yOff'])
+				self.waveform['yData'] = curveData
+				self.waveform['xData'] = np.arange(0,self.waveform['numberOfPoints']*self.waveform['xIncr'],self.waveform['xIncr'])
+				self.waveformQueue.put(self.waveform)
+
+			except AttributeError:
+				print("Error acquiring waveform data.")
+			pass
+
+	def getNextWaveform(self):
+		"""
+		:Returns: The next waveform object in the queue, or None if it is empty
+		"""
+
+		if self.waveformQueue.qsize():
+			return self.waveformQueue.get()
+		else:
+			return None
 
 	def plotCurve(self):
 		"""
@@ -203,7 +231,7 @@ class TDS2024B(GenericOscilloscope):
 
 		curve = self.getCurve()
 		if(self.waveformSet):
-			xArray = np.arange(0,self.numberOfPoints*self.xIncr,self.xIncr)
+			xArray = self.getXArray()
 			unitSet = self.autosetUnits(xArray)
 			xArray = unitSet[0]
 			self.xUnit = unitSet[1] + self.xUnit

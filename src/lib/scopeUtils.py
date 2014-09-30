@@ -8,7 +8,7 @@ as Oscilloscope objects.
 """
 
 import visa # PyVisa
-import lib.oscilloscopes
+import lib.oscilloscopes as oscilloscopes
 
 class ScopeFinder:
 
@@ -59,13 +59,4 @@ class ScopeFinder:
 		:Returns: an array of PyVisa instrument objects representing USB oscilloscopes connected to the computer.
 		"""
 
-		if len(self.scopes) > 1:
-			return self.scopes
-		else:
-			try:
-				return self.scopes[0]
-			except IndexError:
-				print("No oscilloscopes detected.")
-				return []
-
-
+		return self.scopes

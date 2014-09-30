@@ -7,7 +7,8 @@ File to define relevant classes and widgets for user interface.
 from PyQt5 import QtGui, QtCore, QtWidgets
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-import lib.oscilloscopes, sys
+from lib.scopeUtils import ScopeFinder as sf
+import sys, numpy as np
 
 class scopeOutMainWindow(QtWidgets.QMainWindow):
 	"""
@@ -15,7 +16,7 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 	menu bars, tool bars, etc.
 	"""
 
-	def __init__(self, *args):
+	def __init__(self, widgets, *args):
 		"""
 		Constructor.
 		will be passed widgets from threaded client (probably as array).
@@ -23,11 +24,14 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 
 		QtWidgets.QMainWindow.__init__(self, *args)
 
-		self.graph = MplCanvasWidget()
-		self.setCentralWidget(self.graph)
+		self.central = QtWidgets.QWidget(self)
+		self.layout = QtWidgets.QGridLayout(self)
+		self.layout.addWidget(widgets[0],0,0)
+		self.layout.addWidget(widgets[1],0,1)
+		self.central.setLayout(self.layout)
+		self.setCentralWidget(self.central)
 
 		self.initUI()
-		self.show()
 
 	def initUI(self):
 
@@ -62,9 +66,10 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 			The CloseEvent in question. This is accepted by default.
 		"""
 		self.close()
+		root.quit()
 
 
-class MplCanvasWidget(FigureCanvas):
+class WavePlotWidget(FigureCanvas):
     """
     Class to hold matplotlib Figures for display.
     """
@@ -97,11 +102,67 @@ class MplCanvasWidget(FigureCanvas):
         self.axes.clear()
         self.axes.set_ylabel(yLabel)
         self.axes.set_xlabel(xLabel)
-
-        # rudimentary auto-scaling
-        self.axes.set_ylim([np.amin(yArray)-5,np.amax(yArray)+5])
-
         self.axes.plot(xData,yData)
         self.axes.legend()
         self.fig.canvas.draw()
+
+class scopeControlWidget(QtWidgets.QWidget):
+
+	def __init__(self, scope, *args):
+
+		self.scope = scope
+
+		QtWidgets.QWidget.__init__(self, *args)
+
+		self.acqButton = QtWidgets.QPushButton('Acquire',self)
+		self.acqButton.setEnabled(False)
+		if self.scope is not None:
+			self.acqButton.setEnabled(True)
+
+		self.layout = QtWidgets.QGridLayout(self)
+		self.layout.addWidget(self.acqButton,0,0)
+		self.show()
+
+class ThreadedClient:
+	"""
+	Launches the GUI and handles I/O.
+
+	GUI components reside within the body of the class itself, while actual serial communication
+	is in a separate thread.
+	"""
+
+	def __init__(self):
+		"""
+		Constructor
+		"""
+
+		self.scopes = sf().getScopes();
+		if(self.scopes):
+			self.activeScope = self.scopes[0]
+		else:
+			self.activeScope = None
+
+		self.scopeControl = scopeControlWidget(self.activeScope)
+		self.plot = WavePlotWidget()
+		self.mainWindow = scopeOutMainWindow([self.plot,self.scopeControl])
+		self.__connectSignals()
+		self.mainWindow.show()
+
+	def __connectSignals(self):
+		"""
+		Connects signals from subwidgets to appropriate slots.
+		"""
+
+		self.scopeControl.acqButton.clicked.connect(self.__acqEvent)
+
+	def __acqEvent(self):
+		"""
+		Executed to collect waveform data from scope.
+		"""
+		if self.activeScope is None: return
+		
+		self.activeScope.makeWaveform()
+		wave = self.activeScope.getNextWaveform();
+		if wave is not None:
+			self.plot.showPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'])
 

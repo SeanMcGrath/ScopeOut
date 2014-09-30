@@ -4,7 +4,7 @@ Rudimentary REPL for interacting with TDS2024B Oscilloscope.
 
 print("Initializing...")
 
-from lib.scopeFinder import ScopeFinder
+from lib.scopeUtils import ScopeFinder
 
 scopes = ScopeFinder().getScopes()
 if scopes:
