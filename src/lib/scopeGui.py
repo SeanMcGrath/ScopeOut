@@ -66,7 +66,6 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 			The CloseEvent in question. This is accepted by default.
 		"""
 		self.close()
-		root.quit()
 
 
 class WavePlotWidget(FigureCanvas):
@@ -103,7 +102,6 @@ class WavePlotWidget(FigureCanvas):
         self.axes.set_ylabel(yLabel)
         self.axes.set_xlabel(xLabel)
         self.axes.plot(xData,yData)
-        self.axes.legend()
         self.fig.canvas.draw()
 
 class scopeControlWidget(QtWidgets.QWidget):
@@ -165,4 +163,5 @@ class ThreadedClient:
 		wave = self.activeScope.getNextWaveform();
 		if wave is not None:
 			self.plot.showPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'])
+		self.mainWindow.statusBar().showMessage('Waveform acquired on ' +wave['dataChannel'])
 
