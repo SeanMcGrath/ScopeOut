@@ -69,40 +69,72 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 
 
 class WavePlotWidget(FigureCanvas):
-    """
-    Class to hold matplotlib Figures for display.
-    """
+	"""
+	Class to hold matplotlib Figures for display.
+	"""
 
-    def __init__(self):
-        self.fig = Figure()
-        self.fig.suptitle("Waveform Capture")
-        self.axes = self.fig.add_subplot(111)
-        FigureCanvas.__init__(self,self.fig) 
-        self.show()
+	def __init__(self):
+		self.fig = Figure()
+		self.fig.suptitle("Waveform Capture")
+		self.axes = self.fig.add_subplot(111)
+		FigureCanvas.__init__(self,self.fig) 
+		self.show()
 
-    def showPlot(self, xData, xLabel, yData, yLabel):
-        '''
-        Fill plot with data and draw it on the screen.
+	def showPlot(self, xData, xLabel, yData, yLabel):
+			'''
+			Fill plot with data and draw it on the screen.
 
-        :xData:
-            X data for plot (usually time)
+			:xData:
+			    X data for plot (usually time)
 
-        :xLabel:
-        	string to label x axis.
+			:xLabel:
+				string to label x axis.
 
-        :yData:
-            Y data for plot.
+			:yData:
+			    Y data for plot.
 
-        :yLabel:
-        	string to label y axis
+			:yLabel:
+				string to label y axis
 
-        '''
+			'''
 
-        self.axes.clear()
-        self.axes.set_ylabel(yLabel)
-        self.axes.set_xlabel(xLabel)
-        self.axes.plot(xData,yData)
-        self.fig.canvas.draw()
+			self.axes.clear()
+			xData, xPrefix = self.autosetUnits(xData)
+			yData, yPrefix = self.autosetUnits(yData)
+			self.axes.set_ylabel(yPrefix + yLabel)
+			self.axes.set_xlabel(xPrefix + xLabel)
+			self.axes.plot(xData,yData)
+			self.fig.canvas.draw()
+
+	def autosetUnits(self, axisArray):
+		"""
+		Set the X units of the plot to the correct size based on the values in axisArray.
+
+		Parameters:
+			:axisArray: the array of values representing one dimension of the waveform.
+		"""
+		xMax = np.amax(axisArray)
+		if xMax > 1e-9:
+			if xMax > 1e-6:
+				if xMax > 1e-3:
+					if xMax > 1:
+						prefix = ''
+						return axisArray,prefix
+
+					prefix = 'milli'
+					axisArray = np.multiply(axisArray,1000)
+					return axisArray,prefix
+
+				prefix = 'micro'
+				axisArray = np.multiply(axisArray,1e6)
+				return axisArray,prefix
+
+			prefix = 'nano'
+			axisArray = np.multiply(axisArray,1e9)
+			return axisArray,prefix
+
+		prefix = ''
+		return axisArray,prefix
 
 class scopeControlWidget(QtWidgets.QWidget):
 
@@ -159,6 +191,7 @@ class ThreadedClient:
 		"""
 		if self.activeScope is None: return
 		
+		self.mainWindow.statusBar().showMessage('Acquiring data...')
 		self.activeScope.makeWaveform()
 		wave = self.activeScope.getNextWaveform();
 		if wave is not None:
