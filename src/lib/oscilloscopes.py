@@ -129,7 +129,7 @@ class TDS2024B(GenericOscilloscope):
 		"""
 		Object to String.
 		"""
-		return "{:s} {:s} Oscilloscope. Serial Number: {:s}. Output on {:s} in {:s} format.".format(self.make,self.model,self.serialNumber,self.dataChannel,self.encoding)
+		return "{:s} {:s} Oscilloscope. Serial Number: {:s}.".format(self.make,self.model,self.serialNumber)
 
 	def __setParam(self, command):
 		"""

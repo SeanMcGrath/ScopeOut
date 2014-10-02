@@ -8,7 +8,7 @@ from PyQt5 import QtGui, QtCore, QtWidgets
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from lib.scopeUtils import ScopeFinder as sf
-import sys, numpy as np
+import sys, threading, numpy as np
 
 class scopeOutMainWindow(QtWidgets.QMainWindow):
 	"""
@@ -21,13 +21,14 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 		Constructor.
 		will be passed widgets from threaded client (probably as array).
 		"""
+		self.widgets = widgets
 
 		QtWidgets.QMainWindow.__init__(self, *args)
 
 		self.central = QtWidgets.QWidget(self)
 		self.layout = QtWidgets.QGridLayout(self)
-		self.layout.addWidget(widgets[0],0,0)
-		self.layout.addWidget(widgets[1],0,1)
+		self.layout.addWidget(self.widgets[0],0,0)
+		self.layout.addWidget(self.widgets[1],0,1)
 		self.central.setLayout(self.layout)
 		self.setCentralWidget(self.central)
 
@@ -65,8 +66,20 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 		:ev:
 			The CloseEvent in question. This is accepted by default.
 		"""
+		ev.accept()
 		self.close()
 
+	def setEnabled(self, bool):
+		"""
+		Enable/disable this widget.
+
+		Parameters:
+			:bool: True to enable, false to disable.
+		"""
+
+		for widget in self.widgets:
+			widget.setEnabled(bool)
+		print("Should be enabled")
 
 class WavePlotWidget(FigureCanvas):
 	"""
@@ -153,6 +166,8 @@ class scopeControlWidget(QtWidgets.QWidget):
 		self.layout.addWidget(self.acqButton,0,0)
 		self.show()
 
+
+
 class ThreadedClient:
 	"""
 	Launches the GUI and handles I/O.
@@ -171,6 +186,8 @@ class ThreadedClient:
 			self.activeScope = self.scopes[0]
 		else:
 			self.activeScope = None
+			self.scopeThread = threading.Thread(target=self.__scopeFind)
+			self.scopeThread.start()
 
 		self.scopeControl = scopeControlWidget(self.activeScope)
 		self.plot = WavePlotWidget()
@@ -197,4 +214,17 @@ class ThreadedClient:
 		if wave is not None:
 			self.plot.showPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'])
 		self.mainWindow.statusBar().showMessage('Waveform acquired on ' +wave['dataChannel'])
+
+	def __scopeFind(self):
+		"""
+		Continually checks for connected scopes.
+		"""
+		while not self.scopes:
+			self.scopes = sf().getScopes()
+
+		self.activeScope = self.scopes[0]
+		self.scopeControl = scopeControlWidget(self.activeScope)
+		self.mainWindow.statusBar().showMessage('Found ' + str(self.activeScope))
+		self.mainWindow.widgets[1].acqButton.setEnabled(True)
+
 
