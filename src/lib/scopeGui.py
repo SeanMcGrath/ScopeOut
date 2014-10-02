@@ -35,6 +35,9 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 		self.initUI()
 
 	def initUI(self):
+		"""
+		Construct non-widget UI elements - Menubar, statusbar, etc.
+		"""
 
 		# File->Exit
 		exitAction = QtWidgets.QAction(QtGui.QIcon('exit.png'), '&Exit', self)        
@@ -67,6 +70,8 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 			The CloseEvent in question. This is accepted by default.
 		"""
 		ev.accept()
+		for widget in self.widgets:
+			widget.close()
 		self.close()
 
 	def setEnabled(self, bool):
@@ -79,7 +84,6 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 
 		for widget in self.widgets:
 			widget.setEnabled(bool)
-		print("Should be enabled")
 
 class WavePlotWidget(FigureCanvas):
 	"""
@@ -166,6 +170,21 @@ class scopeControlWidget(QtWidgets.QWidget):
 		self.layout.addWidget(self.acqButton,0,0)
 		self.show()
 
+	def setScope(self, scope):
+
+		self.scope = scope
+
+	def setEnabled(self, bool):
+		"""
+		Enable/disable this widget.
+
+		Parameters:
+			:bool: True to enable, false to disable.
+		"""
+
+		self.acqButton.setEnabled(bool)
+
+
 
 
 class ThreadedClient:
@@ -180,19 +199,17 @@ class ThreadedClient:
 		"""
 		Constructor
 		"""
-
-		self.scopes = sf().getScopes();
-		if(self.scopes):
-			self.activeScope = self.scopes[0]
-		else:
-			self.activeScope = None
-			self.scopeThread = threading.Thread(target=self.__scopeFind)
-			self.scopeThread.start()
-
-		self.scopeControl = scopeControlWidget(self.activeScope)
+		self.scopeControl = scopeControlWidget(None)
 		self.plot = WavePlotWidget()
 		self.mainWindow = scopeOutMainWindow([self.plot,self.scopeControl])
 		self.__connectSignals()
+
+		self.scopes = sf().getScopes()
+		self.running = True
+		self.scopeThread = threading.Thread(target=self.__scopeFind)
+		self.scopeThread.start()
+
+		
 		self.mainWindow.show()
 
 	def __connectSignals(self):
@@ -219,12 +236,18 @@ class ThreadedClient:
 		"""
 		Continually checks for connected scopes.
 		"""
-		while not self.scopes:
-			self.scopes = sf().getScopes()
+		while self.running:
 
-		self.activeScope = self.scopes[0]
-		self.scopeControl = scopeControlWidget(self.activeScope)
-		self.mainWindow.statusBar().showMessage('Found ' + str(self.activeScope))
-		self.mainWindow.widgets[1].acqButton.setEnabled(True)
+			while not self.scopes:
+				self.mainWindow.statusBar().showMessage('No Oscilloscopes detected.')
+				self.scopes = sf().getScopes()
 
+			self.activeScope = self.scopes[0]
+			self.scopeControl.setScope(self.activeScope)
+			self.mainWindow.statusBar().showMessage('Found ' + str(self.activeScope))
+			self.mainWindow.setEnabled(True)
 
+			while self.scopes:
+				self.scopes = sf().getScopes()
+
+			self.activeScope = None
