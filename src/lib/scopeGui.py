@@ -26,7 +26,7 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 		QtWidgets.QMainWindow.__init__(self, *args)
 
 		self.central = QtWidgets.QWidget(self)
-		self.layout = QtWidgets.QGridLayout(self)
+		self.layout = QtWidgets.QGridLayout(self.central)
 		self.layout.addWidget(self.widgets[0],0,0)
 		self.layout.addWidget(self.widgets[1],0,1)
 		self.central.setLayout(self.layout)
