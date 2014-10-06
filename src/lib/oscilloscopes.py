@@ -101,29 +101,32 @@ class TDS2024B(GenericOscilloscope):
 		self.waveform = {}
 
 		self.waveform['dataChannel'] = self.query("DAT:SOU?") 	# get active channel
-		preamble = self.query("WFMP?").split(';')	# get waveform preamble and parse it
-		self.waveform['dataWidth']= int(preamble[0])
-		self.waveform['bitsPerPoint'] = int(preamble[1])
-		self.waveform['encoding'] = preamble[2]
-		self.waveform['binaryFormat'] = preamble[3]
-		self.waveform['sigBit'] = preamble[4]
-		if len(preamble) > 5: # normal operation
-			self.waveform['numberOfPoints'] = int(preamble[5])
-			self.waveform['pointFormat'] = preamble[7].strip('"')
-			self.waveform['xIncr'] = float(preamble[8])
-			self.waveform['xOff'] = float(preamble[9])
-			self.waveform['xZero'] = float(preamble[10])
-			self.waveform['xUnit'] = preamble[11].strip('"')
-			if self.waveform['xUnit'] == 's':
-				self.waveform['xUnit'] = 'Seconds'
-			self.waveform['yMult'] = float(preamble[12])
-			self.waveform['yZero'] = float(preamble[13])
-			self.waveform['yOff'] = float(preamble[14])
-			self.waveform['yUnit'] = preamble[15].strip('"')
-			self.waveformSet = True
-		else: # Selected channel is not active
-			print(self.waveform['dataChannel'] + ' is not active. Issue DAT:SOU <CHx> to change source channel.')
-			self.waveformSet = False
+		try:
+			preamble = self.query("WFMP?").split(';')	# get waveform preamble and parse it
+			self.waveform['dataWidth']= int(preamble[0])
+			self.waveform['bitsPerPoint'] = int(preamble[1])
+			self.waveform['encoding'] = preamble[2]
+			self.waveform['binaryFormat'] = preamble[3]
+			self.waveform['sigBit'] = preamble[4]
+			if len(preamble) > 5: # normal operation
+				self.waveform['numberOfPoints'] = int(preamble[5])
+				self.waveform['pointFormat'] = preamble[7].strip('"')
+				self.waveform['xIncr'] = float(preamble[8])
+				self.waveform['xOff'] = float(preamble[9])
+				self.waveform['xZero'] = float(preamble[10])
+				self.waveform['xUnit'] = preamble[11].strip('"')
+				if self.waveform['xUnit'] == 's':
+					self.waveform['xUnit'] = 'Seconds'
+				self.waveform['yMult'] = float(preamble[12])
+				self.waveform['yZero'] = float(preamble[13])
+				self.waveform['yOff'] = float(preamble[14])
+				self.waveform['yUnit'] = preamble[15].strip('"')
+				self.waveformSet = True
+			else: # Selected channel is not active
+				print(self.waveform['dataChannel'] + ' is not active. Issue DAT:SOU <CHx> to change source channel.')
+				self.waveformSet = False
+		except Exception as e:
+			print(e)
 
 	def __str__(self):
 		"""
@@ -536,7 +539,9 @@ class TDS2024B(GenericOscilloscope):
 		:Returns: the integer value held in the ESR.
 		"""
 
-		return int(self.__getParam("*ESR?"))
+		status = self.__getParam("*ESR?")
+		if status:
+			return int(status)
 
 	def eventCode(self):
 		"""
