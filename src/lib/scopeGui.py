@@ -8,7 +8,7 @@ from PyQt5 import QtGui, QtCore, QtWidgets
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from lib.scopeUtils import ScopeFinder as sf
-import sys, threading, numpy as np
+import sys, threading, re, os, numpy as np
 
 class scopeOutMainWindow(QtWidgets.QMainWindow):
 	"""
@@ -36,8 +36,30 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 
 	def initUI(self):
 		"""
-		Construct non-widget UI elements - Menubar, statusbar, etc.
+		Construct non-widget UI elements - Menubar, statusbar, etc. Load theme
 		"""
+
+		# Pull stylesheets from Themes folder
+		path = os.path.join(os.getcwd(), 'lib\Themes')
+		themes = []
+
+		try:
+			themeFiles = os.listdir(path)
+			for theme in themeFiles:
+				if re.match('.*stylesheet',theme):
+					try:
+						openTheme = open(os.path.join(path,theme),'r')
+						themes.append(openTheme)
+					except Exception as e:
+						print(e)
+						print('Could not open ' + theme + ', ignoring')
+		except Exception as e:
+			print('No themes folder found; using default styling')
+
+		if themes:
+			print (theme + ' theme found')
+			self.setStyleSheet(themes[0].read())
+
 
 		# File->Exit
 		exitAction = QtWidgets.QAction(QtGui.QIcon('exit.png'), '&Exit', self)        
@@ -69,7 +91,6 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 		:ev:
 			The CloseEvent in question. This is accepted by default.
 		"""
-		ev.accept()
 		for widget in self.widgets:
 			widget.close()
 		self.close()
