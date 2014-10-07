@@ -135,7 +135,6 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 			return False
 
 		return True
-
     
 	def closeEvent(self, ev):
 		"""
@@ -173,30 +172,30 @@ class WavePlotWidget(FigureCanvas):
 		self.show()
 
 	def showPlot(self, xData, xLabel, yData, yLabel):
-			'''
-			Fill plot with data and draw it on the screen.
+		'''
+		Fill plot with data and draw it on the screen.
 
-			:xData:
-			    X data for plot (usually time)
+		:xData:
+		    X data for plot (usually time)
 
-			:xLabel:
-				string to label x axis.
+		:xLabel:
+			string to label x axis.
 
-			:yData:
-			    Y data for plot.
+		:yData:
+		    Y data for plot.
 
-			:yLabel:
-				string to label y axis
+		:yLabel:
+			string to label y axis
 
-			'''
+		'''
 
-			self.axes.clear()
-			xData, xPrefix = self.autosetUnits(xData)
-			yData, yPrefix = self.autosetUnits(yData)
-			self.axes.set_ylabel(yPrefix + yLabel)
-			self.axes.set_xlabel(xPrefix + xLabel)
-			self.axes.plot(xData,yData)
-			self.fig.canvas.draw()
+		self.axes.clear()
+		xData, xPrefix = self.autosetUnits(xData)
+		yData, yPrefix = self.autosetUnits(yData)
+		self.axes.set_ylabel(yPrefix + yLabel)
+		self.axes.set_xlabel(xPrefix + xLabel)
+		self.axes.plot(xData,yData)
+		self.fig.canvas.draw()
 
 	def autosetUnits(self, axisArray):
 		"""
@@ -238,11 +237,17 @@ class scopeControlWidget(QtWidgets.QWidget):
 
 		self.acqButton = QtWidgets.QPushButton('Acquire',self)
 		self.acqButton.setEnabled(False)
+		self.channelComboLabel = QtWidgets.QLabel('Data Channel',self)
+		self.channelComboBox = QtWidgets.QComboBox(self)
+		
 		if self.scope is not None:
-			self.acqButton.setEnabled(True)
+			self.setEnabled(True)
 
 		self.layout = QtWidgets.QGridLayout(self)
 		self.layout.addWidget(self.acqButton,0,0)
+		self.layout.addWidget(self.channelComboLabel,1,0)
+		self.layout.addWidget(self.channelComboBox,2,0)
+
 		self.show()
 
 	def setScope(self, scope):
@@ -258,8 +263,11 @@ class scopeControlWidget(QtWidgets.QWidget):
 		"""
 
 		self.acqButton.setEnabled(bool)
+		self.channelComboBox.setEnabled(bool)
+		channels =list(map(str,range(1,self.scope.numChannels+1)))
+		self.channelComboBox.addItems(channels)
 
-
+	
 
 
 class ThreadedClient:
@@ -293,6 +301,8 @@ class ThreadedClient:
 		"""
 
 		self.scopeControl.acqButton.clicked.connect(self.__acqEvent)
+		self.scopeControl.channelComboBox.currentIndexChanged.connect(self.setChannel)
+
 
 	def __acqEvent(self):
 		"""
@@ -345,3 +355,18 @@ class ThreadedClient:
 		Executed on app close.
 		"""
 		self.running = 0
+		self.scopeControl.close()
+		self.plot.close()
+
+	def setChannel(self,channel):
+		"""
+		Set data channel of active scope.
+
+		Parameters:
+			:channel: desired data channel
+		"""
+
+		if self.scopeControl.scope.setDataChannel(channel+1):
+			self.mainWindow.statusBar().showMessage('Data channel set to ' + str(channel + 1))
+		else:
+			self.mainWindow.statusBar().showMessage('Failed to set data channel set to ' + str(channel + 1))

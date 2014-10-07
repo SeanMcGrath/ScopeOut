@@ -90,6 +90,7 @@ class TDS2024B(GenericOscilloscope):
 		self.firmwareVersion = firmware
 		self.waveformSet = False
 		self.waveformQueue = queue.Queue()
+		self.numChannels = 4 # 4-channel oscilloscope
 		if(self.eventStatus()):
 			print(self.getAllEvents())
 		
@@ -189,7 +190,6 @@ class TDS2024B(GenericOscilloscope):
 
 			except AttributeError:
 				print("Error acquiring waveform data.")
-			pass
 
 	def getXArray(self):
 		"""
@@ -288,6 +288,16 @@ class TDS2024B(GenericOscilloscope):
 		"""
 
 		return self.__getParam("TRIG:STATE?")
+
+	def setDataChannel(self, channel):
+		"""
+		Set data channel of TDS2024B.
+
+		Parameters:
+			:channel: an integer between 1 and 4.
+		"""
+
+		return self.__setParam("DAT:SOU CH" + str(channel))
 
 	"""
 	END UTILITY METHODS
