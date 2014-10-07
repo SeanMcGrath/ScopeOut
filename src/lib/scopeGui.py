@@ -252,6 +252,8 @@ class scopeControlWidget(QtWidgets.QWidget):
 	def setScope(self, scope):
 
 		self.scope = scope
+		if scope is None:
+			self.setEnabled(False)
 
 	def setEnabled(self, bool):
 		"""
@@ -263,8 +265,9 @@ class scopeControlWidget(QtWidgets.QWidget):
 
 		self.acqButton.setEnabled(bool)
 		self.channelComboBox.setEnabled(bool)
-		channels =list(map(str,range(1,self.scope.numChannels+1)))
-		self.channelComboBox.addItems(channels)
+		if bool:
+			channels =list(map(str,range(1,self.scope.numChannels+1)))
+			self.channelComboBox.addItems(channels)
 
 	
 
@@ -311,7 +314,11 @@ class ThreadedClient:
 		
 			self.mainWindow.statusBar().showMessage('Acquiring data...')
 			self.activeScope.makeWaveform()
-			wave = self.activeScope.getNextWaveform();
+			try:
+				wave = self.activeScope.getNextWaveform();
+			except AttributeError:
+				wave = None
+
 			if wave is not None:
 				if wave['error'] is not None:
 					self.mainWindow.statusBar().showMessage(wave['error'])
@@ -336,9 +343,9 @@ class ThreadedClient:
 				if not showedMessage:
 					self.mainWindow.statusBar().showMessage('No Oscilloscopes detected.')
 					showedMessage = True
-				self.scopes = sf().getScopes()
 				time.sleep(1)
-				print('Checked for Scope')
+				self.scopes = sf().getScopes()
+				print('A')
 
 			if self.running:
 				self.activeScope = self.scopes[0]
@@ -347,12 +354,13 @@ class ThreadedClient:
 				self.mainWindow.setEnabled(True)
 
 			while self.scopes and self.running:
-				self.scopes = sf().getScopes()
 				time.sleep(1)
-				print('Checked connected scopes')
+				self.scopes = sf().getScopes()
+				print('B')
 
 			self.mainWindow.statusBar().showMessage('Connection to oscilloscope lost')
 			self.activeScope = None
+			self.scopeControl.setScope(self.activeScope)
 
 	def __closeEvent(self):
 		"""

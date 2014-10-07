@@ -12,6 +12,7 @@ QLabel {
     border-radius: 5px;
     padding: 8px;
     qproperty-alignment: AlignCenter;
+    max-height: 2em;
 }
 
 QRadioButton {
@@ -48,9 +49,13 @@ QStatusBar {
                                   stop: 0.5 #D8D8D8, stop: 1.0 #D3D3D3);
 }
 
-  QMenuBar::item {
-     spacing: 3px; /* spacing between menu bar items */
-     padding: 1px 4px;
-     background: transparent;
-     border-radius: 4px;
- }
+QMenuBar::item {
+   spacing: 3px; /* spacing between menu bar items */
+   padding: 1px 4px;
+   background: transparent;
+   border-radius: 4px;
+}
+
+scopeControlWidget {
+  max-height: 200px;
+}

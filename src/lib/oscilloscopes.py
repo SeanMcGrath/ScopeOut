@@ -128,7 +128,7 @@ class TDS2024B(GenericOscilloscope):
 				self.waveform['error'] = self.waveform['dataChannel'] + ' is not active. Please select an active channel.'
 				self.waveformSet = False
 		except Exception as e:
-			print(e)
+			print('Error in waveformSetup')
 
 	def __str__(self):
 		"""
@@ -214,7 +214,7 @@ class TDS2024B(GenericOscilloscope):
 				self.waveform['xData'] = np.arange(0,self.waveform['numberOfPoints']*self.waveform['xIncr'],self.waveform['xIncr'])
 				self.waveformQueue.put(self.waveform)
 
-			except AttributeError:
+			except:
 				print("Error acquiring waveform data.")
 			pass
 		else:
