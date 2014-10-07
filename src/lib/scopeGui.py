@@ -127,8 +127,9 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 
 		try:
 			style = open(themePath,'r')
+			self.setStyleSheet('')
 			self.setStyleSheet(style.read())
-			self.show()
+			self.repaint()
 		except Exception as e:
 			print(themePath + ' could not be loaded')
 			return False
@@ -310,10 +311,14 @@ class ThreadedClient:
 		"""
 		Continually checks for connected scopes.
 		"""
+		showedMessage = False
+
 		while self.running:
 
 			while not self.scopes and self.running:
-				self.mainWindow.statusBar().showMessage('No Oscilloscopes detected.')
+				if not showedMessage:
+					self.mainWindow.statusBar().showMessage('No Oscilloscopes detected.')
+					showedMessage = True
 				self.scopes = sf().getScopes()
 
 			if self.running:
