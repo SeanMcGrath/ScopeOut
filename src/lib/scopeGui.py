@@ -306,9 +306,12 @@ class ThreadedClient:
 		if wave is not None:
 			if wave['error'] is not None:
 				self.mainWindow.statusBar().showMessage(wave['error'])
-			else:
-				self.plot.showPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'])
-				self.mainWindow.statusBar().showMessage('Waveform acquired on ' +wave['dataChannel'])
+			else: 
+				try:
+					self.plot.showPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'])
+					self.mainWindow.statusBar().showMessage('Waveform acquired on ' +wave['dataChannel'])
+				except KeyError:
+					self.mainWindow.statusBar().showMessage('Waveform not complete')
 		else:
 			self.mainWindow.statusBar().showMessage('Error on Waveform Acquisition')
 
