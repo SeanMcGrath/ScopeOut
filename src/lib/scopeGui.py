@@ -39,27 +39,15 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 		Construct non-widget UI elements - Menubar, statusbar, etc. Load theme
 		"""
 
-		# Pull stylesheets from Themes folder
-		path = os.path.join(os.getcwd(), 'lib\Themes')
-		themes = []
-
-		try:
-			themeFiles = os.listdir(path)
-			for theme in themeFiles:
-				if re.match('.*stylesheet',theme):
-					try:
-						openTheme = open(os.path.join(path,theme),'r')
-						themes.append(openTheme)
-					except Exception as e:
-						print(e)
-						print('Could not open ' + theme + ', ignoring')
-		except Exception as e:
-			print('No themes folder found; using default styling')
-
-		if themes:
-			print (theme + ' theme found')
-			self.setStyleSheet(themes[0].read())
-
+		if self.findThemes():
+			i = 0
+			while True:
+				if i > len(self.themes) - 1:
+					break
+				elif self.loadTheme(self.themes[i]):
+					break
+				else:
+					i += 1
 
 		# File->Exit
 		exitAction = QtWidgets.QAction(QtGui.QIcon('exit.png'), '&Exit', self)        
@@ -83,6 +71,48 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 		menubar = self.menuBar()
 		fileMenu = menubar.addMenu('&File')
 		fileMenu.addAction(exitAction)
+
+	def findThemes(self):
+		"""
+		Finds themes (stylesheets) in the Themes folder, currently '\lib\Themes'
+		and stores their paths in self.themes.
+
+		:Returns: self.themes, the array of theme paths, for convenience.
+		"""
+		path = os.path.join(os.getcwd(), 'lib\Themes')
+		self.themes = []
+
+		try:
+			themeFiles = os.listdir(path)
+			for theme in themeFiles:
+				if re.match('.*stylesheet',theme):
+					try:
+						openTheme = os.path.join(path,theme)
+						self.themes.append(openTheme)
+					except Exception as e:
+						print(e)
+						print('Could not process ' + theme + ', ignoring')
+		except Exception as e:
+			print('No themes folder found')
+
+		return self.themes
+
+	def loadTheme(self, themePath):
+		"""
+		Loads style sheet from themePath and sets it as the application's style.
+
+		:Returns: True if theme is loaded successfully, False otherwise.
+		"""
+
+		try:
+			style = open(themePath,'r')
+			self.setStyleSheet(style.read())
+		except Exception as e:
+			print(themePath + ' could not be loaded')
+			return False
+
+		return True
+
     
 	def closeEvent(self, ev):
 		"""
