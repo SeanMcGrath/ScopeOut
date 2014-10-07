@@ -16,12 +16,13 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 	menu bars, tool bars, etc.
 	"""
 
-	def __init__(self, widgets, *args):
+	def __init__(self, widgets, endCommand, *args):
 		"""
 		Constructor.
 		will be passed widgets from threaded client (probably as array).
 		"""
 		self.widgets = widgets
+		self.endCommand = endCommand
 
 		QtWidgets.QMainWindow.__init__(self, *args)
 
@@ -144,6 +145,7 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 		"""
 		for widget in self.widgets:
 			widget.close()
+		self.endCommand()
 		self.close()
 
 	def setEnabled(self, bool):
@@ -273,7 +275,7 @@ class ThreadedClient:
 		"""
 		self.scopeControl = scopeControlWidget(None)
 		self.plot = WavePlotWidget()
-		self.mainWindow = scopeOutMainWindow([self.plot,self.scopeControl])
+		self.mainWindow = scopeOutMainWindow([self.plot,self.scopeControl],self.__closeEvent)
 		self.__connectSignals()
 
 		self.scopes = sf().getScopes()
@@ -310,16 +312,23 @@ class ThreadedClient:
 		"""
 		while self.running:
 
-			while not self.scopes:
+			while not self.scopes and self.running:
 				self.mainWindow.statusBar().showMessage('No Oscilloscopes detected.')
 				self.scopes = sf().getScopes()
 
-			self.activeScope = self.scopes[0]
-			self.scopeControl.setScope(self.activeScope)
-			self.mainWindow.statusBar().showMessage('Found ' + str(self.activeScope))
-			self.mainWindow.setEnabled(True)
+			if self.running:
+				self.activeScope = self.scopes[0]
+				self.scopeControl.setScope(self.activeScope)
+				self.mainWindow.statusBar().showMessage('Found ' + str(self.activeScope))
+				self.mainWindow.setEnabled(True)
 
-			while self.scopes:
+			while self.scopes and self.running:
 				self.scopes = sf().getScopes()
 
 			self.activeScope = None
+
+	def __closeEvent(self):
+		"""
+		Executed on app close.
+		"""
+		self.running = 0
