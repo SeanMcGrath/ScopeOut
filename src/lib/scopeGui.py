@@ -8,7 +8,7 @@ from PyQt5 import QtGui, QtCore, QtWidgets
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from lib.scopeUtils import ScopeFinder as sf
-import sys, threading, re, os, functools, numpy as np
+import sys, threading, re, os, functools, time, numpy as np
 
 class scopeOutMainWindow(QtWidgets.QMainWindow):
 	"""
@@ -111,7 +111,6 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 						openTheme = os.path.join(path,theme)
 						self.themes.append(openTheme)
 					except Exception as e:
-						print(e)
 						print('Could not process ' + theme + ', ignoring')
 		except Exception as e:
 			print('No themes folder found')
@@ -308,22 +307,22 @@ class ThreadedClient:
 		"""
 		Executed to collect waveform data from scope.
 		"""
-		if self.activeScope is None: return
+		if self.activeScope is not None:
 		
-		self.mainWindow.statusBar().showMessage('Acquiring data...')
-		self.activeScope.makeWaveform()
-		wave = self.activeScope.getNextWaveform();
-		if wave is not None:
-			if wave['error'] is not None:
-				self.mainWindow.statusBar().showMessage(wave['error'])
-			else: 
-				try:
-					self.plot.showPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'])
-					self.mainWindow.statusBar().showMessage('Waveform acquired on ' +wave['dataChannel'])
-				except KeyError:
-					self.mainWindow.statusBar().showMessage('Waveform not complete')
-		else:
-			self.mainWindow.statusBar().showMessage('Error on Waveform Acquisition')
+			self.mainWindow.statusBar().showMessage('Acquiring data...')
+			self.activeScope.makeWaveform()
+			wave = self.activeScope.getNextWaveform();
+			if wave is not None:
+				if wave['error'] is not None:
+					self.mainWindow.statusBar().showMessage(wave['error'])
+				else: 
+					try:
+						self.plot.showPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'])
+						self.mainWindow.statusBar().showMessage('Waveform acquired on ' +wave['dataChannel'])
+					except KeyError:
+						self.mainWindow.statusBar().showMessage('Waveform not complete')
+			else:
+				self.mainWindow.statusBar().showMessage('Error on Waveform Acquisition')
 
 	def __scopeFind(self):
 		"""
@@ -338,6 +337,8 @@ class ThreadedClient:
 					self.mainWindow.statusBar().showMessage('No Oscilloscopes detected.')
 					showedMessage = True
 				self.scopes = sf().getScopes()
+				time.sleep(1)
+				print('Checked for Scope')
 
 			if self.running:
 				self.activeScope = self.scopes[0]
@@ -347,7 +348,10 @@ class ThreadedClient:
 
 			while self.scopes and self.running:
 				self.scopes = sf().getScopes()
+				time.sleep(1)
+				print('Checked connected scopes')
 
+			self.mainWindow.statusBar().showMessage('Connection to oscilloscope lost')
 			self.activeScope = None
 
 	def __closeEvent(self):

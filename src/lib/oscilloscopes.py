@@ -148,8 +148,8 @@ class TDS2024B(GenericOscilloscope):
 
 		try:
 			self.write(command)
-			result = int(self.query("*ESR?"))
-			if not result:
+			result = self.query("*ESR?")
+			if result is None:
 				return True
 			else:
 				return self.eventMessage().split(',')[1].strip('"')
