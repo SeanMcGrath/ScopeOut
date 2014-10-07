@@ -39,15 +39,7 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 		Construct non-widget UI elements - Menubar, statusbar, etc. Load theme
 		"""
 
-		if self.findThemes():
-			i = 0
-			while True:
-				if i > len(self.themes) - 1:
-					break
-				elif self.loadTheme(self.themes[i]):
-					break
-				else:
-					i += 1
+		self.initTheme()
 
 		# File->Exit
 		exitAction = QtWidgets.QAction(QtGui.QIcon('exit.png'), '&Exit', self)        
@@ -71,6 +63,20 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 		menubar = self.menuBar()
 		fileMenu = menubar.addMenu('&File')
 		fileMenu.addAction(exitAction)
+
+	def initTheme(self):
+		"""
+		Finds all themes, and loads first available one.
+		"""
+		if self.findThemes():
+			i = 0
+			while True:
+				if i > len(self.themes) - 1:
+					break
+				elif self.loadTheme(self.themes[i]):
+					break
+				else:
+					i += 1
 
 	def findThemes(self):
 		"""
