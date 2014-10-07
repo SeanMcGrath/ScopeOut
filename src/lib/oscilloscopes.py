@@ -90,7 +90,6 @@ class TDS2024B(GenericOscilloscope):
 		self.firmwareVersion = firmware
 		self.waveformSet = False
 		self.waveformQueue = queue.Queue()
-		self.waveformSetup()
 		if(self.eventStatus()):
 			print(self.getAllEvents())
 		
@@ -98,7 +97,7 @@ class TDS2024B(GenericOscilloscope):
 		"""
 		Acquires and stores all necessary parameters for waveform transfer and display.
 		"""
-		self.waveform = {}
+		self.waveform = {'error' : None}
 
 		self.waveform['dataChannel'] = self.query("DAT:SOU?") 	# get active channel
 		try:
@@ -124,6 +123,7 @@ class TDS2024B(GenericOscilloscope):
 				self.waveformSet = True
 			else: # Selected channel is not active
 				print(self.waveform['dataChannel'] + ' is not active. Issue DAT:SOU <CHx> to change source channel.')
+				self.waveform['error'] = self.waveform['dataChannel'] + ' is not active'
 				self.waveformSet = False
 		except Exception as e:
 			print(e)
@@ -216,6 +216,8 @@ class TDS2024B(GenericOscilloscope):
 			except AttributeError:
 				print("Error acquiring waveform data.")
 			pass
+		else:
+			self.waveformQueue.put(self.waveform)
 
 	def getNextWaveform(self):
 		"""

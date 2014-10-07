@@ -304,8 +304,13 @@ class ThreadedClient:
 		self.activeScope.makeWaveform()
 		wave = self.activeScope.getNextWaveform();
 		if wave is not None:
-			self.plot.showPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'])
-		self.mainWindow.statusBar().showMessage('Waveform acquired on ' +wave['dataChannel'])
+			if wave['error'] is not None:
+				self.mainWindow.statusBar().showMessage(wave['error'])
+			else:
+				self.plot.showPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'])
+				self.mainWindow.statusBar().showMessage('Waveform acquired on ' +wave['dataChannel'])
+		else:
+			self.mainWindow.statusBar().showMessage('Error on Waveform Acquisition')
 
 	def __scopeFind(self):
 		"""
