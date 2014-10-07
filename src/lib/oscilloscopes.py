@@ -169,7 +169,7 @@ class TDS2024B(GenericOscilloscope):
 		try: return self.query(command).strip("'")
 		except Exception as err:
 			print(type(err))
-			print(err.args)
+			print(err)
 
 	def getCurve(self):
 		"""

@@ -269,9 +269,6 @@ class scopeControlWidget(QtWidgets.QWidget):
 			channels =list(map(str,range(1,self.scope.numChannels+1)))
 			self.channelComboBox.addItems(channels)
 
-	
-
-
 class ThreadedClient:
 	"""
 	Launches the GUI and handles I/O.
@@ -362,13 +359,19 @@ class ThreadedClient:
 			self.activeScope = None
 			self.scopeControl.setScope(self.activeScope)
 
+		print('thread dead')
+		return
+
 	def __closeEvent(self):
 		"""
 		Executed on app close.
 		"""
+		print('Closing...')
 		self.running = 0
 		self.scopeControl.close()
 		self.plot.close()
+		self.mainWindow.close()
+		QtWidgets.QApplication.quit()
 
 	def setChannel(self,channel):
 		"""
