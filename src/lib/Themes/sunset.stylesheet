@@ -1,0 +1,56 @@
+QMainWindow { 
+	background-color: #FF6600
+}
+
+QWidget:disabled {
+    color: gray;
+}
+
+QLabel { 
+    color: white;
+    background-color: #1E1E1E;
+    border-radius: 5px;
+    padding: 8px;
+    qproperty-alignment: AlignCenter;
+}
+
+QRadioButton {
+	color: white;
+	background-color: #1E1E1E;
+  border-radius: 5px;
+  padding: 8px;
+}
+
+QCheckBox {
+  color: white;
+  background-color: #1E1E1E;
+  border-radius: 5px;
+  padding: 8px;
+}
+
+QSpinBox {
+	background-color: white;
+    width: 10em;
+    max-width: 10em;
+}
+
+QComboBox {
+    max-width: 10em;
+}
+
+QStatusBar {
+	color: white;
+}
+
+ QMenuBar {
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                  stop: 0 #E1E1E1, stop: 0.4 #DDDDDD,
+                                  stop: 0.5 #D8D8D8, stop: 1.0 #D3D3D3);
+}
+
+  QMenuBar::item {
+     spacing: 3px; /* spacing between menu bar items */
+     padding: 1px 4px;
+     background: transparent;
+     border-radius: 4px;
+ }

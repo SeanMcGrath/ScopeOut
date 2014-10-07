@@ -8,7 +8,7 @@ from PyQt5 import QtGui, QtCore, QtWidgets
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from lib.scopeUtils import ScopeFinder as sf
-import sys, threading, re, os, numpy as np
+import sys, threading, re, os, functools, numpy as np
 
 class scopeOutMainWindow(QtWidgets.QMainWindow):
 	"""
@@ -63,6 +63,20 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 		menubar = self.menuBar()
 		fileMenu = menubar.addMenu('&File')
 		fileMenu.addAction(exitAction)
+		viewMenu = menubar.addMenu('&View')
+		themeMenu = viewMenu.addMenu('Change Theme')
+		if self.themes:
+			themeActions = []
+			for theme in self.themes:
+				themeAction = QtWidgets.QAction(theme.split('\\')[-1].split('.')[0],self)
+				themeAction.setStatusTip('Change active theme to ' + theme.split('\\')[-1].split('.')[0])
+				themeAction.triggered.connect(functools.partial(self.loadTheme,theme))
+				themeActions.append(themeAction)
+				themeAction = None
+			for theme in themeActions:
+				themeMenu.addAction(theme)
+		else:
+			themeMenu.setEnabled(False)
 
 	def initTheme(self):
 		"""
@@ -113,6 +127,7 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 		try:
 			style = open(themePath,'r')
 			self.setStyleSheet(style.read())
+			self.show()
 		except Exception as e:
 			print(themePath + ' could not be loaded')
 			return False
