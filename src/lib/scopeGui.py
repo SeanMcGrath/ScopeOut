@@ -8,6 +8,7 @@ from PyQt5 import QtGui, QtCore, QtWidgets
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from lib.scopeUtils import ScopeFinder as sf
+from lib.oscilloscopes import GenericOscilloscope
 import sys, threading, re, os, functools, time, numpy as np
 
 class scopeOutMainWindow(QtWidgets.QMainWindow):
@@ -227,13 +228,29 @@ class WavePlotWidget(FigureCanvas):
 		return axisArray,prefix
 
 class scopeControlWidget(QtWidgets.QWidget):
+	"""
+	Widget containing scope interaction widgets; buttons, selectors, etc.
+	"""
 
 	def __init__(self, scope, *args):
+		"""
+		Constructor.
+
+		Parameters
+			:scope: The oscilloscope to be controlled by this widget.
+		"""
 
 		self.scope = scope
 
 		QtWidgets.QWidget.__init__(self, *args)
+		self.initWidgets()
+		self.show()
 
+
+	def initWidgets(self):
+		"""
+		Set up the subwidgets
+		"""
 		self.acqButton = QtWidgets.QPushButton('Acquire',self)
 		self.acqButton.setEnabled(False)
 		self.channelComboLabel = QtWidgets.QLabel('Data Channel',self)
@@ -247,13 +264,19 @@ class scopeControlWidget(QtWidgets.QWidget):
 		self.layout.addWidget(self.channelComboLabel,1,0)
 		self.layout.addWidget(self.channelComboBox,2,0)
 
-		self.show()
-
 	def setScope(self, scope):
+		"""
+		Change the oscilloscope that this widget is controlling.
+
+		Parameters:
+			:scope: the new oscilloscope bject to be controlled.
+		"""
 
 		self.scope = scope
 		if scope is None:
 			self.setEnabled(False)
+		elif scope is GenericOscilloscope:
+			self.setEnabled(True)
 
 	def setEnabled(self, bool):
 		"""
@@ -276,6 +299,8 @@ class ThreadedClient:
 	GUI components reside within the body of the class itself, while actual serial communication
 	is in a separate thread.
 	"""
+
+	lock = threading.Lock()
 
 	def __init__(self):
 		"""
@@ -301,19 +326,27 @@ class ThreadedClient:
 		self.scopeControl.acqButton.clicked.connect(self.__acqEvent)
 		self.scopeControl.channelComboBox.currentIndexChanged.connect(self.setChannel)
 
-
 	def __acqEvent(self):
 		"""
 		Executed to collect waveform data from scope.
 		"""
-		if self.activeScope is not None:
+
+		self.acqThread = threading.Thread(target = self.__acqThread)
+		self.acqThread.start()
 		
+	def __acqThread(self):
+
+		if self.activeScope is not None:
 			self.mainWindow.statusBar().showMessage('Acquiring data...')
+			self.lock.acquire()
+		
 			self.activeScope.makeWaveform()
 			try:
 				wave = self.activeScope.getNextWaveform();
 			except AttributeError:
 				wave = None
+			finally:
+				self.lock.release()
 
 			if wave is not None:
 				if wave['error'] is not None:
@@ -336,7 +369,7 @@ class ThreadedClient:
 		finder = sf()
 
 		self.scopes = finder.refresh().getScopes()
-		
+
 		while self.running:
 
 			while not self.scopes and self.running:
@@ -344,7 +377,9 @@ class ThreadedClient:
 					self.mainWindow.statusBar().showMessage('No Oscilloscopes detected.')
 					showedMessage = True
 				time.sleep(1)
+				self.lock.acquire()
 				self.scopes = finder.refresh().getScopes()
+				self.lock.release()
 				print('A')
 
 			if self.running:
@@ -355,7 +390,9 @@ class ThreadedClient:
 
 			while self.scopes and self.running:
 				time.sleep(1)
+				self.lock.acquire()
 				self.scopes = finder.refresh().getScopes()
+				self.lock.release()
 				print('B')
 
 			self.mainWindow.statusBar().showMessage('Connection to oscilloscope lost')
