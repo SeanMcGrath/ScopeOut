@@ -324,7 +324,7 @@ class ThreadedClient:
 		"""
 
 		self.scopeControl.acqButton.clicked.connect(self.__acqEvent)
-		self.scopeControl.channelComboBox.currentIndexChanged.connect(self.setChannel)
+		self.scopeControl.channelComboBox.currentIndexChanged.connect(self.__setChannel)
 
 	def __acqEvent(self):
 		"""
@@ -376,7 +376,6 @@ class ThreadedClient:
 				if not showedMessage:
 					self.mainWindow.statusBar().showMessage('No Oscilloscopes detected.')
 					showedMessage = True
-				time.sleep(1)
 				self.lock.acquire()
 				self.scopes = finder.refresh().getScopes()
 				self.lock.release()
@@ -389,7 +388,7 @@ class ThreadedClient:
 				self.mainWindow.setEnabled(True)
 
 			while self.scopes and self.running:
-				time.sleep(1)
+				time.sleep(5)
 				self.lock.acquire()
 				self.scopes = finder.refresh().getScopes()
 				self.lock.release()
@@ -413,15 +412,25 @@ class ThreadedClient:
 		self.mainWindow.close()
 		QtWidgets.QApplication.quit()
 
-	def setChannel(self,channel):
+	def __setChannel(self,channel):
 		"""
 		Set data channel of active scope.
 
 		Parameters:
 			:channel: desired data channel
 		"""
+		def __channelThread():
 
-		if self.scopeControl.scope.setDataChannel(channel+1):
-			self.mainWindow.statusBar().showMessage('Data channel set to ' + str(channel + 1))
-		else:
-			self.mainWindow.statusBar().showMessage('Failed to set data channel set to ' + str(channel + 1))
+			self.lock.acquire()
+			if self.scopeControl.scope.setDataChannel(channel+1):
+				self.mainWindow.statusBar().showMessage('Data channel set to ' + str(channel + 1))
+			else:
+				self.mainWindow.statusBar().showMessage('Failed to set data channel set to ' + str(channel + 1))
+			self.lock.release()
+
+		threading.Thread(target=__channelThread).start()
+
+		
+
+
+
