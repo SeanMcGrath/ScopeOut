@@ -17,7 +17,33 @@ class ScopeFinder:
 		"""
 
 		self.rm = visa.ResourceManager() # performs USB polling and finds instruments
-		self.resources = []
+
+		self.refresh()
+
+	def query(self, inst, command):
+		"""
+		Issues query to instrument and returns response.
+
+		Parameters:
+			:inst: the instrument to be queried.
+			:command: the command to be issued.
+
+		:Returns: the response of inst as a string.
+		"""
+		inst.write(command)
+		return inst.read().strip() # strip newline
+
+	def getScopes(self):
+		"""
+		Getter for array of connected oscilloscopes.
+
+		:Returns: an array of PyVisa instrument objects representing USB oscilloscopes connected to the computer.
+		"""
+
+		return self.scopes
+
+	def refresh(self):
+
 		self.scopes = []
 
 		try:
@@ -43,24 +69,4 @@ class ScopeFinder:
 				except visa.VisaIOError:
 					print('Error in ScopeFinder')
 
-	def query(self, inst, command):
-		"""
-		Issues query to instrument and returns response.
-
-		Parameters:
-			:inst: the instrument to be queried.
-			:command: the command to be issued.
-
-		:Returns: the response of inst as a string.
-		"""
-		inst.write(command)
-		return inst.read().strip() # strip newline
-
-	def getScopes(self):
-		"""
-		Getter for array of connected oscilloscopes.
-
-		:Returns: an array of PyVisa instrument objects representing USB oscilloscopes connected to the computer.
-		"""
-
-		return self.scopes
+		return self

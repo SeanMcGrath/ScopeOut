@@ -286,7 +286,6 @@ class ThreadedClient:
 		self.mainWindow = scopeOutMainWindow([self.plot,self.scopeControl],self.__closeEvent)
 		self.__connectSignals()
 
-		self.scopes = sf().getScopes()
 		self.running = True
 		self.scopeThread = threading.Thread(target=self.__scopeFind)
 		self.scopeThread.start()
@@ -334,6 +333,10 @@ class ThreadedClient:
 		"""
 		showedMessage = False
 
+		finder = sf()
+
+		self.scopes = finder.refresh().getScopes()
+		
 		while self.running:
 
 			while not self.scopes and self.running:
@@ -341,7 +344,7 @@ class ThreadedClient:
 					self.mainWindow.statusBar().showMessage('No Oscilloscopes detected.')
 					showedMessage = True
 				time.sleep(1)
-				self.scopes = sf().getScopes()
+				self.scopes = finder.refresh().getScopes()
 				print('A')
 
 			if self.running:
@@ -352,7 +355,7 @@ class ThreadedClient:
 
 			while self.scopes and self.running:
 				time.sleep(1)
-				self.scopes = sf().getScopes()
+				self.scopes = finder.refresh().getScopes()
 				print('B')
 
 			self.mainWindow.statusBar().showMessage('Connection to oscilloscope lost')
