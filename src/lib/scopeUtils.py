@@ -45,6 +45,7 @@ class ScopeFinder:
 	def refresh(self):
 
 		self.scopes = []
+		self.resources = []
 
 		try:
 			self.resources = self.rm.list_resources("USB?*") #  We only want USB scopes

@@ -146,7 +146,6 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 		for widget in self.widgets:
 			widget.close()
 		self.endCommand()
-		self.close()
 
 	def setEnabled(self, bool):
 		"""
@@ -245,7 +244,6 @@ class scopeControlWidget(QtWidgets.QWidget):
 		QtWidgets.QWidget.__init__(self, *args)
 		self.initWidgets()
 		self.show()
-
 
 	def initWidgets(self):
 		"""
@@ -409,8 +407,6 @@ class ThreadedClient:
 		self.running = 0
 		self.scopeControl.close()
 		self.plot.close()
-		self.mainWindow.close()
-		QtWidgets.QApplication.quit()
 
 	def __setChannel(self,channel):
 		"""
