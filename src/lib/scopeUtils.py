@@ -25,7 +25,7 @@ class ScopeFinder:
 
 	def __exit__(self,type,value,traceback):
 		pass
-		
+
 	def query(self, inst, command):
 		"""
 		Issues query to instrument and returns response.
@@ -49,6 +49,9 @@ class ScopeFinder:
 		return self.scopes
 
 	def refresh(self):
+		"""
+		Re-run scope acquisition to update scope array.
+		"""
 
 		self.scopes = []
 		self.resources = []
@@ -77,3 +80,14 @@ class ScopeFinder:
 					print('Error in ScopeFinder')
 
 		return self
+
+	def checkScope(self, scopeIndex):
+		"""
+		Check if the scope at scopeIndex is still connected.
+		"""
+
+		try:
+			self.scopes[scopeIndex].query("TRIGGER?")
+			return True
+		except:
+			return False

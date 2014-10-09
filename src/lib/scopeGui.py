@@ -301,6 +301,7 @@ class ThreadedClient(QtWidgets.QApplication):
 
 
 	lock = threading.Lock()
+	stopFlag = threading.Event()
 
 	def __init__(self, *args):
 		"""
@@ -313,9 +314,7 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.mainWindow = scopeOutMainWindow([self.plot,self.scopeControl],self.__closeEvent)
 		self.__connectSignals()
 
-		self.running = True
 		self.scopeThread = threading.Thread(target=self.__scopeFind)
-		self.scopeThread.daemon = True
 		self.scopeThread.start()
 
 	def __connectSignals(self):
@@ -370,9 +369,13 @@ class ThreadedClient(QtWidgets.QApplication):
 
 			self.scopes = finder.refresh().getScopes()
 
-			while self.running:
+			while not self.stopFlag.isSet():
 
-				while not self.scopes and self.running:
+				while not self.scopes: # Check for scopes and connect if possible
+					if self.stopFlag.isSet():
+						self.running = 0
+						self.scopes = []
+						break
 					if not showedMessage:
 						self.mainWindow.statusBar().showMessage('No Oscilloscopes detected.')
 						showedMessage = True
@@ -381,32 +384,35 @@ class ThreadedClient(QtWidgets.QApplication):
 					self.lock.release()
 					print('A')
 
-				if self.running:
+				if not self.stopFlag.isSet(): # Scope Found!
 					self.activeScope = self.scopes[0]
 					self.scopeControl.setScope(self.activeScope)
 					self.mainWindow.statusBar().showMessage('Found ' + str(self.activeScope))
 					self.mainWindow.setEnabled(True)
 
-				while self.scopes and self.running:
-					pass
-					# time.sleep(5)
-					# self.lock.acquire()
-					# self.scopes = finder.refresh().getScopes()
-					# self.lock.release()
-					# print('B')
+				while self.scopes: # See if scope is still there or program terminates
+					if self.stopFlag.isSet():
+						self.scopes = []
+						break
+					self.lock.acquire()
+					if not finder.checkScope(0):
+						self.scopes = []
+					self.lock.release()
+					print('B')
 
 				self.mainWindow.statusBar().showMessage('Connection to oscilloscope lost')
 				self.activeScope = None
 				self.scopeControl.setScope(self.activeScope)
 
-			print('thread dead')
+		print('thread dead')
 		
 	def __closeEvent(self):
 		"""
 		Executed on app close.
 		"""
 		print('Closing...')
-		self.running = 0
+		self.scopes = []
+		self.stopFlag.set()
 		self.closeAllWindows()
 		self.beep()
 		self.exit(0)
@@ -427,6 +433,7 @@ class ThreadedClient(QtWidgets.QApplication):
 			else:
 				self.mainWindow.statusBar().showMessage('Failed to set data channel set to ' + str(channel + 1))
 			self.lock.release()
+			sys.exit(0)
 
 		threading.Thread(target=__channelThread).start()
 
