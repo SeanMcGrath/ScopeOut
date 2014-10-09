@@ -8,6 +8,6 @@ def main():
 	return GUI.exec_()
 
 if __name__ == "__main__":
-	main()
-	
+	sys.exit(main())
+
 	
