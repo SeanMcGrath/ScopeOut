@@ -6,13 +6,7 @@ print("Initializing...")
 
 from lib.scopeUtils import ScopeFinder
 
-scopes = []
-
-try:
-	scopes = ScopeFinder().getScopes()
-except OSError:
-	print('VISA Library not installed.')
-
+scopes = ScopeFinder().getScopes()
 if scopes:
 	TDS = scopes[0]
 
