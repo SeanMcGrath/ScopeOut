@@ -1,9 +1,13 @@
 from PyQt5 import QtGui, QtCore, QtWidgets
-import lib.scopeGui as sg, sys, signal
+import lib.scopeGui as sg, sys, signal, os
 
-root = QtWidgets.QApplication(sys.argv)
-root.GUI = sg.ThreadedClient()
-print('GUI')
-signal.signal(signal.SIGINT, signal.SIG_DFL)
-sys.exit(root.exec_())
-print('Done')
+def main():
+	GUI = sg.ThreadedClient(sys.argv)
+	GUI.mainWindow.show()
+	signal.signal(signal.SIGINT, signal.SIG_DFL)
+	return GUI.exec_()
+
+if __name__ == "__main__":
+	main()
+	
+	

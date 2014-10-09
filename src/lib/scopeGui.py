@@ -143,6 +143,7 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 		:ev:
 			The CloseEvent in question. This is accepted by default.
 		"""
+		print('Executing Endcommand')
 		for widget in self.widgets:
 			widget.close()
 		self.endCommand()
@@ -290,7 +291,7 @@ class scopeControlWidget(QtWidgets.QWidget):
 			channels =list(map(str,range(1,self.scope.numChannels+1)))
 			self.channelComboBox.addItems(channels)
 
-class ThreadedClient:
+class ThreadedClient(QtWidgets.QApplication):
 	"""
 	Launches the GUI and handles I/O.
 
@@ -298,12 +299,15 @@ class ThreadedClient:
 	is in a separate thread.
 	"""
 
+
 	lock = threading.Lock()
 
-	def __init__(self):
+	def __init__(self, *args):
 		"""
 		Constructor
 		"""
+
+		QtWidgets.QApplication.__init__(self, *args)
 		self.scopeControl = scopeControlWidget(None)
 		self.plot = WavePlotWidget()
 		self.mainWindow = scopeOutMainWindow([self.plot,self.scopeControl],self.__closeEvent)
@@ -311,10 +315,8 @@ class ThreadedClient:
 
 		self.running = True
 		self.scopeThread = threading.Thread(target=self.__scopeFind)
+		self.scopeThread.daemon = True
 		self.scopeThread.start()
-
-		
-		self.mainWindow.show()
 
 	def __connectSignals(self):
 		"""
@@ -364,49 +366,51 @@ class ThreadedClient:
 		"""
 		showedMessage = False
 
-		finder = sf()
+		with sf() as finder:
 
-		self.scopes = finder.refresh().getScopes()
+			self.scopes = finder.refresh().getScopes()
 
-		while self.running:
+			while self.running:
 
-			while not self.scopes and self.running:
-				if not showedMessage:
-					self.mainWindow.statusBar().showMessage('No Oscilloscopes detected.')
-					showedMessage = True
-				self.lock.acquire()
-				self.scopes = finder.refresh().getScopes()
-				self.lock.release()
-				print('A')
+				while not self.scopes and self.running:
+					if not showedMessage:
+						self.mainWindow.statusBar().showMessage('No Oscilloscopes detected.')
+						showedMessage = True
+					self.lock.acquire()
+					self.scopes = finder.refresh().getScopes()
+					self.lock.release()
+					print('A')
 
-			if self.running:
-				self.activeScope = self.scopes[0]
+				if self.running:
+					self.activeScope = self.scopes[0]
+					self.scopeControl.setScope(self.activeScope)
+					self.mainWindow.statusBar().showMessage('Found ' + str(self.activeScope))
+					self.mainWindow.setEnabled(True)
+
+				while self.scopes and self.running:
+					pass
+					# time.sleep(5)
+					# self.lock.acquire()
+					# self.scopes = finder.refresh().getScopes()
+					# self.lock.release()
+					# print('B')
+
+				self.mainWindow.statusBar().showMessage('Connection to oscilloscope lost')
+				self.activeScope = None
 				self.scopeControl.setScope(self.activeScope)
-				self.mainWindow.statusBar().showMessage('Found ' + str(self.activeScope))
-				self.mainWindow.setEnabled(True)
 
-			while self.scopes and self.running:
-				time.sleep(5)
-				self.lock.acquire()
-				self.scopes = finder.refresh().getScopes()
-				self.lock.release()
-				print('B')
-
-			self.mainWindow.statusBar().showMessage('Connection to oscilloscope lost')
-			self.activeScope = None
-			self.scopeControl.setScope(self.activeScope)
-
-		print('thread dead')
-		return
-
+			print('thread dead')
+		
 	def __closeEvent(self):
 		"""
 		Executed on app close.
 		"""
 		print('Closing...')
 		self.running = 0
-		self.scopeControl.close()
-		self.plot.close()
+		self.closeAllWindows()
+		self.beep()
+		self.exit(0)
+		print('Closed!')
 
 	def __setChannel(self,channel):
 		"""

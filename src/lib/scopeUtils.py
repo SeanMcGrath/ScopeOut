@@ -20,6 +20,12 @@ class ScopeFinder:
 
 		self.refresh()
 
+	def __enter__(self):
+		return self
+
+	def __exit__(self,type,value,traceback):
+		pass
+		
 	def query(self, inst, command):
 		"""
 		Issues query to instrument and returns response.
