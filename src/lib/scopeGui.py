@@ -143,7 +143,6 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 		:ev:
 			The CloseEvent in question. This is accepted by default.
 		"""
-		print('Executing Endcommand')
 		for widget in self.widgets:
 			widget.close()
 		self.endCommand()
@@ -299,7 +298,6 @@ class ThreadedClient(QtWidgets.QApplication):
 	is in a separate thread.
 	"""
 
-
 	lock = threading.Lock()
 	stopFlag = threading.Event()
 
@@ -335,7 +333,7 @@ class ThreadedClient(QtWidgets.QApplication):
 		
 	def __acqThread(self):
 
-		if self.activeScope is not None:
+		if self.activeScope is not None :
 			self.mainWindow.statusBar().showMessage('Acquiring data...')
 			self.lock.acquire()
 		
@@ -347,7 +345,7 @@ class ThreadedClient(QtWidgets.QApplication):
 			finally:
 				self.lock.release()
 
-			if wave is not None:
+			if wave is not None and (not self.stopFlag.isSet()):
 				if wave['error'] is not None:
 					self.mainWindow.statusBar().showMessage(wave['error'])
 				else: 
@@ -390,7 +388,7 @@ class ThreadedClient(QtWidgets.QApplication):
 					self.mainWindow.statusBar().showMessage('Found ' + str(self.activeScope))
 					self.mainWindow.setEnabled(True)
 
-				while self.scopes: # See if scope is still there or program terminates
+				while self.scopes: # See if scope is still there or if program terminates
 					if self.stopFlag.isSet():
 						self.scopes = []
 						break
@@ -403,8 +401,6 @@ class ThreadedClient(QtWidgets.QApplication):
 				self.mainWindow.statusBar().showMessage('Connection to oscilloscope lost')
 				self.activeScope = None
 				self.scopeControl.setScope(self.activeScope)
-
-		print('thread dead')
 		
 	def __closeEvent(self):
 		"""

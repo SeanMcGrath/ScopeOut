@@ -2,6 +2,7 @@ from PyQt5 import QtGui, QtCore, QtWidgets
 import lib.scopeGui as sg, sys, signal, os
 
 def main():
+	print("Initializing ScopeOut...")
 	GUI = sg.ThreadedClient(sys.argv)
 	GUI.mainWindow.show()
 	signal.signal(signal.SIGINT, signal.SIG_DFL)
@@ -9,5 +10,3 @@ def main():
 
 if __name__ == "__main__":
 	sys.exit(main())
-
-	
