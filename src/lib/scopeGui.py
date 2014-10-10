@@ -9,6 +9,8 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from lib.scopeUtils import ScopeFinder as sf
 from lib.oscilloscopes import GenericOscilloscope
+from queue import Queue
+from datetime import date
 import sys, threading, re, os, functools, time, numpy as np
 
 class scopeOutMainWindow(QtWidgets.QMainWindow):
@@ -17,13 +19,14 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 	menu bars, tool bars, etc.
 	"""
 
-	def __init__(self, widgets, endCommand, *args):
+	def __init__(self, widgets, endCommand, saveCommand, *args):
 		"""
 		Constructor.
 		will be passed widgets from threaded client (probably as array).
 		"""
 		self.widgets = widgets
 		self.endCommand = endCommand
+		self.saveCommand = saveCommand
 
 		QtWidgets.QMainWindow.__init__(self, *args)
 
@@ -53,6 +56,7 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 		saveAction = QtWidgets.QAction(QtGui.QIcon('save.png'), '&Save Waveform', self)
 		saveAction.setShortcut('Ctrl+S')
 		saveAction.setStatusTip('Save Waveform to .csv file')
+		saveAction.triggered.connect(self.saveCommand)
 
         # Put title on window
 		self.setWindowTitle('ScopeOut')
@@ -309,11 +313,13 @@ class ThreadedClient(QtWidgets.QApplication):
 		QtWidgets.QApplication.__init__(self, *args)
 		self.scopeControl = scopeControlWidget(None)
 		self.plot = WavePlotWidget()
-		self.mainWindow = scopeOutMainWindow([self.plot,self.scopeControl],self.__closeEvent)
+		self.mainWindow = scopeOutMainWindow([self.plot,self.scopeControl],self.__closeEvent,self.__saveWaveformEvent)
 		self.__connectSignals()
 
 		self.scopeThread = threading.Thread(target=self.__scopeFind)
 		self.scopeThread.start()
+
+		self.waveQueue = Queue()
 
 	def __connectSignals(self):
 		"""
@@ -337,9 +343,10 @@ class ThreadedClient(QtWidgets.QApplication):
 			self.mainWindow.statusBar().showMessage('Acquiring data...')
 			self.lock.acquire()
 		
-			self.activeScope.makeWaveform()
 			try:
-				wave = self.activeScope.getNextWaveform();
+				self.activeScope.makeWaveform()
+				wave = self.activeScope.getNextWaveform()
+				self.waveQueue.put(self.activeScope.getNextWaveform());
 			except AttributeError:
 				wave = None
 			finally:
@@ -433,7 +440,20 @@ class ThreadedClient(QtWidgets.QApplication):
 
 		threading.Thread(target=__channelThread).start()
 
+	def __saveWaveformEvent(self):
+		"""
+		Called in order to save in-memory waveforms to disk.
+		"""
 		
+		waveDirectory = os.path.join(os.getcwd(), 'waveforms')
+		if not os.path.exists(waveDirectory):
+			os.makedirs(waveDirectory)
+
+		dayDirectory = os.path.join(waveDirectory, date.today().isoformat())
+		if not os.path.exists(dayDirectory):
+			os.makedirs(dayDirectory)
+
+ 
 
 
 
