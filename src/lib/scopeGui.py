@@ -50,10 +50,9 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 		exitAction.triggered.connect(self.closeEvent)
 
         # Graph->Reset
-		resetAction = QtWidgets.QAction('&Reset plot', self)
-		resetAction.setShortcut('Ctrl+R')
-		resetAction.setStatusTip('Reset plot and clear temperature data')
-		# resetAction.triggered.connect(self.plotResetEvent)
+		saveAction = QtWidgets.QAction(QtGui.QIcon('save.png'), '&Save Waveform', self)
+		saveAction.setShortcut('Ctrl+S')
+		saveAction.setStatusTip('Save Waveform to .csv file')
 
         # Put title on window
 		self.setWindowTitle('ScopeOut')
@@ -65,6 +64,7 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 		menubar = self.menuBar()
 		fileMenu = menubar.addMenu('&File')
 		fileMenu.addAction(exitAction)
+		fileMenu.addAction(saveAction)
 		viewMenu = menubar.addMenu('&View')
 		themeMenu = viewMenu.addMenu('Change Theme')
 		if self.themes:
