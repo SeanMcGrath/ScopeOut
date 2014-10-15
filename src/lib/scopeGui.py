@@ -442,19 +442,27 @@ class ThreadedClient(QtWidgets.QApplication):
 		"""
 		Called in order to save in-memory waveforms to disk.
 		"""
-		
-		waveDirectory = os.path.join(os.getcwd(), 'waveforms')
-		if not os.path.exists(waveDirectory):
-			os.makedirs(waveDirectory)
+		if self.waveQueue.qsize():
 
-		dayDirectory = os.path.join(waveDirectory, date.today().isoformat())
-		if not os.path.exists(dayDirectory):
-			os.makedirs(dayDirectory)
+			try:
+				waveDirectory = os.path.join(os.getcwd(), 'waveforms')
+				if not os.path.exists(waveDirectory):
+					os.makedirs(waveDirectory)
 
-		filename = 'Capture' + datetime.now().strftime('%m-%d-%H-%M-%S')+'.csv'
-		saveFile = open(os.path.join(dayDirectory,filename).replace('\\','/'),'w')
-		saveFile.write('Test')
-		saveFile.close()
+				dayDirectory = os.path.join(waveDirectory, date.today().isoformat())
+				if not os.path.exists(dayDirectory):
+					os.makedirs(dayDirectory)
+
+				filename = 'Capture' + datetime.now().strftime('%m-%d-%H-%M-%S')+'.csv'
+				saveFile = open(os.path.join(dayDirectory,filename).replace('\\','/'),'w')
+				saveFile.write('Test')
+				saveFile.close()
+
+			except Exception as e:
+				print(e + 'Error on waveform saving')
+
+		else:
+			self.mainWindow.statusBar().showMessage('No Waveforms to Save')
 
 
  
