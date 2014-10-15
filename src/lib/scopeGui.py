@@ -10,7 +10,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from lib.scopeUtils import ScopeFinder as sf
 from lib.oscilloscopes import GenericOscilloscope
 from queue import Queue
-from datetime import date
+from datetime import date, datetime
 import sys, threading, re, os, functools, time, numpy as np
 
 class scopeOutMainWindow(QtWidgets.QMainWindow):
@@ -387,7 +387,6 @@ class ThreadedClient(QtWidgets.QApplication):
 					self.lock.acquire()
 					self.scopes = finder.refresh().getScopes()
 					self.lock.release()
-					print('A')
 
 				if not self.stopFlag.isSet(): # Scope Found!
 					self.activeScope = self.scopes[0]
@@ -403,7 +402,6 @@ class ThreadedClient(QtWidgets.QApplication):
 					if not finder.checkScope(0):
 						self.scopes = []
 					self.lock.release()
-					print('B')
 
 				self.mainWindow.statusBar().showMessage('Connection to oscilloscope lost')
 				self.activeScope = None
@@ -452,6 +450,12 @@ class ThreadedClient(QtWidgets.QApplication):
 		dayDirectory = os.path.join(waveDirectory, date.today().isoformat())
 		if not os.path.exists(dayDirectory):
 			os.makedirs(dayDirectory)
+
+		filename = 'Capture' + datetime.now().strftime('%m-%d-%H-%M-%S')+'.csv'
+		saveFile = open(os.path.join(dayDirectory,filename).replace('\\','/'),'w')
+		saveFile.write('Test')
+		saveFile.close()
+
 
  
 
