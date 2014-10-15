@@ -455,7 +455,7 @@ class ThreadedClient(QtWidgets.QApplication):
 
 				filename = 'Capture' + datetime.now().strftime('%m-%d-%H-%M-%S')+'.csv'
 				saveFile = open(os.path.join(dayDirectory,filename).replace('\\','/'),'w')
-				saveFile.write(str(self.waveQueue.get()['yData']))
+				self.__writeWave(saveFile,self.waveQueue.get())
 				saveFile.close()
 
 			except Exception as e:
@@ -463,6 +463,32 @@ class ThreadedClient(QtWidgets.QApplication):
 
 		else:
 			self.mainWindow.statusBar().showMessage('No Waveforms to Save')
+
+	def __writeWave(self, outFile, wave):
+		"""
+		Write contents of waveform dictionary to .csv file.
+		
+		Parameters:
+			:outFile: Open file object to be written to.
+			:wave: full waveform dictionary.
+		"""
+
+		try:
+			outFile.write('"Waveform captured ' + datetime.now().isoformat() + ' from ' + str(self.activeScope)+'"\n')
+			outFile.write('\n')
+			for field in wave:
+				if not isinstance(wave[field],(list,np.ndarray)):
+					outFile.write('"' + field + '",' + str(wave[field]))
+					outFile.write('\n')
+			outFile.write('\n')
+			outFile.write('X,Y\n')
+			for i in range(0,len(wave['xData'])):
+				try:
+					outFile.write(str(wave['xData'][i])+','+str(wave['yData'][i])+'\n')
+				except IndexError:
+					print('X and Y data incompatible.')
+		except Exception as e:
+			print(e)
 
 
  
