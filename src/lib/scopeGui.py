@@ -346,7 +346,7 @@ class ThreadedClient(QtWidgets.QApplication):
 			try:
 				self.activeScope.makeWaveform()
 				wave = self.activeScope.getNextWaveform()
-				self.waveQueue.put(self.activeScope.getNextWaveform());
+				self.waveQueue.put(wave);
 			except AttributeError:
 				wave = None
 			finally:
@@ -455,11 +455,11 @@ class ThreadedClient(QtWidgets.QApplication):
 
 				filename = 'Capture' + datetime.now().strftime('%m-%d-%H-%M-%S')+'.csv'
 				saveFile = open(os.path.join(dayDirectory,filename).replace('\\','/'),'w')
-				saveFile.write('Test')
+				saveFile.write(str(self.waveQueue.get()['yData']))
 				saveFile.close()
 
 			except Exception as e:
-				print(e + 'Error on waveform saving')
+				print(e)
 
 		else:
 			self.mainWindow.statusBar().showMessage('No Waveforms to Save')
