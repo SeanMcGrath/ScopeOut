@@ -41,6 +41,8 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 
 		self.initUI()
 
+		self.setEnabled(False)
+
 	def initUI(self):
 		"""
 		Construct non-widget UI elements - Menubar, statusbar, etc. Load theme
@@ -72,13 +74,13 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 		self.statusBar().showMessage("Initializing")
 
         # Initialize "File" Section of top menu
-		menubar = self.menuBar()
-		fileMenu = menubar.addMenu('&File')
-		fileMenu.addAction(exitAction)
-		fileMenu.addAction(saveAction)
-		dataMenu = menubar.addMenu('&Data')
-		dataMenu.addAction(self.resetAction)
-		viewMenu = menubar.addMenu('&View')
+		self.menubar = self.menuBar()
+		self.fileMenu = self.menubar.addMenu('&File')
+		self.fileMenu.addAction(exitAction)
+		self.fileMenu.addAction(saveAction)
+		self.dataMenu = self.menubar.addMenu('&Data')
+		self.dataMenu.addAction(self.resetAction)
+		viewMenu = self.menubar.addMenu('&View')
 		themeMenu = viewMenu.addMenu('Change Theme')
 		if self.themes:
 			themeActions = []
@@ -172,6 +174,9 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 
 		for widget in self.widgets:
 			widget.setEnabled(bool)
+
+		self.menubar.actions()[1].setEnabled(bool)
+		self.menubar.actions()[0].menu().actions()[1].setEnabled(bool)
 
 class WavePlotWidget(FigureCanvas):
 	"""
