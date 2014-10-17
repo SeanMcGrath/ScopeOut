@@ -34,6 +34,7 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 		self.layout = QtWidgets.QGridLayout(self.central)
 		self.layout.addWidget(self.widgets[0],0,0)
 		self.layout.addWidget(self.widgets[1],0,1)
+		self.layout.addWidget(self.widgets[2],1,0)
 		self.central.setLayout(self.layout)
 		self.setCentralWidget(self.central)
 
@@ -310,16 +311,17 @@ class ThreadedClient(QtWidgets.QApplication):
 		Constructor
 		"""
 
+		self.waveList = []
+
 		QtWidgets.QApplication.__init__(self, *args)
 		self.scopeControl = scopeControlWidget(None)
 		self.plot = WavePlotWidget()
-		self.mainWindow = scopeOutMainWindow([self.plot,self.scopeControl],self.__closeEvent,self.__saveWaveformEvent)
+		self.waveCounter = QtWidgets.QLabel("Waveforms acquired: " + str(len(self.waveList)))
+		self.mainWindow = scopeOutMainWindow([self.plot,self.scopeControl,self.waveCounter],self.__closeEvent,self.__saveWaveformEvent)
 		self.__connectSignals()
 
 		self.scopeThread = threading.Thread(target=self.__scopeFind)
 		self.scopeThread.start()
-
-		self.waveQueue = Queue()
 
 	def __connectSignals(self):
 		"""
@@ -346,7 +348,8 @@ class ThreadedClient(QtWidgets.QApplication):
 			try:
 				self.activeScope.makeWaveform()
 				wave = self.activeScope.getNextWaveform()
-				self.waveQueue.put(wave);
+				self.waveList.append(wave);
+				self.waveCounter.setText(("Waveforms acquired: " + str(len(self.waveList))))
 			except AttributeError:
 				wave = None
 			finally:
@@ -442,7 +445,7 @@ class ThreadedClient(QtWidgets.QApplication):
 		"""
 		Called in order to save in-memory waveforms to disk.
 		"""
-		if self.waveQueue.qsize():
+		if self.waveList:
 
 			try:
 				waveDirectory = os.path.join(os.getcwd(), 'waveforms')
@@ -455,8 +458,12 @@ class ThreadedClient(QtWidgets.QApplication):
 
 				filename = 'Capture' + datetime.now().strftime('%m-%d-%H-%M-%S')+'.csv'
 				saveFile = open(os.path.join(dayDirectory,filename).replace('\\','/'),'w')
-				self.__writeWave(saveFile,self.waveQueue.get())
+
+				for wave in self.waveList:
+					self.__writeWave(saveFile,wave)
+
 				saveFile.close()
+				self.mainWindow.statusBar().showMessage('Waveform saved to ' + filename)
 
 			except Exception as e:
 				print(e)
@@ -487,6 +494,9 @@ class ThreadedClient(QtWidgets.QApplication):
 					outFile.write(str(wave['xData'][i])+','+str(wave['yData'][i])+'\n')
 				except IndexError:
 					print('X and Y data incompatible.')
+
+			outFile.write('\n')
+
 		except Exception as e:
 			print(e)
 
