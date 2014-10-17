@@ -53,11 +53,16 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 		exitAction.setStatusTip('Exit application')
 		exitAction.triggered.connect(self.closeEvent)
 
-        # Graph->Reset
+        # File->Save
 		saveAction = QtWidgets.QAction(QtGui.QIcon('save.png'), '&Save Waveform', self)
 		saveAction.setShortcut('Ctrl+S')
 		saveAction.setStatusTip('Save Waveform to .csv file')
 		saveAction.triggered.connect(self.saveCommand)
+
+		# Data->Reset
+		self.resetAction = QtWidgets.QAction('&Reset and Clear Data', self)
+		self.resetAction.setShortcut('Ctrl+R')
+		self.resetAction.setStatusTip('Clear all waveforms in memory')
 
         # Put title on window
 		self.setWindowTitle('ScopeOut')
@@ -70,6 +75,8 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 		fileMenu = menubar.addMenu('&File')
 		fileMenu.addAction(exitAction)
 		fileMenu.addAction(saveAction)
+		dataMenu = menubar.addMenu('&Data')
+		dataMenu.addAction(self.resetAction)
 		viewMenu = menubar.addMenu('&View')
 		themeMenu = viewMenu.addMenu('Change Theme')
 		if self.themes:
@@ -231,6 +238,14 @@ class WavePlotWidget(FigureCanvas):
 		prefix = ''
 		return axisArray,prefix
 
+	def resetPlot(self):
+		"""
+		Reset plot to initial state.
+		"""
+
+		self.axes.clear()
+		self.fig.canvas.draw()
+
 class scopeControlWidget(QtWidgets.QWidget):
 	"""
 	Widget containing scope interaction widgets; buttons, selectors, etc.
@@ -330,6 +345,7 @@ class ThreadedClient(QtWidgets.QApplication):
 
 		self.scopeControl.acqButton.clicked.connect(self.__acqEvent)
 		self.scopeControl.channelComboBox.currentIndexChanged.connect(self.__setChannel)
+		self.mainWindow.resetAction.triggered.connect(self.__resetEvent)
 
 	def __acqEvent(self):
 		"""
@@ -342,7 +358,7 @@ class ThreadedClient(QtWidgets.QApplication):
 	def __acqThread(self):
 
 		if self.activeScope is not None :
-			self.mainWindow.statusBar().showMessage('Acquiring data...')
+			self.__status('Acquiring data...')
 			self.lock.acquire()
 		
 			try:
@@ -357,15 +373,15 @@ class ThreadedClient(QtWidgets.QApplication):
 
 			if wave is not None and (not self.stopFlag.isSet()):
 				if wave['error'] is not None:
-					self.mainWindow.statusBar().showMessage(wave['error'])
+					self.__status(wave['error'])
 				else: 
 					try:
 						self.plot.showPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'])
-						self.mainWindow.statusBar().showMessage('Waveform acquired on ' +wave['dataChannel'])
+						self.__status('Waveform acquired on ' +wave['dataChannel'])
 					except KeyError:
-						self.mainWindow.statusBar().showMessage('Waveform not complete')
+						self.__status('Waveform not complete')
 			else:
-				self.mainWindow.statusBar().showMessage('Error on Waveform Acquisition')
+				self.__status('Error on Waveform Acquisition')
 
 	def __scopeFind(self):
 		"""
@@ -385,7 +401,7 @@ class ThreadedClient(QtWidgets.QApplication):
 						self.scopes = []
 						break
 					if not showedMessage:
-						self.mainWindow.statusBar().showMessage('No Oscilloscopes detected.')
+						self.__status('No Oscilloscopes detected.')
 						showedMessage = True
 					self.lock.acquire()
 					self.scopes = finder.refresh().getScopes()
@@ -394,7 +410,7 @@ class ThreadedClient(QtWidgets.QApplication):
 				if not self.stopFlag.isSet(): # Scope Found!
 					self.activeScope = self.scopes[0]
 					self.scopeControl.setScope(self.activeScope)
-					self.mainWindow.statusBar().showMessage('Found ' + str(self.activeScope))
+					self.__status('Found ' + str(self.activeScope))
 					self.mainWindow.setEnabled(True)
 
 				while self.scopes: # See if scope is still there or if program terminates
@@ -406,7 +422,7 @@ class ThreadedClient(QtWidgets.QApplication):
 						self.scopes = []
 					self.lock.release()
 
-				self.mainWindow.statusBar().showMessage('Connection to oscilloscope lost')
+				self.__status('Connection to oscilloscope lost')
 				self.activeScope = None
 				self.scopeControl.setScope(self.activeScope)
 		
@@ -422,6 +438,16 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.exit(0)
 		print('Closed!')
 
+	def __resetEvent(self):
+		"""
+		Called to reset waveform list and plot.
+		"""
+
+		self.waveList = []
+		self.waveCounter.setText(("Waveforms acquired: " + str(len(self.waveList))))
+		self.plot.resetPlot()
+		self.__status('Data Reset.')
+
 	def __setChannel(self,channel):
 		"""
 		Set data channel of active scope.
@@ -433,9 +459,9 @@ class ThreadedClient(QtWidgets.QApplication):
 
 			self.lock.acquire()
 			if self.scopeControl.scope.setDataChannel(channel+1):
-				self.mainWindow.statusBar().showMessage('Data channel set to ' + str(channel + 1))
+				self.__status('Data channel set to ' + str(channel + 1))
 			else:
-				self.mainWindow.statusBar().showMessage('Failed to set data channel set to ' + str(channel + 1))
+				self.__status('Failed to set data channel set to ' + str(channel + 1))
 			self.lock.release()
 			sys.exit(0)
 
@@ -463,13 +489,13 @@ class ThreadedClient(QtWidgets.QApplication):
 					self.__writeWave(saveFile,wave)
 
 				saveFile.close()
-				self.mainWindow.statusBar().showMessage('Waveform saved to ' + filename)
+				self.__status('Waveform saved to ' + filename)
 
 			except Exception as e:
 				print(e)
 
 		else:
-			self.mainWindow.statusBar().showMessage('No Waveforms to Save')
+			self.__status('No Waveforms to Save')
 
 	def __writeWave(self, outFile, wave):
 		"""
@@ -499,6 +525,16 @@ class ThreadedClient(QtWidgets.QApplication):
 
 		except Exception as e:
 			print(e)
+
+	def __status(self, message):
+		"""
+		Print a message to the statusbar.
+
+		Parameters:
+			:message: The string to be printed.
+		"""
+
+		self.mainWindow.statusBar().showMessage(message)
 
 
  
