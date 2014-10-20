@@ -4,11 +4,11 @@ ScopeOut GUI
 Defines GUI client that instantiates and controls widgets and threads.
 """
 
-from PyQt5 import QtGui, QtCore, QtWidgets
+from PyQt5 import QtWidgets
 from lib.scopeUtils import ScopeFinder as sf
 import lib.scopeWidgets as sw
 from datetime import date, datetime
-import sys, threading, re, os, functools, time, numpy as np
+import sys, threading, os, functools, time, numpy as np
 
 class ThreadedClient(QtWidgets.QApplication):
 	"""
@@ -113,15 +113,17 @@ class ThreadedClient(QtWidgets.QApplication):
 					self.__status('Found ' + str(self.activeScope))
 					self.mainWindow.setEnabled(True)
 
+				time.sleep(5)
+
 				while self.scopes: # See if scope is still there or if program terminates
 					if self.stopFlag.isSet():
 						self.scopes = []
 						break
-					time.sleep(5)
 					self.lock.acquire()
 					if not finder.checkScope(0):
 						self.scopes = []
 					self.lock.release()
+					time.sleep(5)
 
 				self.__status('Connection to oscilloscope lost')
 				self.activeScope = None
