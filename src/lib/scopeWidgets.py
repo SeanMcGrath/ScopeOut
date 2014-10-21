@@ -289,6 +289,7 @@ class scopeControlWidget(QtWidgets.QWidget):
 		self.layout.addWidget(self.acqButton,0,0)
 		self.layout.addWidget(self.channelComboLabel,1,0)
 		self.layout.addWidget(self.channelComboBox,2,0)
+		self.setLayout(self.layout)
 
 	def setScope(self, scope):
 		"""

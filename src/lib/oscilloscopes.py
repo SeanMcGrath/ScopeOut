@@ -29,15 +29,15 @@ class GenericOscilloscope:
 		Parameters:
 			:command: command to be written to scope.
 
-		:Returns: the output of the scope given in response to command.
+		:Returns: the output of the scope given in response to command, False if command fails.
 		"""
 
 		try:
 			self.scope.write(command)
 			return self.scope.read().strip()
 		except Exception:
-			print(Exception)
-			pass
+			return False
+
 
 	def write(self, toWrite):
 		"""

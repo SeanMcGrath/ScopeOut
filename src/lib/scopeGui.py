@@ -6,9 +6,8 @@ Defines GUI client that instantiates and controls widgets and threads.
 
 from PyQt5 import QtWidgets
 from lib.scopeUtils import ScopeFinder as sf
-import lib.scopeWidgets as sw
 from datetime import date, datetime
-import sys, threading, os, functools, time, numpy as np
+import sys, threading, os, time, numpy as np, lib.scopeWidgets as sw
 
 class ThreadedClient(QtWidgets.QApplication):
 	"""
@@ -119,11 +118,11 @@ class ThreadedClient(QtWidgets.QApplication):
 					if self.stopFlag.isSet():
 						self.scopes = []
 						break
+					time.sleep(5)
 					self.lock.acquire()
 					if not finder.checkScope(0):
 						self.scopes = []
 					self.lock.release()
-					time.sleep(5)
 
 				self.__status('Connection to oscilloscope lost')
 				self.activeScope = None

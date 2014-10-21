@@ -87,7 +87,9 @@ class ScopeFinder:
 		"""
 
 		try:
-			self.scopes[scopeIndex].query("TRIGGER?")
-			return True
+			if self.scopes[scopeIndex].query("TRIGGER?"):
+				return True
+			else:
+				return False
 		except:
 			return False
