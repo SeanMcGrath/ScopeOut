@@ -88,6 +88,8 @@ class ThreadedClient(QtWidgets.QApplication):
 
 			else:
 
+				self.plot.resetPlot()
+
 				for i in range(0,self.activeScope.numChannels):
 
 					try:
@@ -108,7 +110,7 @@ class ThreadedClient(QtWidgets.QApplication):
 							self.__status(wave['error'])
 						else: 
 							try:
-								self.plot.showPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'])
+								self.plot.showMultiPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'])
 								self.__status('Waveform acquired on ' +wave['dataChannel'])
 							except KeyError:
 								self.__status('Waveform not complete')
@@ -201,7 +203,6 @@ class ThreadedClient(QtWidgets.QApplication):
 			else:
 				self.__status('Failed to set data channel set to ' + str(channel + 1))
 			self.lock.release()
-			sys.exit(0)
 
 		if (channel) in range(0,self.scopeControl.scope.numChannels):
 			self.multiAcq = False

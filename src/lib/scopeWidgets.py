@@ -216,6 +216,31 @@ class WavePlotWidget(FigureCanvas):
 		self.axes.plot(xData,yData)
 		self.fig.canvas.draw()
 
+	def showMultiPlot(self, xData, xLabel, yData, yLabel):
+		'''
+		Fill plot with data and draw it on the screen.
+
+		:xData:
+		    X data for plot (usually time)
+
+		:xLabel:
+			string to label x axis.
+
+		:yData:
+		    Y data for plot.
+
+		:yLabel:
+			string to label y axis
+
+		'''
+
+		xData, xPrefix = self.autosetUnits(xData)
+		yData, yPrefix = self.autosetUnits(yData)
+		self.axes.set_ylabel(yPrefix + yLabel)
+		self.axes.set_xlabel(xPrefix + xLabel)
+		self.axes.plot(xData,yData)
+		self.fig.canvas.draw()
+
 	def autosetUnits(self, axisArray):
 		"""
 		Set the X units of the plot to the correct size based on the values in axisArray.
