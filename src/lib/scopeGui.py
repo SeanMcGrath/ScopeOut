@@ -44,14 +44,10 @@ class ThreadedClient(QtWidgets.QApplication):
 
 		self.mainWindow = sw.ScopeOutMainWindow([self.plot,self.scopeControl,self.waveCounter],self.__closeEvent,self.__saveWaveformEvent)
 		
-		self.logger.info("Main window Created")
-
 		self.__connectSignals()
 
 		self.scopeThread = threading.Thread(target=self.__scopeFind)
 		self.scopeThread.start()
-
-		self.logger.info("Scope Acquisition thread started")
 
 	def __connectSignals(self):
 		"""
@@ -63,7 +59,6 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.mainWindow.resetAction.triggered.connect(self.__resetEvent)
 
 		self.logger.info("Signals connected")
-
 
 	def __acqEvent(self):
 		"""
@@ -77,14 +72,14 @@ class ThreadedClient(QtWidgets.QApplication):
 		
 	def __acqThread(self):
 
+		self.lock.acquire()
+
 		if self.activeScope is not None :
 			self.__status('Acquiring data...')
 
 			if not self.multiAcq:
 
 				self.logger.info("Single channel acquisition")
-
-				self.lock.acquire()
 		
 				try:
 					self.activeScope.makeWaveform()
@@ -95,7 +90,8 @@ class ThreadedClient(QtWidgets.QApplication):
 				except AttributeError:
 					wave = None
 				finally:
-					self.lock.release()
+					if self.lock.locked():
+						self.lock.release()
 
 				if wave is not None and (not self.stopFlag.isSet()):
 					if wave['error'] is not None:
@@ -119,6 +115,9 @@ class ThreadedClient(QtWidgets.QApplication):
 				for i in range(0,self.activeScope.numChannels):
 
 					try:
+						self.logger.info("Acquiring data from channel %d", i+1)
+						if self.lock.locked():
+							self.lock.release()
 						self.__setChannel(i)
 						self.lock.acquire()
 						self.activeScope.makeWaveform()
@@ -126,10 +125,12 @@ class ThreadedClient(QtWidgets.QApplication):
 						if wave['error'] is not None:
 							self.waveList.append(wave);
 							self.waveCounter.setText(("Waveforms acquired: " + str(len(self.waveList))))
-					except:
+					except Exception as e:
+						self.logger.error(e)
 						wave = None
 					finally:
-						self.lock.release()					
+						if self.lock.locked():
+							self.lock.release()				
 
 					if wave is not None and (not self.stopFlag.isSet()):
 						if wave['error'] is not None:
@@ -151,6 +152,8 @@ class ThreadedClient(QtWidgets.QApplication):
 		"""
 		showedMessage = False
 
+		self.logger.info("Scope Acquisition thread started")
+
 		with sf() as finder:
 
 			self.scopes = finder.refresh().getScopes()
@@ -171,6 +174,7 @@ class ThreadedClient(QtWidgets.QApplication):
 
 				if not self.stopFlag.isSet(): # Scope Found!
 					self.activeScope = self.scopes[0]
+					self.logger.info("Set active scope to %s", str(self.activeScope))
 					self.scopeControl.setScope(self.activeScope)
 					self.__status('Found ' + str(self.activeScope))
 					self.mainWindow.setEnabled(True)
@@ -187,6 +191,7 @@ class ThreadedClient(QtWidgets.QApplication):
 						self.scopes = []
 					self.lock.release()
 
+				self.logger.info('Connection to oscilloscope lost')
 				self.__status('Connection to oscilloscope lost')
 				self.activeScope = None
 				self.scopeControl.setScope(self.activeScope)
@@ -222,17 +227,22 @@ class ThreadedClient(QtWidgets.QApplication):
 		"""
 		def __channelThread():
 
-			self.lock.acquire()
-			if self.scopeControl.scope.setDataChannel(channel+1):
-				self.logger.info('Successfully set data channel %d', channel+1)
-				self.__status('Data channel set to ' + str(channel + 1))
-			else:
-				self.logger.debug('Failed to set data channel set to ' + str(channel + 1))
-				self.__status('Failed to set data channel set to ' + str(channel + 1))
-			self.lock.release()
+			try:
+				self.lock.acquire()
+				if self.scopeControl.scope.setDataChannel(channel+1):
+					self.logger.info('Successfully set data channel %d', channel+1)
+					self.__status('Data channel set to ' + str(channel + 1))
+				else:
+					self.logger.debug('Failed to set data channel set to ' + str(channel + 1))
+					self.__status('Failed to set data channel ' + str(channel + 1))
+			except Exception as e:
+				self.logger.error(e)
+			finally:
+				if self.lock.locked():
+					self.lock.release()
 
 		self.logger.info('Attempting to set data channel %d', channel+1)
-		if (channel) in range(0,self.scopeControl.scope.numChannels):
+		if channel in range(0,self.scopeControl.scope.numChannels):
 			self.multiAcq = False
 			threading.Thread(target=__channelThread).start()
 		else:

@@ -8,13 +8,17 @@ as Oscilloscope objects.
 """
 
 import visa # PyVisa
+import logging
 import lib.oscilloscopes as oscilloscopes
 
 class ScopeFinder:
 
+
 	def __init__(self):
 		"""Constructor
 		"""
+		self.logger = logging.getLogger('ScopeOut.scopeUtils.ScopeFinder')
+		self.logger.info("ScopeFinder Initialized")
 
 		self.rm = visa.ResourceManager() # performs USB polling and finds instruments
 
@@ -60,9 +64,9 @@ class ScopeFinder:
 			self.resources = self.rm.list_resources("USB?*") #  We only want USB scopes
 		except visa.VisaIOError:
 			pass
-
-
+			
 		if(self.resources):
+			self.logger.info("%d VISA Resources found", len(self.resources))
 			self.instruments = []
 			for resource in self.resources:
 				self.instruments.append(self.rm.get_instrument(resource))
@@ -73,12 +77,13 @@ class ScopeFinder:
 
 					if info[1] == 'TDS 2024B': # TDS 2024B oscilloscope
 						info.append(info.pop().split()[1][3:]) # get our identification string into array format
-						self.scopes.append(oscilloscopes.TDS2024B(ins, info[0],info[1],info[2],info[3]))
+						scope = oscilloscopes.TDS2024B(ins, info[0],info[1],info[2],info[3])
+						self.scopes.append(scope)
+						self.logger.info("Found %s", str(scope))
 					
 					# Support for other scopes to be implemented here!
-				except visa.VisaIOError:
-					print('Error in ScopeFinder')
-
+				except visa.VisaIOError as e:
+					self.logger.error(e)
 		return self
 
 	def checkScope(self, scopeIndex):

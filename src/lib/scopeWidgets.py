@@ -196,6 +196,8 @@ class WavePlotWidget(FigureCanvas):
 	"""
 
 	def __init__(self):
+
+		self.logger = logging.getLogger("ScopeOut.scopeWidgets.WavePlotWidget")
 		self.fig = Figure()
 		self.fig.suptitle("Waveform Capture")
 		self.axes = self.fig.add_subplot(111)
@@ -290,6 +292,8 @@ class WavePlotWidget(FigureCanvas):
 
 		self.axes.clear()
 		self.fig.canvas.draw()
+		self.logger.info("Plot Reset")
+
 
 class scopeControlWidget(QtWidgets.QWidget):
 	"""

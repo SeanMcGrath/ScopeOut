@@ -6,7 +6,7 @@ Classes to represent, control, and read out VISA Oscilloscopes.
 """
 
 import visa, numpy as np, matplotlib.pyplot as plt
-import queue
+import queue, logging
 
 class GenericOscilloscope:
 	"""
@@ -83,6 +83,7 @@ class TDS2024B(GenericOscilloscope):
 		"""
 
 		GenericOscilloscope.__init__(self,VISA)
+		self.logger = logging.getLogger("oscilloscopes.TDS2024B")
 
 		self.make = make
 		self.model = model
@@ -128,7 +129,7 @@ class TDS2024B(GenericOscilloscope):
 				self.waveform['error'] = self.waveform['dataChannel'] + ' is not active. Please select an active channel.'
 				self.waveformSet = False
 		except Exception as e:
-			print('Error in waveformSetup')
+			self.logger.error(e)
 
 	def __str__(self):
 		"""
@@ -152,9 +153,11 @@ class TDS2024B(GenericOscilloscope):
 			if result is None:
 				return True
 			else:
+				self.logger.error(self.eventMessage().split(',')[1].strip('"'))
 				return self.eventMessage().split(',')[1].strip('"')
-		except AttributeError:
-				return False
+		except AttributeError as e:
+			self.logger.error(e)
+			return False
 
 	def __getParam(self, command):
 		"""
@@ -168,8 +171,7 @@ class TDS2024B(GenericOscilloscope):
 
 		try: return self.query(command).strip("'")
 		except Exception as err:
-			print(type(err))
-			print(err)
+			self.logger.error(err)
 
 	def getCurve(self):
 		"""
@@ -213,10 +215,10 @@ class TDS2024B(GenericOscilloscope):
 				self.waveform['yData'] = curveData
 				self.waveform['xData'] = np.arange(0,self.waveform['numberOfPoints']*self.waveform['xIncr'],self.waveform['xIncr'])
 				self.waveformQueue.put(self.waveform)
+				self.logger.info("Waveform made successfully")
 
-			except:
-				print("Error acquiring waveform data.")
-			pass
+			except Exception as e:
+				self.logger.error(e)
 		else:
 			self.waveformQueue.put(self.waveform)
 
