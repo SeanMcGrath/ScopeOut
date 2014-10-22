@@ -58,29 +58,65 @@ class ThreadedClient(QtWidgets.QApplication):
 
 		if self.activeScope is not None :
 			self.__status('Acquiring data...')
-			self.lock.acquire()
-		
-			try:
-				self.activeScope.makeWaveform()
-				wave = self.activeScope.getNextWaveform()
-				self.waveList.append(wave);
-				self.waveCounter.setText(("Waveforms acquired: " + str(len(self.waveList))))
-			except AttributeError:
-				wave = None
-			finally:
-				self.lock.release()
 
-			if wave is not None and (not self.stopFlag.isSet()):
-				if wave['error'] is not None:
-					self.__status(wave['error'])
-				else: 
-					try:
-						self.plot.showPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'])
-						self.__status('Waveform acquired on ' +wave['dataChannel'])
-					except KeyError:
-						self.__status('Waveform not complete')
+			if not self.multiAcq:
+
+				self.lock.acquire()
+		
+				try:
+					self.activeScope.makeWaveform()
+					wave = self.activeScope.getNextWaveform()
+					if wave['error'] is not None:
+						self.waveList.append(wave);
+						self.waveCounter.setText(("Waveforms acquired: " + str(len(self.waveList))))
+				except AttributeError:
+					wave = None
+				finally:
+					self.lock.release()
+
+				if wave is not None and (not self.stopFlag.isSet()):
+					if wave['error'] is not None:
+						self.__status(wave['error'])
+					else: 
+						try:
+							self.plot.showPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'])
+							self.__status('Waveform acquired on ' +wave['dataChannel'])
+						except KeyError:
+							self.__status('Waveform not complete')
+				else:
+					self.__status('Error on Waveform Acquisition')
+
 			else:
-				self.__status('Error on Waveform Acquisition')
+
+				for i in range(0,self.activeScope.numChannels):
+
+					try:
+						self.__setChannel(i)
+						self.lock.acquire()
+						self.activeScope.makeWaveform()
+						wave = self.activeScope.getNextWaveform()
+						if wave['error'] is not None:
+							self.waveList.append(wave);
+							self.waveCounter.setText(("Waveforms acquired: " + str(len(self.waveList))))
+					except:
+						wave = None
+					finally:
+						self.lock.release()					
+
+					if wave is not None and (not self.stopFlag.isSet()):
+						if wave['error'] is not None:
+							self.__status(wave['error'])
+						else: 
+							try:
+								self.plot.showPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'])
+								self.__status('Waveform acquired on ' +wave['dataChannel'])
+							except KeyError:
+								self.__status('Waveform not complete')
+					else:
+						self.__status('Error on Waveform Acquisition')
+
+				self.__status('Acquired all active channels.')
+
 
 	def __scopeFind(self):
 		"""
@@ -167,7 +203,12 @@ class ThreadedClient(QtWidgets.QApplication):
 			self.lock.release()
 			sys.exit(0)
 
-		threading.Thread(target=__channelThread).start()
+		if (channel) in range(0,self.scopeControl.scope.numChannels):
+			self.multiAcq = False
+			threading.Thread(target=__channelThread).start()
+		else:
+			self.__status("Selected all data channels")
+			self.multiAcq = True
 
 	def __saveWaveformEvent(self):
 		"""
