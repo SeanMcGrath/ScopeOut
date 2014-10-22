@@ -42,3 +42,34 @@
 2014-10-22 13:18:24,772 - ScopeOut.ThreadedClient - INFO - Attempting to set data channel 5
 2014-10-22 13:19:39,708 - ScopeOut.ThreadedClient - INFO - Attempting to set data channel 1
 2014-10-22 13:19:39,865 - ScopeOut.ThreadedClient - INFO - Successfully set data channel 1
+2014-10-22 13:25:07,477 - ScopeOut - INFO - Initializing ScopeOut...
+2014-10-22 13:25:07,477 - ScopeOut.ThreadedClient - INFO - Threaded Client initialized
+2014-10-22 13:25:07,616 - ScopeOut.ThreadedClient - INFO - All Widgets initialized
+2014-10-22 13:25:07,617 - ScopeOut.scopeWidgets.ScopeOutMainWindow - INFO - Main Window created
+2014-10-22 13:25:07,625 - ScopeOut.scopeWidgets.ScopeOutMainWindow - DEBUG - Loaded theme C:\Users\menp\Documents\GitHub\ScopeOut\src\Themes\default.stylesheet
+2014-10-22 13:25:07,635 - ScopeOut.scopeWidgets.ScopeOutMainWindow - INFO - Main Window disabled
+2014-10-22 13:25:07,635 - ScopeOut.ThreadedClient - INFO - Main window Created
+2014-10-22 13:25:07,635 - ScopeOut.ThreadedClient - INFO - Signals connected
+2014-10-22 13:25:07,636 - ScopeOut.ThreadedClient - INFO - Scope Acquisition thread started
+2014-10-22 13:25:07,636 - ScopeOut - INFO - ScopeOut initialization completed
+2014-10-22 13:25:08,108 - ScopeOut.scopeWidgets.scopeControlWidget - INFO - Active scope set to TEKTRONIX TDS 2024B Oscilloscope. Serial Number: C037950.
+2014-10-22 13:25:08,114 - ScopeOut.scopeWidgets.ScopeOutMainWindow - INFO - Main Window enabled
+2014-10-22 13:25:21,940 - ScopeOut.ThreadedClient - INFO - Attempting to set data channel 1
+2014-10-22 13:25:22,102 - ScopeOut.ThreadedClient - INFO - Successfully set data channel 1
+2014-10-22 13:25:29,365 - ScopeOut.ThreadedClient - INFO - Acquisition Event
+2014-10-22 13:25:29,372 - ScopeOut.ThreadedClient - INFO - Single channel acquisition
+2014-10-22 13:27:15,748 - ScopeOut.scopeWidgets.ScopeOutMainWindow - INFO - Close Event accepted
+2014-10-22 13:27:22,395 - ScopeOut - INFO - Initializing ScopeOut...
+2014-10-22 13:27:22,395 - ScopeOut.ThreadedClient - INFO - Threaded Client initialized
+2014-10-22 13:27:22,537 - ScopeOut.ThreadedClient - INFO - All Widgets initialized
+2014-10-22 13:27:22,537 - ScopeOut.scopeWidgets.ScopeOutMainWindow - INFO - Main Window created
+2014-10-22 13:27:22,546 - ScopeOut.scopeWidgets.ScopeOutMainWindow - DEBUG - Loaded theme C:\Users\menp\Documents\GitHub\ScopeOut\src\Themes\default.stylesheet
+2014-10-22 13:27:22,555 - ScopeOut.scopeWidgets.ScopeOutMainWindow - INFO - Main Window disabled
+2014-10-22 13:27:22,556 - ScopeOut.ThreadedClient - INFO - Main window Created
+2014-10-22 13:27:22,556 - ScopeOut.ThreadedClient - INFO - Signals connected
+2014-10-22 13:27:22,557 - ScopeOut.ThreadedClient - INFO - Scope Acquisition thread started
+2014-10-22 13:27:22,557 - ScopeOut - INFO - ScopeOut initialization completed
+2014-10-22 13:27:23,051 - ScopeOut.scopeWidgets.scopeControlWidget - INFO - Active scope set to TEKTRONIX TDS 2024B Oscilloscope. Serial Number: C037950.
+2014-10-22 13:27:23,064 - ScopeOut.scopeWidgets.ScopeOutMainWindow - INFO - Main Window enabled
+2014-10-22 13:27:30,429 - ScopeOut.ThreadedClient - INFO - Attempting to set data channel 1
+2014-10-22 13:27:30,585 - ScopeOut.ThreadedClient - INFO - Successfully set data channel 1

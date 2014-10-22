@@ -99,8 +99,10 @@ class ThreadedClient(QtWidgets.QApplication):
 
 				if wave is not None and (not self.stopFlag.isSet()):
 					if wave['error'] is not None:
+						self.logger.debug("Wave error: %s", wave['error'])
 						self.__status(wave['error'])
-					else: 
+					else:
+						self.logger.info('Waveform acquired on ' +wave['dataChannel'])
 						try:
 							self.plot.showPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'])
 							self.__status('Waveform acquired on ' +wave['dataChannel'])
@@ -110,7 +112,6 @@ class ThreadedClient(QtWidgets.QApplication):
 					self.__status('Error on Waveform Acquisition')
 
 			else:
-
 				self.logger.info("Multichannel acquisition")
 
 				self.plot.resetPlot()

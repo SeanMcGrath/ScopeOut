@@ -13,8 +13,6 @@ from lib.oscilloscopes import GenericOscilloscope
 from functools import partial
 import os, re, logging, numpy as np
 
-module_logger = logging.getLogger('ScopeOut.scopeWidgets')
-
 class ScopeOutMainWindow(QtWidgets.QMainWindow):
 	"""
 	Class to represent entire GUI Window. Will contain various QWidgets within a QLayout,
@@ -166,6 +164,8 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 		:ev:
 			The CloseEvent in question. This is accepted by default.
 		"""
+
+		self.logger.info("Close Event accepted")
 		for widget in self.widgets:
 			widget.close()
 		self.endCommand()
@@ -177,6 +177,12 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 		Parameters:
 			:bool: True to enable, false to disable.
 		"""
+
+		if bool:
+			self.logger.info("Main Window enabled")
+		else:
+			self.logger.info("Main Window disabled")
+
 
 		for widget in self.widgets:
 			widget.setEnabled(bool)
@@ -297,6 +303,7 @@ class scopeControlWidget(QtWidgets.QWidget):
 		Parameters
 			:scope: The oscilloscope to be controlled by this widget.
 		"""
+		self.logger = logging.getLogger('ScopeOut.scopeWidgets.scopeControlWidget')
 
 		self.scope = scope
 
@@ -331,6 +338,8 @@ class scopeControlWidget(QtWidgets.QWidget):
 		"""
 
 		self.scope = scope
+		self.logger.info("Active scope set to %s", str(scope))
+
 		if scope is None:
 			self.setEnabled(False)
 		elif scope is GenericOscilloscope:
