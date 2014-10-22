@@ -1,0 +1,44 @@
+2014-10-22 13:11:07,573 - ScopeOut.ThreadedClient - DEBUG - Threaded Client initialized
+2014-10-22 13:11:07,711 - ScopeOut.ThreadedClient - DEBUG - All Widgets initialized
+2014-10-22 13:11:07,712 - ScopeOut.scopeWidgets.ScopeOutMainWindow - INFO - Main Window created
+2014-10-22 13:11:07,721 - ScopeOut.scopeWidgets.ScopeOutMainWindow - DEBUG - Loaded theme C:\Users\menp\Documents\GitHub\ScopeOut\src\Themes\default.stylesheet
+2014-10-22 13:11:07,730 - ScopeOut.ThreadedClient - DEBUG - Main window Created
+2014-10-22 13:11:07,731 - ScopeOut.ThreadedClient - DEBUG - Signals connected
+2014-10-22 13:11:07,731 - ScopeOut.ThreadedClient - DEBUG - Scope Acquisition thread started
+2014-10-22 13:11:07,731 - ScopeOut - INFO - ScopeOut initialized
+2014-10-22 13:11:37,388 - ScopeOut.ThreadedClient - DEBUG - Acquisition Event
+2014-10-22 13:11:37,395 - ScopeOut.ThreadedClient - DEBUG - Single channel acquisition
+2014-10-22 13:13:33,746 - ScopeOut.ThreadedClient - INFO - Threaded Client initialized
+2014-10-22 13:13:33,882 - ScopeOut.ThreadedClient - INFO - All Widgets initialized
+2014-10-22 13:13:33,883 - ScopeOut.scopeWidgets.ScopeOutMainWindow - INFO - Main Window created
+2014-10-22 13:13:33,893 - ScopeOut.scopeWidgets.ScopeOutMainWindow - DEBUG - Loaded theme C:\Users\menp\Documents\GitHub\ScopeOut\src\Themes\default.stylesheet
+2014-10-22 13:13:33,902 - ScopeOut.ThreadedClient - INFO - Main window Created
+2014-10-22 13:13:33,903 - ScopeOut.ThreadedClient - INFO - Signals connected
+2014-10-22 13:13:33,903 - ScopeOut.ThreadedClient - INFO - Scope Acquisition thread started
+2014-10-22 13:13:33,904 - ScopeOut - INFO - ScopeOut initialized
+2014-10-22 13:17:35,131 - ScopeOut - INFO - Initializing ScopeOut...
+2014-10-22 13:17:35,132 - ScopeOut.ThreadedClient - INFO - Threaded Client initialized
+2014-10-22 13:17:35,268 - ScopeOut.ThreadedClient - INFO - All Widgets initialized
+2014-10-22 13:17:35,269 - ScopeOut.scopeWidgets.ScopeOutMainWindow - INFO - Main Window created
+2014-10-22 13:17:35,277 - ScopeOut.scopeWidgets.ScopeOutMainWindow - DEBUG - Loaded theme C:\Users\menp\Documents\GitHub\ScopeOut\src\Themes\default.stylesheet
+2014-10-22 13:17:35,287 - ScopeOut.ThreadedClient - INFO - Main window Created
+2014-10-22 13:17:35,288 - ScopeOut.ThreadedClient - INFO - Signals connected
+2014-10-22 13:17:35,288 - ScopeOut.ThreadedClient - INFO - Scope Acquisition thread started
+2014-10-22 13:17:35,288 - ScopeOut - INFO - ScopeOut initialization completed
+2014-10-22 13:17:38,500 - ScopeOut.ThreadedClient - INFO - Attempting to set data channel 1
+2014-10-22 13:18:05,585 - ScopeOut - INFO - Initializing ScopeOut...
+2014-10-22 13:18:05,586 - ScopeOut.ThreadedClient - INFO - Threaded Client initialized
+2014-10-22 13:18:05,719 - ScopeOut.ThreadedClient - INFO - All Widgets initialized
+2014-10-22 13:18:05,719 - ScopeOut.scopeWidgets.ScopeOutMainWindow - INFO - Main Window created
+2014-10-22 13:18:05,728 - ScopeOut.scopeWidgets.ScopeOutMainWindow - DEBUG - Loaded theme C:\Users\menp\Documents\GitHub\ScopeOut\src\Themes\default.stylesheet
+2014-10-22 13:18:05,738 - ScopeOut.ThreadedClient - INFO - Main window Created
+2014-10-22 13:18:05,738 - ScopeOut.ThreadedClient - INFO - Signals connected
+2014-10-22 13:18:05,739 - ScopeOut.ThreadedClient - INFO - Scope Acquisition thread started
+2014-10-22 13:18:05,739 - ScopeOut - INFO - ScopeOut initialization completed
+2014-10-22 13:18:08,317 - ScopeOut.ThreadedClient - INFO - Attempting to set data channel 1
+2014-10-22 13:18:08,473 - ScopeOut.ThreadedClient - INFO - Successfully set data channel 1
+2014-10-22 13:18:19,236 - ScopeOut.ThreadedClient - INFO - Attempting to set data channel 2
+2014-10-22 13:18:19,393 - ScopeOut.ThreadedClient - INFO - Successfully set data channel 2
+2014-10-22 13:18:24,772 - ScopeOut.ThreadedClient - INFO - Attempting to set data channel 5
+2014-10-22 13:19:39,708 - ScopeOut.ThreadedClient - INFO - Attempting to set data channel 1
+2014-10-22 13:19:39,865 - ScopeOut.ThreadedClient - INFO - Successfully set data channel 1

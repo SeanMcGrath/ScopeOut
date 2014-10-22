@@ -11,10 +11,11 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from lib.oscilloscopes import GenericOscilloscope
 from functools import partial
-import os, re, numpy as np
+import os, re, logging, numpy as np
 
+module_logger = logging.getLogger('ScopeOut.scopeWidgets')
 
-class scopeOutMainWindow(QtWidgets.QMainWindow):
+class ScopeOutMainWindow(QtWidgets.QMainWindow):
 	"""
 	Class to represent entire GUI Window. Will contain various QWidgets within a QLayout,
 	menu bars, tool bars, etc.
@@ -25,6 +26,10 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 		Constructor.
 		will be passed widgets from threaded client (probably as array).
 		"""
+
+		self.logger = logging.getLogger('ScopeOut.scopeWidgets.ScopeOutMainWindow')
+		self.logger.info('Main Window created')
+
 		self.widgets = widgets
 		self.endCommand = endCommand
 		self.saveCommand = saveCommand
@@ -105,6 +110,7 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 				if i > len(self.themes) - 1:
 					break
 				elif self.loadTheme(self.themes[i]):
+					self.logger.debug("Loaded theme %s", self.themes[i])
 					break
 				else:
 					i += 1
@@ -148,7 +154,7 @@ class scopeOutMainWindow(QtWidgets.QMainWindow):
 			self.setStyleSheet(style.read())
 			self.repaint()
 		except Exception as e:
-			print(themePath + ' could not be loaded')
+			logging.warning(themePath + ' could not be loaded')
 			return False
 
 		return True

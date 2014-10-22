@@ -7,7 +7,7 @@ Defines GUI client that instantiates and controls widgets and threads.
 from PyQt5 import QtWidgets
 from lib.scopeUtils import ScopeFinder as sf
 from datetime import date, datetime
-import sys, threading, os, time, numpy as np, lib.scopeWidgets as sw
+import sys, threading, os, time, logging, numpy as np, lib.scopeWidgets as sw
 
 class ThreadedClient(QtWidgets.QApplication):
 	"""
@@ -20,10 +20,18 @@ class ThreadedClient(QtWidgets.QApplication):
 	lock = threading.Lock()
 	stopFlag = threading.Event()
 
+	
+
 	def __init__(self, *args):
 		"""
 		Constructor
 		"""
+
+		# create logger
+		self.logger = logging.getLogger('ScopeOut.ThreadedClient')
+		self.logger.setLevel(logging.DEBUG)
+
+		self.logger.info("Threaded Client initialized")
 
 		self.waveList = []
 
@@ -31,11 +39,19 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.scopeControl = sw.scopeControlWidget(None)
 		self.plot = sw.WavePlotWidget()
 		self.waveCounter = QtWidgets.QLabel("Waveforms acquired: " + str(len(self.waveList)))
-		self.mainWindow = sw.scopeOutMainWindow([self.plot,self.scopeControl,self.waveCounter],self.__closeEvent,self.__saveWaveformEvent)
+		
+		self.logger.info("All Widgets initialized")
+
+		self.mainWindow = sw.ScopeOutMainWindow([self.plot,self.scopeControl,self.waveCounter],self.__closeEvent,self.__saveWaveformEvent)
+		
+		self.logger.info("Main window Created")
+
 		self.__connectSignals()
 
 		self.scopeThread = threading.Thread(target=self.__scopeFind)
 		self.scopeThread.start()
+
+		self.logger.info("Scope Acquisition thread started")
 
 	def __connectSignals(self):
 		"""
@@ -46,10 +62,15 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.scopeControl.channelComboBox.currentIndexChanged.connect(self.__setChannel)
 		self.mainWindow.resetAction.triggered.connect(self.__resetEvent)
 
+		self.logger.info("Signals connected")
+
+
 	def __acqEvent(self):
 		"""
 		Executed to collect waveform data from scope.
 		"""
+
+		self.logger.info("Acquisition Event")
 
 		self.acqThread = threading.Thread(target = self.__acqThread)
 		self.acqThread.start()
@@ -60,6 +81,8 @@ class ThreadedClient(QtWidgets.QApplication):
 			self.__status('Acquiring data...')
 
 			if not self.multiAcq:
+
+				self.logger.info("Single channel acquisition")
 
 				self.lock.acquire()
 		
@@ -87,6 +110,8 @@ class ThreadedClient(QtWidgets.QApplication):
 					self.__status('Error on Waveform Acquisition')
 
 			else:
+
+				self.logger.info("Multichannel acquisition")
 
 				self.plot.resetPlot()
 
@@ -118,7 +143,6 @@ class ThreadedClient(QtWidgets.QApplication):
 						self.__status('Error on Waveform Acquisition')
 
 				self.__status('Acquired all active channels.')
-
 
 	def __scopeFind(self):
 		"""
@@ -199,15 +223,19 @@ class ThreadedClient(QtWidgets.QApplication):
 
 			self.lock.acquire()
 			if self.scopeControl.scope.setDataChannel(channel+1):
+				self.logger.info('Successfully set data channel %d', channel+1)
 				self.__status('Data channel set to ' + str(channel + 1))
 			else:
+				self.logger.debug('Failed to set data channel set to ' + str(channel + 1))
 				self.__status('Failed to set data channel set to ' + str(channel + 1))
 			self.lock.release()
 
+		self.logger.info('Attempting to set data channel %d', channel+1)
 		if (channel) in range(0,self.scopeControl.scope.numChannels):
 			self.multiAcq = False
 			threading.Thread(target=__channelThread).start()
 		else:
+			self.logger.info("Selected all data channels")
 			self.__status("Selected all data channels")
 			self.multiAcq = True
 
