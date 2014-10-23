@@ -108,7 +108,7 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 				if i > len(self.themes) - 1:
 					break
 				elif self.loadTheme(self.themes[i]):
-					self.logger.debug("Loaded theme %s", self.themes[i])
+					self.logger.info("Loaded theme %s", self.themes[i])
 					break
 				else:
 					i += 1
@@ -189,6 +189,13 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 
 		self.menubar.actions()[1].setEnabled(bool)
 		self.menubar.actions()[0].menu().actions()[1].setEnabled(bool)
+
+	def status(self, message):
+		"""
+		Slot to print message to statusbar.
+		"""
+
+		self.statusBar().showMessage(message)
 
 class WavePlotWidget(FigureCanvas):
 	"""

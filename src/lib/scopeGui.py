@@ -4,7 +4,7 @@ ScopeOut GUI
 Defines GUI client that instantiates and controls widgets and threads.
 """
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 from lib.scopeUtils import ScopeFinder as sf
 from datetime import date, datetime
 import sys, threading, os, time, logging, numpy as np, lib.scopeWidgets as sw
@@ -20,8 +20,11 @@ class ThreadedClient(QtWidgets.QApplication):
 	lock = threading.Lock()
 	stopFlag = threading.Event()
 	channelSetFlag = threading.Event()
+	periodicFlag = threading.Event()
+	continuousFlag = threading.Event()
+	continuousFlag.set()
+	statusChange = QtCore.pyqtSignal(str)
 	
-
 	def __init__(self, *args):
 		"""
 		Constructor
@@ -43,11 +46,16 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.logger.info("All Widgets initialized")
 
 		self.mainWindow = sw.ScopeOutMainWindow([self.plot,self.scopeControl,self.waveCounter],self.__closeEvent,self.__saveWaveformEvent)
-		
+
 		self.__connectSignals()
 
-		self.scopeThread = threading.Thread(target=self.__scopeFind)
-		self.scopeThread.start()
+		self.finder = sf()
+
+		scopeFinderThread = threading.Thread(target=self.__scopeFind)
+		scopeFinderThread.start()
+
+		scopeCheckerThread = threading.Thread(target=self.__scopeCheck)
+		scopeCheckerThread.start()
 
 	def __connectSignals(self):
 		"""
@@ -57,7 +65,7 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.scopeControl.acqButton.clicked.connect(self.__acqEvent)
 		self.scopeControl.channelComboBox.currentIndexChanged.connect(self.__setChannel)
 		self.mainWindow.resetAction.triggered.connect(self.__resetEvent)
-
+		self.statusChange.connect(self.mainWindow.status)
 		self.logger.info("Signals connected")
 
 	def __acqEvent(self):
@@ -153,28 +161,32 @@ class ThreadedClient(QtWidgets.QApplication):
 
 	def __scopeFind(self):
 		"""
-		Continually checks for connected scopes.
+		Continually checks for connected scopes, until one is found, then begins periodic checking.
 		"""
-		showedMessage = False
 
-		self.logger.info("Scope Acquisition thread started")
+		self.logger.info("Scope acquisition thread started")
 
-		with sf() as finder:
+		while not self.stopFlag.isSet():
 
-			self.scopes = finder.refresh().getScopes()
+			self.continuousFlag.wait()
 
-			while not self.stopFlag.isSet():
+			self.logger.info("Entered continuous checking mode")
+
+			while self.continuousFlag.isSet():
+
+				showedMessage = False
+
+				self.scopes = self.finder.getScopes()
 
 				while not self.scopes: # Check for scopes and connect if possible
 					if self.stopFlag.isSet():
-						self.running = 0
 						self.scopes = []
 						break
 					if not showedMessage:
 						self.__status('No Oscilloscopes detected.')
 						showedMessage = True
 					self.lock.acquire()
-					self.scopes = finder.refresh().getScopes()
+					self.scopes = self.finder.refresh().getScopes()
 					self.lock.release()
 
 				if not self.stopFlag.isSet(): # Scope Found!
@@ -183,24 +195,33 @@ class ThreadedClient(QtWidgets.QApplication):
 					self.scopeControl.setScope(self.activeScope)
 					self.__status('Found ' + str(self.activeScope))
 					self.mainWindow.setEnabled(True)
+					self.continuousFlag.clear()
+					self.periodicFlag.set()
+	
+	def __scopeCheck(self):
 
-				time.sleep(5)
+		self.logger.info("Scope checking thread started")
 
-				while self.scopes: # See if scope is still there or if program terminates
-					if self.stopFlag.isSet():
-						self.scopes = []
-						break
+		while not self.stopFlag.isSet():
+
+			self.periodicFlag.wait()
+
+			self.logger.info("Entered periodic checking mode")
+
+			while self.periodicFlag.isSet():
+
+				self.lock.acquire()
+				connected = self.finder.checkScope(0)
+				self.lock.release()
+				if not connected:
+					self.logger.info("Lost Connection to Oscilloscope(s)")
+					self.periodicFlag.clear()
+					self.continuousFlag.set()
+				else:
 					time.sleep(5)
-					self.lock.acquire()
-					if not finder.checkScope(0):
-						self.scopes = []
-					self.lock.release()
 
-				self.logger.info('Connection to oscilloscope lost')
-				self.__status('Connection to oscilloscope lost')
-				self.activeScope = None
-				self.scopeControl.setScope(self.activeScope)
-		
+
+
 	def __closeEvent(self):
 		"""
 		Executed on app close.
@@ -240,15 +261,19 @@ class ThreadedClient(QtWidgets.QApplication):
 			except Exception as e:
 				self.logger.error(e)
 			finally:
-				self.channelSetFlag.set()
-				if self.lock.locked():
-					self.lock.release()
+				try:
+					self.channelSetFlag.set()
+					if self.lock.locked():
+						self.lock.release()
+				except Exception as e:
+					logger.error(e)
 
 		self.channelSetFlag.clear()
 		self.logger.info('Attempting to set data channel %d', channel+1)
 		if channel in range(0,self.scopeControl.scope.numChannels):
 			self.multiAcq = False
-			threading.Thread(target=__channelThread).start()
+			setThread = threading.Thread(target=__channelThread)
+			setThread.start()
 		else:
 			self.logger.info("Selected all data channels")
 			self.__status("Selected all data channels")
@@ -323,7 +348,7 @@ class ThreadedClient(QtWidgets.QApplication):
 			:message: The string to be printed.
 		"""
 
-		self.mainWindow.statusBar().showMessage(message)
+		self.statusChange.emit(message)
 
 
  
