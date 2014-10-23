@@ -328,6 +328,7 @@ class scopeControlWidget(QtWidgets.QWidget):
 		"""
 		self.acqButton = QtWidgets.QPushButton('Acquire',self)
 		self.acqButton.setEnabled(False)
+		self.acqOnTrigButton = QtWidgets.QPushButton('Acquire on Trigger', self)
 		self.channelComboLabel = QtWidgets.QLabel('Data Channel',self)
 		self.channelComboBox = QtWidgets.QComboBox(self)
 		
@@ -336,8 +337,9 @@ class scopeControlWidget(QtWidgets.QWidget):
 
 		self.layout = QtWidgets.QGridLayout(self)
 		self.layout.addWidget(self.acqButton,0,0)
-		self.layout.addWidget(self.channelComboLabel,1,0)
-		self.layout.addWidget(self.channelComboBox,2,0)
+		self.layout.addWidget(self.acqOnTrigButton,1,0)
+		self.layout.addWidget(self.channelComboLabel,2,0)
+		self.layout.addWidget(self.channelComboBox,3,0)
 		self.setLayout(self.layout)
 
 	def setScope(self, scope):

@@ -277,8 +277,6 @@ class ThreadedClient(QtWidgets.QApplication):
 					self.continuousFlag.clear()
 					self.periodicFlag.set()
 
-		print('A')
-
 	def __scopeCheck(self):
 		"""
 		Periodically confirms that scopes are still connected.
@@ -305,8 +303,6 @@ class ThreadedClient(QtWidgets.QApplication):
 					self.continuousFlag.set()
 				else:
 					time.sleep(5)
-
-		print('B')
 
 	def __closeEvent(self):
 		"""
