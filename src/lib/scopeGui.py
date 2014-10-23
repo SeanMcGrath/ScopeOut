@@ -37,8 +37,6 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.logger.info("Threaded Client initialized")
 
 		self.waveList = []
-		
-		self.finder = sf()
 
 		QtWidgets.QApplication.__init__(self, *args)
 		self.scopeControl = sw.scopeControlWidget(None)
@@ -51,11 +49,12 @@ class ThreadedClient(QtWidgets.QApplication):
 
 		self.__connectSignals()
 
-		scopeFinderThread = threading.Thread(target=self.__scopeFind)
-		scopeFinderThread.start()
+		with sf() as self.finder:
+			scopeFinderThread = threading.Thread(target=self.__scopeFind)
+			scopeFinderThread.start()
 
-		scopeCheckerThread = threading.Thread(target=self.__scopeCheck)
-		scopeCheckerThread.start()
+			scopeCheckerThread = threading.Thread(target=self.__scopeCheck)
+			scopeCheckerThread.start()
 
 	def __connectSignals(self):
 		"""
@@ -172,7 +171,7 @@ class ThreadedClient(QtWidgets.QApplication):
 
 			self.logger.info("Entered continuous checking mode")
 
-			while self.continuousFlag.isSet():
+			while self.continuousFlag.isSet() and not self.stopFlag.isSet():
 
 				showedMessage = False
 
@@ -198,9 +197,8 @@ class ThreadedClient(QtWidgets.QApplication):
 					self.continuousFlag.clear()
 					self.periodicFlag.set()
 
-			print('A')
-			sys.exit(0)
-	
+		print('A')
+
 	def __scopeCheck(self):
 		"""
 		Periodically confirms that scopes are still connected.
@@ -214,7 +212,7 @@ class ThreadedClient(QtWidgets.QApplication):
 
 			self.logger.info("Entered periodic checking mode")
 
-			while self.periodicFlag.isSet():
+			while self.periodicFlag.isSet() and not self.stopFlag.isSet():
 
 				self.lock.acquire()
 				connected = self.finder.checkScope(0)
@@ -228,7 +226,6 @@ class ThreadedClient(QtWidgets.QApplication):
 				else:
 					time.sleep(5)
 
-		del self.finder
 		print('B')
 
 	def __closeEvent(self):
@@ -237,8 +234,8 @@ class ThreadedClient(QtWidgets.QApplication):
 		"""
 		self.scopes = []
 		self.stopFlag.set()
-		self.periodicFlag.clear()
-		self.continuousFlag.clear()
+		self.periodicFlag.set()
+		self.continuousFlag.set()
 		self.closeAllWindows()
 		self.exit(0)
 
@@ -294,6 +291,36 @@ class ThreadedClient(QtWidgets.QApplication):
 		"""
 		Called in order to save in-memory waveforms to disk.
 		"""
+
+		def __writeWave(outFile, wave):
+			"""
+			Write contents of waveform dictionary to .csv file.
+			
+			Parameters:
+				:outFile: Open file object to be written to.
+				:wave: full waveform dictionary.
+			"""
+
+			try:
+				outFile.write('"Waveform captured ' + datetime.now().isoformat() + ' from ' + str(self.activeScope)+'"\n')
+				outFile.write('\n')
+				for field in wave:
+					if not isinstance(wave[field],(list,np.ndarray)):
+						outFile.write('"' + field + '",' + str(wave[field]))
+						outFile.write('\n')
+				outFile.write('\n')
+				outFile.write('X,Y\n')
+				for i in range(0,len(wave['xData'])):
+					try:
+						outFile.write(str(wave['xData'][i])+','+str(wave['yData'][i])+'\n')
+					except IndexError:
+						self.logger.error('X and Y data incompatible.')
+
+				outFile.write('\n')
+
+			except Exception as e:
+				self.logger.error(e)
+
 		if self.waveList:
 
 			try:
@@ -309,7 +336,7 @@ class ThreadedClient(QtWidgets.QApplication):
 
 				with open(os.path.join(dayDirectory,filename).replace('\\','/'),'w') as saveFile:
 					for wave in self.waveList:
-						self.__writeWave(saveFile,wave)
+						__writeWave(saveFile,wave)
 
 				self.logger.info("%d waveforms saved to %s", len(self.waveList), filename)
 				self.__status('Waveform saved to ' + filename)
@@ -319,35 +346,6 @@ class ThreadedClient(QtWidgets.QApplication):
 
 		else:
 			self.__status('No Waveforms to Save')
-
-	def __writeWave(self, outFile, wave):
-		"""
-		Write contents of waveform dictionary to .csv file.
-		
-		Parameters:
-			:outFile: Open file object to be written to.
-			:wave: full waveform dictionary.
-		"""
-
-		try:
-			outFile.write('"Waveform captured ' + datetime.now().isoformat() + ' from ' + str(self.activeScope)+'"\n')
-			outFile.write('\n')
-			for field in wave:
-				if not isinstance(wave[field],(list,np.ndarray)):
-					outFile.write('"' + field + '",' + str(wave[field]))
-					outFile.write('\n')
-			outFile.write('\n')
-			outFile.write('X,Y\n')
-			for i in range(0,len(wave['xData'])):
-				try:
-					outFile.write(str(wave['xData'][i])+','+str(wave['yData'][i])+'\n')
-				except IndexError:
-					self.logger.error('X and Y data incompatible.')
-
-			outFile.write('\n')
-
-		except Exception as e:
-			self.logger.error(e)
 
 	def __status(self, message):
 		"""

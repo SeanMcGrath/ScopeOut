@@ -28,7 +28,7 @@ class ScopeFinder:
 		return self
 
 	def __exit__(self,type,value,traceback):
-		del self.rm
+		pass
 
 	def query(self, inst, command):
 		"""
