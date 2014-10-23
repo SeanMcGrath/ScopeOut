@@ -216,6 +216,7 @@ class ThreadedClient(QtWidgets.QApplication):
 				if not connected:
 					self.scopes = []
 					self.logger.info("Lost Connection to Oscilloscope(s)")
+					self.mainWindow.setEnabled(False)
 					self.periodicFlag.clear()
 					self.continuousFlag.set()
 				else:
