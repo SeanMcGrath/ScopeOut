@@ -37,6 +37,8 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.logger.info("Threaded Client initialized")
 
 		self.waveList = []
+		
+		self.finder = sf()
 
 		QtWidgets.QApplication.__init__(self, *args)
 		self.scopeControl = sw.scopeControlWidget(None)
@@ -48,8 +50,6 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.mainWindow = sw.ScopeOutMainWindow([self.plot,self.scopeControl,self.waveCounter],self.__closeEvent,self.__saveWaveformEvent)
 
 		self.__connectSignals()
-
-		self.finder = sf()
 
 		scopeFinderThread = threading.Thread(target=self.__scopeFind)
 		scopeFinderThread.start()
@@ -197,8 +197,14 @@ class ThreadedClient(QtWidgets.QApplication):
 					self.mainWindow.setEnabled(True)
 					self.continuousFlag.clear()
 					self.periodicFlag.set()
+
+			print('A')
+			sys.exit(0)
 	
 	def __scopeCheck(self):
+		"""
+		Periodically confirms that scopes are still connected.
+		"""
 
 		self.logger.info("Scope checking thread started")
 
@@ -222,12 +228,17 @@ class ThreadedClient(QtWidgets.QApplication):
 				else:
 					time.sleep(5)
 
+		del self.finder
+		print('B')
+
 	def __closeEvent(self):
 		"""
 		Executed on app close.
 		"""
 		self.scopes = []
 		self.stopFlag.set()
+		self.periodicFlag.clear()
+		self.continuousFlag.clear()
 		self.closeAllWindows()
 		self.exit(0)
 
@@ -295,18 +306,16 @@ class ThreadedClient(QtWidgets.QApplication):
 					os.makedirs(dayDirectory)
 
 				filename = 'Capture' + datetime.now().strftime('%m-%d-%H-%M-%S')+'.csv'
-				saveFile = open(os.path.join(dayDirectory,filename).replace('\\','/'),'w')
 
-				for wave in self.waveList:
-					self.__writeWave(saveFile,wave)
+				with open(os.path.join(dayDirectory,filename).replace('\\','/'),'w') as saveFile:
+					for wave in self.waveList:
+						self.__writeWave(saveFile,wave)
 
-				self.logger.info("%d waveforms saved to %s", len(self.wavelist), filename)
+				self.logger.info("%d waveforms saved to %s", len(self.waveList), filename)
 				self.__status('Waveform saved to ' + filename)
 
 			except Exception as e:
 				self.logger.error(e)
-			finally:
-				saveFile.close()
 
 		else:
 			self.__status('No Waveforms to Save')

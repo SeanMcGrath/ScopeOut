@@ -38,3 +38,6 @@ Icon
 
 # Waveforms file
 waveforms
+
+# log files
+*.log
