@@ -150,7 +150,7 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 			style = open(themePath,'r')
 			self.setStyleSheet('')
 			self.setStyleSheet(style.read())
-			self.repaint()
+			self.update()
 		except Exception as e:
 			logging.warning(themePath + ' could not be loaded')
 			return False

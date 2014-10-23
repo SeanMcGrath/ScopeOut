@@ -93,7 +93,7 @@ class TDS2024B(GenericOscilloscope):
 		self.waveformQueue = queue.Queue()
 		self.numChannels = 4 # 4-channel oscilloscope
 		if(self.eventStatus()):
-			print(self.getAllEvents())
+			self.logger.info(self.getAllEvents())
 		
 	def waveformSetup(self):
 		"""
@@ -125,7 +125,6 @@ class TDS2024B(GenericOscilloscope):
 				self.waveform['yUnit'] = preamble[15].strip('"')
 				self.waveformSet = True
 			else: # Selected channel is not active
-				print(self.waveform['dataChannel'] + ' is not active. Issue DAT:SOU <CHx> to change source channel.')
 				self.waveform['error'] = self.waveform['dataChannel'] + ' is not active. Please select an active channel.'
 				self.waveformSet = False
 		except Exception as e:
@@ -153,7 +152,6 @@ class TDS2024B(GenericOscilloscope):
 			if result is None:
 				return True
 			else:
-				self.logger.error(self.eventMessage().split(',')[1].strip('"'))
 				return self.eventMessage().split(',')[1].strip('"')
 		except AttributeError as e:
 			self.logger.error(e)
@@ -190,8 +188,8 @@ class TDS2024B(GenericOscilloscope):
 					curveData[i] = self.waveform['yZero'] +self.waveform['yMult']*(curveData[i]-self.waveform['yOff'])
 				return curveData
 
-			except AttributeError:
-				print("Error acquiring waveform data.")
+			except AttributeError as e:
+				self.logger.error(e)
 
 	def getXArray(self):
 		"""

@@ -19,7 +19,7 @@ class ThreadedClient(QtWidgets.QApplication):
 
 	lock = threading.Lock()
 	stopFlag = threading.Event()
-
+	channelSetFlag = threading.Event()
 	
 
 	def __init__(self, *args):
@@ -72,7 +72,7 @@ class ThreadedClient(QtWidgets.QApplication):
 		
 	def __acqThread(self):
 
-		self.lock.acquire()
+		self.channelSetFlag.clear()
 
 		if self.activeScope is not None :
 			self.__status('Acquiring data...')
@@ -82,9 +82,11 @@ class ThreadedClient(QtWidgets.QApplication):
 				self.logger.info("Single channel acquisition")
 		
 				try:
+					self.lock.acquire()
 					self.activeScope.makeWaveform()
 					wave = self.activeScope.getNextWaveform()
 					if wave['error'] is not None:
+						self.logger.info("Successfully acquired waveform from %s", wave['dataChannel'])
 						self.waveList.append(wave);
 						self.waveCounter.setText(("Waveforms acquired: " + str(len(self.waveList))))
 				except AttributeError:
@@ -116,13 +118,14 @@ class ThreadedClient(QtWidgets.QApplication):
 
 					try:
 						self.logger.info("Acquiring data from channel %d", i+1)
-						if self.lock.locked():
-							self.lock.release()
 						self.__setChannel(i)
+						self.channelSetFlag.wait()
 						self.lock.acquire()
 						self.activeScope.makeWaveform()
+						self.lock.release()
 						wave = self.activeScope.getNextWaveform()
-						if wave['error'] is not None:
+						if wave['error'] is None:
+							self.logger.info("Successfully acquired waveform from %s", wave['dataChannel'])
 							self.waveList.append(wave);
 							self.waveCounter.setText(("Waveforms acquired: " + str(len(self.waveList))))
 					except Exception as e:
@@ -145,6 +148,8 @@ class ThreadedClient(QtWidgets.QApplication):
 						self.__status('Error on Waveform Acquisition')
 
 				self.__status('Acquired all active channels.')
+				self.multiAcq = True
+				self.mainWindow.update()
 
 	def __scopeFind(self):
 		"""
@@ -200,13 +205,10 @@ class ThreadedClient(QtWidgets.QApplication):
 		"""
 		Executed on app close.
 		"""
-		print('Closing...')
 		self.scopes = []
 		self.stopFlag.set()
 		self.closeAllWindows()
-		self.beep()
 		self.exit(0)
-		print('Closed!')
 
 	def __resetEvent(self):
 		"""
@@ -238,9 +240,11 @@ class ThreadedClient(QtWidgets.QApplication):
 			except Exception as e:
 				self.logger.error(e)
 			finally:
+				self.channelSetFlag.set()
 				if self.lock.locked():
 					self.lock.release()
 
+		self.channelSetFlag.clear()
 		self.logger.info('Attempting to set data channel %d', channel+1)
 		if channel in range(0,self.scopeControl.scope.numChannels):
 			self.multiAcq = False
@@ -271,11 +275,13 @@ class ThreadedClient(QtWidgets.QApplication):
 				for wave in self.waveList:
 					self.__writeWave(saveFile,wave)
 
-				saveFile.close()
+				self.logger.info("%d waveforms saved to %s", len(self.wavelist), filename)
 				self.__status('Waveform saved to ' + filename)
 
 			except Exception as e:
-				print(e)
+				self.logger.error(e)
+			finally:
+				saveFile.close()
 
 		else:
 			self.__status('No Waveforms to Save')
@@ -302,12 +308,12 @@ class ThreadedClient(QtWidgets.QApplication):
 				try:
 					outFile.write(str(wave['xData'][i])+','+str(wave['yData'][i])+'\n')
 				except IndexError:
-					print('X and Y data incompatible.')
+					self.logger.error('X and Y data incompatible.')
 
 			outFile.write('\n')
 
 		except Exception as e:
-			print(e)
+			self.logger.error(e)
 
 	def __status(self, message):
 		"""
