@@ -176,7 +176,7 @@ class ThreadedClient(QtWidgets.QApplication):
 
 				showedMessage = False
 
-				self.scopes = self.finder.getScopes()
+				self.scopes = self.finder.refresh().getScopes()
 
 				while not self.scopes: # Check for scopes and connect if possible
 					if self.stopFlag.isSet():
@@ -214,13 +214,12 @@ class ThreadedClient(QtWidgets.QApplication):
 				connected = self.finder.checkScope(0)
 				self.lock.release()
 				if not connected:
+					self.scopes = []
 					self.logger.info("Lost Connection to Oscilloscope(s)")
 					self.periodicFlag.clear()
 					self.continuousFlag.set()
 				else:
 					time.sleep(5)
-
-
 
 	def __closeEvent(self):
 		"""

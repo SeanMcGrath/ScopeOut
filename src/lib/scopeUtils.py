@@ -63,7 +63,7 @@ class ScopeFinder:
 		try:
 			self.resources = self.rm.list_resources("USB?*") #  We only want USB scopes
 		except visa.VisaIOError as e:
-			self.logger.log(e)
+			pass
 
 		if(self.resources):
 			self.logger.info("%d VISA Resource(s) found", len(self.resources))
