@@ -93,7 +93,7 @@ class ThreadedClient(QtWidgets.QApplication):
 					self.lock.acquire()
 					self.activeScope.makeWaveform()
 					wave = self.activeScope.getNextWaveform()
-					if wave['error'] is not None:
+					if wave['error'] is None:
 						self.logger.info("Successfully acquired waveform from %s", wave['dataChannel'])
 						self.waveList.append(wave);
 						self.waveCounter.setText(("Waveforms acquired: " + str(len(self.waveList))))

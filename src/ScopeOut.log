@@ -467,3 +467,42 @@
 2014-10-23 14:25:34,594 - ScopeOut.ThreadedClient - INFO - Acquiring data from channel 4
 2014-10-23 14:25:34,595 - ScopeOut.ThreadedClient - INFO - Attempting to set data channel 4
 2014-10-23 14:25:34,763 - ScopeOut.ThreadedClient - INFO - Successfully set data channel 4
+2014-10-23 14:27:03,595 - ScopeOut.ThreadedClient - INFO - Attempting to set data channel 1
+2014-10-23 14:27:03,757 - ScopeOut.ThreadedClient - INFO - Successfully set data channel 1
+2014-10-23 14:27:04,964 - ScopeOut.ThreadedClient - INFO - Attempting to set data channel 2
+2014-10-23 14:27:05,127 - ScopeOut.ThreadedClient - INFO - Successfully set data channel 2
+2014-10-23 14:27:07,539 - ScopeOut.ThreadedClient - INFO - Attempting to set data channel 1
+2014-10-23 14:27:07,702 - ScopeOut.ThreadedClient - INFO - Successfully set data channel 1
+2014-10-23 14:27:08,731 - ScopeOut.ThreadedClient - INFO - Attempting to set data channel 5
+2014-10-23 14:27:08,731 - ScopeOut.ThreadedClient - INFO - Selected all data channels
+2014-10-23 14:27:10,259 - ScopeOut.ThreadedClient - INFO - Attempting to set data channel 4
+2014-10-23 14:27:10,421 - ScopeOut.ThreadedClient - INFO - Successfully set data channel 4
+2014-10-23 14:27:11,451 - ScopeOut.ThreadedClient - INFO - Attempting to set data channel 2
+2014-10-23 14:27:11,610 - ScopeOut.ThreadedClient - INFO - Successfully set data channel 2
+2014-10-23 14:27:13,747 - ScopeOut.ThreadedClient - INFO - Acquisition Event
+2014-10-23 14:27:13,748 - ScopeOut.ThreadedClient - INFO - Single channel acquisition
+2014-10-23 14:27:16,706 - ScopeOut.ThreadedClient - INFO - Waveform acquired on CH2
+2014-10-23 14:28:12,776 - ScopeOut - INFO - Initializing ScopeOut...
+2014-10-23 14:28:12,776 - ScopeOut.ThreadedClient - INFO - Threaded Client initialized
+2014-10-23 14:28:12,916 - ScopeOut.ThreadedClient - INFO - All Widgets initialized
+2014-10-23 14:28:12,916 - ScopeOut.scopeWidgets.ScopeOutMainWindow - INFO - Main Window created
+2014-10-23 14:28:12,924 - ScopeOut.scopeWidgets.ScopeOutMainWindow - INFO - Loaded theme C:\Users\menp\Documents\GitHub\ScopeOut\src\Themes\default.stylesheet
+2014-10-23 14:28:12,933 - ScopeOut.scopeWidgets.ScopeOutMainWindow - INFO - Main Window disabled
+2014-10-23 14:28:12,934 - ScopeOut.ThreadedClient - INFO - Signals connected
+2014-10-23 14:28:12,934 - ScopeOut.scopeUtils.ScopeFinder - INFO - ScopeFinder Initialized
+2014-10-23 14:28:12,961 - ScopeOut.scopeUtils.ScopeFinder - INFO - 1 VISA Resource(s) found
+2014-10-23 14:28:13,209 - ScopeOut.scopeUtils.ScopeFinder - INFO - Found TEKTRONIX TDS 2024B Oscilloscope. Serial Number: C037950.
+2014-10-23 14:28:13,210 - ScopeOut.ThreadedClient - INFO - Scope acquisition thread started
+2014-10-23 14:28:13,210 - ScopeOut.ThreadedClient - INFO - Entered continuous checking mode
+2014-10-23 14:28:13,211 - ScopeOut.ThreadedClient - INFO - Scope checking thread started
+2014-10-23 14:28:13,211 - ScopeOut - INFO - ScopeOut initialization completed
+2014-10-23 14:28:13,211 - ScopeOut.ThreadedClient - INFO - Set active scope to TEKTRONIX TDS 2024B Oscilloscope. Serial Number: C037950.
+2014-10-23 14:28:13,227 - ScopeOut.scopeWidgets.scopeControlWidget - INFO - Active scope set to TEKTRONIX TDS 2024B Oscilloscope. Serial Number: C037950.
+2014-10-23 14:28:13,229 - ScopeOut.scopeWidgets.ScopeOutMainWindow - INFO - Main Window enabled
+2014-10-23 14:28:13,230 - ScopeOut.ThreadedClient - INFO - Entered periodic checking mode
+2014-10-23 14:28:16,523 - ScopeOut.ThreadedClient - INFO - Attempting to set data channel 1
+2014-10-23 14:28:16,685 - ScopeOut.ThreadedClient - INFO - Successfully set data channel 1
+2014-10-23 14:28:17,363 - ScopeOut.ThreadedClient - INFO - Acquisition Event
+2014-10-23 14:28:17,364 - ScopeOut.ThreadedClient - INFO - Single channel acquisition
+2014-10-23 14:28:20,297 - ScopeOut.ThreadedClient - INFO - Successfully acquired waveform from CH1
+2014-10-23 14:28:20,298 - ScopeOut.ThreadedClient - INFO - Waveform acquired on CH1
