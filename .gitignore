@@ -40,4 +40,4 @@ Icon
 waveforms
 
 # log files
-*.log
+**/*.log
