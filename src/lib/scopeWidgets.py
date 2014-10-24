@@ -368,6 +368,7 @@ class scopeControlWidget(QtWidgets.QWidget):
 
 		self.acqButton.setEnabled(bool)
 		self.channelComboBox.setEnabled(bool)
+		self.acqOnTrigButton.setEnabled(bool)
 		if bool:
 			channels =list(map(str,range(1,self.scope.numChannels+1)))
 			self.channelComboBox.addItems(channels)
