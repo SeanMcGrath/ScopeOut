@@ -7,6 +7,7 @@ Defines GUI client that instantiates and controls widgets and threads.
 from PyQt5 import QtWidgets, QtCore
 from lib.scopeUtils import ScopeFinder as sf
 from datetime import date, datetime
+from functools import partial
 import sys, threading, os, time, logging, numpy as np, lib.scopeWidgets as sw
 
 class ThreadedClient(QtWidgets.QApplication):
@@ -61,17 +62,18 @@ class ThreadedClient(QtWidgets.QApplication):
 		Connects signals from subwidgets to appropriate slots.
 		"""
 
-		self.scopeControl.acqButton.clicked.connect(self.__acqEvent)
+		self.scopeControl.acqButton.clicked.connect(partial(self.__acqEvent,'now'))
+		self.scopeControl.acqOnTrigButton.clicked.connect(partial(self.__acqEvent,'trig'))
 		self.scopeControl.channelComboBox.currentIndexChanged.connect(self.__setChannel)
 		self.mainWindow.resetAction.triggered.connect(self.__resetEvent)
 		self.statusChange.connect(self.mainWindow.status)
 		self.logger.info("Signals connected")
 
-	def __acqEvent(self):
+	def __acqEvent(self, mode):
 		"""
 		Executed to collect waveform data from scope.
 		"""
-		def __acqThread():
+		def __immAcqThread():
 
 			self.channelSetFlag.clear()
 
@@ -152,91 +154,48 @@ class ThreadedClient(QtWidgets.QApplication):
 					self.multiAcq = True
 					self.mainWindow.update()
 
-		self.logger.info("Acquisition Event")
+		def __trigAcqThread():
 
-		self.acqThread = threading.Thread(target = __acqThread)
-		self.acqThread.start()
-		
-	def __acqThread(self):
+			self.__status("Waiting for trigger...")
+			self.lock.acquire()
+			trigState = self.activeScope.checkTrigger()
+			print("Checking trigger...")
+			while trigState != 'TRIGGER':
+				trigState = self.activeScope.checkTrigger()
 
-		self.channelSetFlag.clear()
+			try:
+				self.activeScope.makeWaveform()
+				wave = self.activeScope.getNextWaveform()
+				if wave['error'] is None:
+					self.logger.info("Successfully acquired waveform from %s", wave['dataChannel'])
+					self.waveList.append(wave);
+					self.waveCounter.setText(("Waveforms acquired: " + str(len(self.waveList))))
+			except AttributeError:
+				wave = None
+			finally:
+				if self.lock.locked():
+					self.lock.release()
 
-		if self.activeScope is not None :
-			self.__status('Acquiring data...')
-
-			if not self.multiAcq:
-
-				self.logger.info("Single channel acquisition")
-		
-				try:
-					self.lock.acquire()
-					self.activeScope.makeWaveform()
-					wave = self.activeScope.getNextWaveform()
-					if wave['error'] is None:
-						self.logger.info("Successfully acquired waveform from %s", wave['dataChannel'])
-						self.waveList.append(wave);
-						self.waveCounter.setText(("Waveforms acquired: " + str(len(self.waveList))))
-				except AttributeError:
-					wave = None
-				finally:
-					if self.lock.locked():
-						self.lock.release()
-
-				if wave is not None and (not self.stopFlag.isSet()):
-					if wave['error'] is not None:
-						self.logger.debug("Wave error: %s", wave['error'])
-						self.__status(wave['error'])
-					else:
-						self.logger.info('Waveform acquired on ' +wave['dataChannel'])
-						try:
-							self.plot.showPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'])
-							self.__status('Waveform acquired on ' +wave['dataChannel'])
-						except KeyError:
-							self.__status('Waveform not complete')
-				else:
-					self.__status('Error on Waveform Acquisition')
-
-			else:
-				self.logger.info("Multichannel acquisition")
-
-				self.plot.resetPlot()
-
-				for i in range(0,self.activeScope.numChannels):
-
+			if wave is not None and (not self.stopFlag.isSet()):
+				if wave['error'] is not None:
+					self.__status(wave['error'])
+				else: 
 					try:
-						self.logger.info("Acquiring data from channel %d", i+1)
-						self.__setChannel(i)
-						self.channelSetFlag.wait()
-						self.lock.acquire()
-						self.activeScope.makeWaveform()
-						self.lock.release()
-						wave = self.activeScope.getNextWaveform()
-						if wave['error'] is None:
-							self.logger.info("Successfully acquired waveform from %s", wave['dataChannel'])
-							self.waveList.append(wave);
-							self.waveCounter.setText(("Waveforms acquired: " + str(len(self.waveList))))
-					except Exception as e:
-						self.logger.error(e)
-						wave = None
-					finally:
-						if self.lock.locked():
-							self.lock.release()				
+						self.plot.showMultiPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'])
+						self.__status('Waveform acquired on ' +wave['dataChannel'])
+					except KeyError:
+						self.__status('Waveform not complete')
+			else:
+				self.__status('Error on Waveform Acquisition')
 
-					if wave is not None and (not self.stopFlag.isSet()):
-						if wave['error'] is not None:
-							self.__status(wave['error'])
-						else: 
-							try:
-								self.plot.showMultiPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'])
-								self.__status('Waveform acquired on ' +wave['dataChannel'])
-							except KeyError:
-								self.__status('Waveform not complete')
-					else:
-						self.__status('Error on Waveform Acquisition')
-
-				self.__status('Acquired all active channels.')
-				self.multiAcq = True
-				self.mainWindow.update()
+		if mode == 'now':
+			self.logger.info("Immediate acquisition Event")
+			acqThread = threading.Thread(target = __immAcqThread)
+		elif mode == 'trig':
+			self.logger.info("Acquisition on trigger event")
+			acqThread = threading.Thread(target=__trigAcqThread)
+		
+		acqThread.start()
 
 	def __scopeFind(self):
 		"""
