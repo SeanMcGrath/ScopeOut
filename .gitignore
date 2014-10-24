@@ -37,7 +37,7 @@ Icon
 .Trashes
 
 # Waveforms file
-waveforms
+**/waveforms
 
 # log files
 **/*.log
