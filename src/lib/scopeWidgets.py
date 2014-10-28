@@ -211,7 +211,7 @@ class WavePlotWidget(FigureCanvas):
 		FigureCanvas.__init__(self,self.fig) 
 		self.show()
 
-	def showPlot(self, xData, xLabel, yData, yLabel):
+	def showPlot(self, xData, xLabel, yData, yLabel, clear):
 		'''
 		Fill plot with data and draw it on the screen.
 
@@ -227,9 +227,11 @@ class WavePlotWidget(FigureCanvas):
 		:yLabel:
 			string to label y axis
 
+		:clear:
+			True to draw new plot, false to add to existing plot
 		'''
 
-		self.axes.clear()
+		if not clear: self.axes.clear()
 		xData, xPrefix = self.autosetUnits(xData)
 		yData, yPrefix = self.autosetUnits(yData)
 		self.axes.set_ylabel(yPrefix + yLabel)
@@ -331,6 +333,7 @@ class scopeControlWidget(QtWidgets.QWidget):
 		self.acqOnTrigButton = QtWidgets.QPushButton('Acquire on Trigger', self)
 		self.channelComboLabel = QtWidgets.QLabel('Data Channel',self)
 		self.channelComboBox = QtWidgets.QComboBox(self)
+		self.keepPlotCheckBox = QtWidgets.QCheckBox('Hold plot',self)
 		
 		if self.scope is not None:
 			self.setEnabled(True)
@@ -338,8 +341,9 @@ class scopeControlWidget(QtWidgets.QWidget):
 		self.layout = QtWidgets.QGridLayout(self)
 		self.layout.addWidget(self.acqButton,0,0)
 		self.layout.addWidget(self.acqOnTrigButton,1,0)
-		self.layout.addWidget(self.channelComboLabel,2,0)
-		self.layout.addWidget(self.channelComboBox,3,0)
+		self.layout.addWidget(self.keepPlotCheckBox,2,0)
+		self.layout.addWidget(self.channelComboLabel,3,0)
+		self.layout.addWidget(self.channelComboBox,4,0)
 		self.setLayout(self.layout)
 
 	def setScope(self, scope):
@@ -375,3 +379,12 @@ class scopeControlWidget(QtWidgets.QWidget):
 			self.channelComboBox.addItem('All')
 		else:
 			self.channelComboBox.clear()
+
+	def plotHeld(self):
+		"""
+		Check if 'plot hold' option is selected.
+		
+		:Returns: True if plot is to be held, false otherwise
+		"""
+
+		return self.keepPlotCheckBox.isChecked()

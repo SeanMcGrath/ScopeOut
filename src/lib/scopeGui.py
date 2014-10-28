@@ -73,6 +73,16 @@ class ThreadedClient(QtWidgets.QApplication):
 		"""
 		Executed to collect waveform data from scope.
 		"""
+		def plotHeld():
+			"""
+			Check if 'plot hold' option is selected.
+			
+			:Returns: True if plot is to be held, false otherwise
+			"""
+
+			held = self.scopeControl.plotHeld()
+			return held
+
 		def __immAcqThread():
 
 			self.channelSetFlag.clear()
@@ -105,7 +115,7 @@ class ThreadedClient(QtWidgets.QApplication):
 						else:
 							self.logger.info('Waveform acquired on ' +wave['dataChannel'])
 							try:
-								self.plot.showPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'])
+								self.plot.showPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'],plotHeld())
 								self.__status('Waveform acquired on ' +wave['dataChannel'])
 							except KeyError:
 								self.__status('Waveform not complete')
@@ -143,7 +153,7 @@ class ThreadedClient(QtWidgets.QApplication):
 								self.__status(wave['error'])
 							else: 
 								try:
-									self.plot.showMultiPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'])
+									self.plot.showPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'],True)
 									self.__status('Waveform acquired on ' +wave['dataChannel'])
 								except KeyError:
 									self.__status('Waveform not complete')
@@ -159,7 +169,7 @@ class ThreadedClient(QtWidgets.QApplication):
 			self.__status("Waiting for trigger...")
 			self.lock.acquire()
 			trigState = self.activeScope.checkTrigger()
-			print("Checking trigger...")
+			
 			while trigState != 'TRIGGER':
 				trigState = self.activeScope.checkTrigger()
 
@@ -181,7 +191,7 @@ class ThreadedClient(QtWidgets.QApplication):
 					self.__status(wave['error'])
 				else: 
 					try:
-						self.plot.showMultiPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'])
+						self.plot.showPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'],plotHeld)
 						self.__status('Waveform acquired on ' +wave['dataChannel'])
 					except KeyError:
 						self.__status('Waveform not complete')
