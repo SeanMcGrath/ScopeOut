@@ -13,16 +13,13 @@ import lib.oscilloscopes as oscilloscopes
 
 class ScopeFinder:
 
-
+	scopes = []
+	
 	def __init__(self):
 		"""Constructor
 		"""
 		self.logger = logging.getLogger('ScopeOut.scopeUtils.ScopeFinder')
 		self.logger.info("ScopeFinder Initialized")
-
-		self.rm = visa.ResourceManager() # performs USB polling and finds instruments
-
-		self.refresh()
 
 	def __enter__(self):
 		return self
@@ -60,8 +57,9 @@ class ScopeFinder:
 		self.scopes = []
 		self.resources = []
 
+		rm = visa.ResourceManager()
 		try:
-			self.resources = self.rm.list_resources("USB?*") #  We only want USB scopes
+			self.resources = rm.list_resources("USB?*") #  We only want USB scopes
 		except visa.VisaIOError as e:
 			pass
 
@@ -69,7 +67,7 @@ class ScopeFinder:
 			self.logger.info("%d VISA Resource(s) found", len(self.resources))
 			self.instruments = []
 			for resource in self.resources:
-				self.instruments.append(self.rm.get_instrument(resource))
+				self.instruments.append(rm.get_instrument(resource))
 			for ins in self.instruments:
 
 				try:
@@ -89,6 +87,8 @@ class ScopeFinder:
 	def checkScope(self, scopeIndex):
 		"""
 		Check if the scope at scopeIndex is still connected.
+
+		:Returns: True if connected, false otherwise
 		"""
 
 		try:

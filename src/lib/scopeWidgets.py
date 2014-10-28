@@ -169,6 +169,7 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 		for widget in self.widgets:
 			widget.close()
 		self.endCommand()
+		self.close()
 
 	def setEnabled(self, bool):
 		"""
@@ -334,6 +335,7 @@ class scopeControlWidget(QtWidgets.QWidget):
 		self.channelComboLabel = QtWidgets.QLabel('Data Channel',self)
 		self.channelComboBox = QtWidgets.QComboBox(self)
 		self.keepPlotCheckBox = QtWidgets.QCheckBox('Hold plot',self)
+		self.keepPlotCheckBox.setChecked(True)
 		
 		if self.scope is not None:
 			self.setEnabled(True)

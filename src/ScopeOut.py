@@ -1,6 +1,12 @@
 from PyQt5 import QtGui, QtCore, QtWidgets
 import lib.scopeGui as sg, sys, signal, os, logging
 
+"""
+ScopeOut
+"""
+
+import signal, threading, sys
+
 def main():
 
 	# create logger
@@ -24,7 +30,6 @@ def main():
 	logger.info("Initializing ScopeOut...")
 	GUI = sg.ThreadedClient(sys.argv)
 	logger.info("ScopeOut initialization completed")
-	GUI.mainWindow.show()
 	signal.signal(signal.SIGINT, signal.SIG_DFL)
 	return GUI.exec_()
 
