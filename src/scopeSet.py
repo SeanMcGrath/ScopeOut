@@ -1,2 +1,2 @@
 import lib.scopeUtils as sf
-TDS = sf.ScopeFinder().getScopes()[0]
+TDS = sf.ScopeFinder().refresh().getScopes()[0]

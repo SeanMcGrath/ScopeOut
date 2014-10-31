@@ -67,6 +67,7 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.scopeControl.acqButton.clicked.connect(partial(self.__acqEvent,'now'))
 		self.scopeControl.acqOnTrigButton.clicked.connect(partial(self.__acqEvent,'trig'))
 		self.scopeControl.channelComboBox.currentIndexChanged.connect(self.__setChannel)
+		self.scopeControl.autoSetButton.clicked.connect(self.__autosetEvent)
 		self.mainWindow.resetAction.triggered.connect(self.__resetEvent)
 		self.statusChange.connect(self.mainWindow.status)
 		self.scopeChange.connect(self.scopeControl.setScope)
@@ -269,6 +270,9 @@ class ThreadedClient(QtWidgets.QApplication):
 			self.mainWindow.setEnabled(False)
 			self.continuousFlag.set()
 			self.checkTimer.cancel()
+		else:
+			self.checkTimer = threading.Timer(5.0, self.__scopeCheck)
+			self.checkTimer.start()
 
 		self.logger.info("Scope Checking Thread ended")
 
@@ -400,8 +404,20 @@ class ThreadedClient(QtWidgets.QApplication):
 
 		self.statusChange.emit(message)
 
+	def __autosetEvent(self):
+		"""
+		Called when a scope autoset is requested.
+		"""
 
- 
+		def __doAutoset():
+			"""
+			Thread to execute the autoset.
+			"""
 
+			self.lock.acquire()
+			self.scopeControl.scope.autoSet()
+			self.lock.release()
 
-
+		self.logger.info("Starting autoSet")
+		self.__status("Executing Auto-set. Ensure process is complete before continuing.")
+		threading.Thread(target = __doAutoset, name = 'AutoSetThread').start()

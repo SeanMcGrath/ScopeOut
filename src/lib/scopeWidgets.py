@@ -330,7 +330,7 @@ class scopeControlWidget(QtWidgets.QWidget):
 		Set up the subwidgets
 		"""
 		self.acqButton = QtWidgets.QPushButton('Acquire',self)
-		self.acqButton.setEnabled(False)
+		self.autoSetButton = QtWidgets.QPushButton('Autoset',self)
 		self.acqOnTrigButton = QtWidgets.QPushButton('Acquire on Trigger', self)
 		self.channelComboLabel = QtWidgets.QLabel('Data Channel',self)
 		self.channelComboBox = QtWidgets.QComboBox(self)
@@ -341,11 +341,14 @@ class scopeControlWidget(QtWidgets.QWidget):
 			self.setEnabled(True)
 
 		self.layout = QtWidgets.QGridLayout(self)
-		self.layout.addWidget(self.acqButton,0,0)
-		self.layout.addWidget(self.acqOnTrigButton,1,0)
-		self.layout.addWidget(self.keepPlotCheckBox,2,0)
-		self.layout.addWidget(self.channelComboLabel,3,0)
-		self.layout.addWidget(self.channelComboBox,4,0)
+		self.layout.setRowMinimumHeight(1,100)
+		self.layout.setRowMinimumHeight(5,100)
+		self.layout.addWidget(self.autoSetButton,0,0)
+		self.layout.addWidget(self.acqButton,2,0)
+		self.layout.addWidget(self.acqOnTrigButton,3,0)
+		self.layout.addWidget(self.keepPlotCheckBox,4,0)
+		self.layout.addWidget(self.channelComboLabel,6,0)
+		self.layout.addWidget(self.channelComboBox,7,0)
 		self.setLayout(self.layout)
 
 	def setScope(self, scope):
@@ -373,6 +376,7 @@ class scopeControlWidget(QtWidgets.QWidget):
 		"""
 
 		self.acqButton.setEnabled(bool)
+		self.autoSetButton.setEnabled(bool)
 		self.channelComboBox.setEnabled(bool)
 		self.acqOnTrigButton.setEnabled(bool)
 		if bool:

@@ -58,6 +58,6 @@ QMenuBar::item {
 }
 
 scopeControlWidget {
-  max-height: 200px;
+  max-height: 400px;
   max-width: 200px;
 }

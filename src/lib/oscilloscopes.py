@@ -574,6 +574,19 @@ class TDS2024B(GenericOscilloscope):
 
 		return self.__getParam("EVMSG?")
 
+	"""
+	END STATUS AND ERROR COMMANDS
+	"""
+
+	"""
+	AUTOSET COMMAND
+	"""
+
+	def autoSet(self):
+
+		return self.__setParam("AUTOS EXEC")
+
+
 
 
 
