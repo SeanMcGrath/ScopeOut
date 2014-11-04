@@ -23,10 +23,11 @@ def findPeakStart(wave, threshold):
 	try:
 		x = wave['xData']
 		y = wave['yData']
-		for i in range(0,len(y)-1):
+		for i in range(0,len(y)-10):
 			if y[i] != 0.0:
-				if abs((y[i+1]-y[i])/y[i]) > threshold:
-					return x[i+1]
+				if abs((y[i+5]-y[i])/(y[i])) > threshold:
+					if y[i+5] != 0.0 and abs((y[i+10]-y[i+5])/(y[i+5])) > threshold:
+						return x[i+1]
 		return 0
 	except Exception as e:
 		logger.error(e)
