@@ -104,7 +104,7 @@ class ThreadedClient(QtWidgets.QApplication):
 						if wave['error'] is None:
 							self.logger.info("Successfully acquired waveform from %s", wave['dataChannel'])
 							self.waveList.append(wave);
-							self.waveCounter.setText(("Waveforms acquired: " + str(len(self.waveList))))
+							self.__waveCount(len(self.waveList))
 					except AttributeError:
 						wave = None
 					finally:
@@ -143,7 +143,7 @@ class ThreadedClient(QtWidgets.QApplication):
 							if wave['error'] is None:
 								self.logger.info("Successfully acquired waveform from %s", wave['dataChannel'])
 								self.waveList.append(wave);
-								self.waveCounter.setText(("Waveforms acquired: " + str(len(self.waveList))))
+								self.__waveCount(len(self.waveList))
 						except Exception as e:
 							self.logger.error(e)
 							wave = None
@@ -182,7 +182,7 @@ class ThreadedClient(QtWidgets.QApplication):
 				if wave['error'] is None:
 					self.logger.info("Successfully acquired waveform from %s", wave['dataChannel'])
 					self.waveList.append(wave);
-					self.waveCounter.setText(("Waveforms acquired: " + str(len(self.waveList))))
+					self.__waveCount(len(self.waveList))
 			except AttributeError:
 				wave = None
 			finally:
@@ -289,7 +289,7 @@ class ThreadedClient(QtWidgets.QApplication):
 		"""
 
 		self.waveList = []
-		self.waveCounter.setText(("Waveforms acquired: " + str(len(self.waveList))))
+		self.__waveCount(len(self.waveList))
 		self.plot.resetPlot()
 		self.__status('Data Reset.')
 
@@ -418,3 +418,7 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.logger.info("Starting autoSet")
 		self.__status("Executing Auto-set. Ensure process is complete before continuing.")
 		threading.Thread(target = __doAutoset, name = 'AutoSetThread').start()
+
+	def __waveCount(self, waves):
+
+		self.waveOptions.updateCount(waves)

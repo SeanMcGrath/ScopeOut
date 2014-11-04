@@ -400,6 +400,10 @@ class waveOptionsWidget(QtWidgets.QWidget):
 	Widget containing information and settings for captured waveforms.
 	"""
 	def __init__(self, *args):
+		"""
+		constructor.
+		"""
+
 		self.logger = logging.getLogger('ScopeOut.scopeWidgets.waveOptionsWidget')
 		QtWidgets.QWidget.__init__(self, *args)
 		self.initWidgets()
@@ -426,6 +430,16 @@ class waveOptionsWidget(QtWidgets.QWidget):
 		self.layout.addWidget(self.thresholdLabel,0,3)
 		self.layout.addWidget(self.thresholdInput,0,4)
 		self.setLayout(self.layout)
+
+	def updateCount(self, waves):
+		"""
+		Updates the displayed count of acquired waves.
+
+		Parameters:
+			:waves: the integer number of acquired waves.
+		"""
+
+		self.waveCounter.setText("Waveforms acquired: " + str(waves))
 
 
 
