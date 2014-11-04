@@ -304,6 +304,22 @@ class WavePlotWidget(FigureCanvas):
 		self.fig.canvas.draw()
 		self.logger.info("Plot Reset")
 
+	def vertLines(self, xArray):
+		"""
+		Add vertical lines at the x values in xArray.
+
+		Parameters:
+			:xArray: the list of x values at which to add vertical lines
+		"""
+
+		xArray, prefix = self.autosetUnits(xArray)
+		for x in xArray:
+			if x != 0:
+				print(x)
+				self.axes.axvline(x)
+
+		self.fig.canvas.draw()
+
 
 class scopeControlWidget(QtWidgets.QWidget):
 	"""
@@ -415,7 +431,7 @@ class waveOptionsWidget(QtWidgets.QWidget):
 		"""
 
 		self.waveCounter = QtWidgets.QLabel("Waveforms acquired: 0", self)
-		self.showStart = QtWidgets.QCheckBox('Show peak start', self)
+		self.showStart = QtWidgets.QCheckBox('Show Peak start', self)
 		self.showEnd = QtWidgets.QCheckBox('Show Peak End', self)
 		self.thresholdLabel = QtWidgets.QLabel("Peak Threshold", self)
 		self.thresholdInput = QtWidgets.QSpinBox(self)
@@ -440,6 +456,20 @@ class waveOptionsWidget(QtWidgets.QWidget):
 		"""
 
 		self.waveCounter.setText("Waveforms acquired: " + str(waves))
+
+	def getThreshold(self):
+		"""
+		Returns the threshold as a decimal.
+		"""
+
+		return self.thresholdInput.value()/100.0
+
+	def peakStart(self):
+		"""
+		Returns checked value of "show peak start" box.
+		"""
+
+		return self.showStart.isChecked()
 
 
 
