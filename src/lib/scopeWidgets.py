@@ -394,3 +394,41 @@ class scopeControlWidget(QtWidgets.QWidget):
 		"""
 
 		return self.keepPlotCheckBox.isChecked()
+
+class waveOptionsWidget(QtWidgets.QWidget):
+	"""
+	Widget containing information and settings for captured waveforms.
+	"""
+	def __init__(self, *args):
+		self.logger = logging.getLogger('ScopeOut.scopeWidgets.waveOptionsWidget')
+		QtWidgets.QWidget.__init__(self, *args)
+		self.initWidgets()
+		self.show()
+
+	def initWidgets(self):
+		"""
+		Set up sub-widgets.
+		"""
+
+		self.waveCounter = QtWidgets.QLabel("Waveforms acquired: 0", self)
+		self.showStart = QtWidgets.QCheckBox('Show peak start', self)
+		self.showEnd = QtWidgets.QCheckBox('Show Peak End', self)
+		self.thresholdLabel = QtWidgets.QLabel("Peak Threshold", self)
+		self.thresholdInput = QtWidgets.QSpinBox(self)
+		self.thresholdInput.setMaximum(100)
+		self.thresholdInput.setMinimum(0)
+		self.thresholdInput.setSuffix('%')
+
+		self.layout = QtWidgets.QGridLayout(self)
+		self.layout.addWidget(self.waveCounter,0,0)
+		self.layout.addWidget(self.showStart,0,1)
+		self.layout.addWidget(self.showEnd,0,2)
+		self.layout.addWidget(self.thresholdLabel,0,3)
+		self.layout.addWidget(self.thresholdInput,0,4)
+		self.setLayout(self.layout)
+
+
+
+
+
+

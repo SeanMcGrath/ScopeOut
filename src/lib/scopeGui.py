@@ -6,10 +6,10 @@ Defines GUI client that instantiates and controls widgets and threads.
 
 from PyQt5 import QtWidgets, QtCore
 from lib.scopeUtils import ScopeFinder as sf
-from lib.oscilloscopes import GenericOscilloscope as go
+from lib.oscilloscopes import GenericOscilloscope
 from datetime import date, datetime
 from functools import partial
-import sys, threading, os, time, logging, numpy as np, lib.scopeWidgets as sw
+import sys, threading, os, time, logging, numpy as np, lib.scopeWidgets as sw, lib.waveUtils as WU
 
 class ThreadedClient(QtWidgets.QApplication):
 	"""
@@ -22,11 +22,10 @@ class ThreadedClient(QtWidgets.QApplication):
 	lock = threading.Lock()
 	stopFlag = threading.Event()
 	channelSetFlag = threading.Event()
-	periodicFlag = threading.Event()
 	continuousFlag = threading.Event()
 	continuousFlag.set()
 	statusChange = QtCore.pyqtSignal(str)
-	scopeChange = QtCore.pyqtSignal(go)
+	scopeChange = QtCore.pyqtSignal(GenericOscilloscope)
 	
 	def __init__(self, *args):
 		"""
@@ -44,11 +43,11 @@ class ThreadedClient(QtWidgets.QApplication):
 
 		self.scopeControl = sw.scopeControlWidget(None)
 		self.plot = sw.WavePlotWidget()
-		self.waveCounter = QtWidgets.QLabel("Waveforms acquired: " + str(len(self.waveList)))
+		self.waveOptions = sw.waveOptionsWidget()
 		
 		self.logger.info("All Widgets initialized")
 
-		self.mainWindow = sw.ScopeOutMainWindow([self.plot,self.scopeControl,self.waveCounter],self.__closeEvent,self.__saveWaveformEvent)
+		self.mainWindow = sw.ScopeOutMainWindow([self.plot,self.scopeControl,self.waveOptions],self.__closeEvent,self.__saveWaveformEvent)
 
 		self.__connectSignals()
 			
@@ -220,37 +219,37 @@ class ThreadedClient(QtWidgets.QApplication):
 
 		while not self.stopFlag.isSet():
 
-			self.continuousFlag.wait()
+			if self.continuousFlag.isSet():
 
-			with sf() as self.finder:
+				with sf() as self.finder:
 
-				self.logger.info("Entered continuous checking mode")
+					self.logger.info("Entered continuous checking mode")
 
-				while self.continuousFlag.isSet() and not self.stopFlag.isSet():
+					while self.continuousFlag.isSet() and not self.stopFlag.isSet():
 
-					showedMessage = False
+						showedMessage = False
 
-					self.scopes = self.finder.refresh().getScopes()
-
-					while not self.scopes: # Check for scopes and connect if possible
-						if self.stopFlag.isSet():
-							self.scopes = []
-							break
-						if not showedMessage:
-							self.__status('No Oscilloscopes detected.')
-							showedMessage = True
-						self.lock.acquire()
 						self.scopes = self.finder.refresh().getScopes()
-						self.lock.release()
 
-					if not self.stopFlag.isSet(): # Scope Found!
-						self.activeScope = self.scopes[0]
-						self.logger.info("Set active scope to %s", str(self.activeScope))
-						self.scopeChange.emit(self.activeScope)
-						self.__status('Found ' + str(self.activeScope))
-						self.mainWindow.setEnabled(True)
-						self.continuousFlag.clear()
-						self.checkTimer.start()
+						while not self.scopes: # Check for scopes and connect if possible
+							if self.stopFlag.isSet():
+								self.scopes = []
+								break
+							if not showedMessage:
+								self.__status('No Oscilloscopes detected.')
+								showedMessage = True
+							self.lock.acquire()
+							self.scopes = self.finder.refresh().getScopes()
+							self.lock.release()
+
+						if not self.stopFlag.isSet(): # Scope Found!
+							self.activeScope = self.scopes[0]
+							self.logger.info("Set active scope to %s", str(self.activeScope))
+							self.scopeChange.emit(self.activeScope)
+							self.__status('Found ' + str(self.activeScope))
+							self.mainWindow.setEnabled(True)
+							self.continuousFlag.clear()
+							self.checkTimer.start()
 
 		self.logger.info("Scope acquisition Thread ended")
 
@@ -258,23 +257,20 @@ class ThreadedClient(QtWidgets.QApplication):
 		"""
 		Periodically confirms that scopes are still connected.
 		"""
-
-		self.logger.info("Scope checking thread started")
-
-		self.lock.acquire()
-		connected = self.finder.checkScope(0)
-		self.lock.release()
-		if not connected:
-			self.scopes = []
-			self.logger.info("Lost Connection to Oscilloscope(s)")
-			self.mainWindow.setEnabled(False)
-			self.continuousFlag.set()
-			self.checkTimer.cancel()
-		else:
-			self.checkTimer = threading.Timer(5.0, self.__scopeCheck)
-			self.checkTimer.start()
-
-		self.logger.info("Scope Checking Thread ended")
+		if not self.stopFlag.isSet():
+			self.lock.acquire()
+			connected = self.finder.checkScope(0)
+			self.lock.release()
+			if not connected:
+				self.scopes = []
+				self.logger.info("Lost Connection to Oscilloscope(s)")
+				self.__status("Lost Connection to Oscilloscope(s)")
+				self.mainWindow.setEnabled(False)
+				self.continuousFlag.set()
+				self.checkTimer.cancel()
+			elif not self.stopFlag.isSet():
+				self.checkTimer = threading.Timer(5.0, self.__scopeCheck)
+				self.checkTimer.start()
 
 	def __closeEvent(self):
 		"""
@@ -283,7 +279,8 @@ class ThreadedClient(QtWidgets.QApplication):
 
 		self.scopes = []
 		self.stopFlag.set()
-		self.continuousFlag.set()
+		self.continuousFlag.clear()
+		self.checkTimer.cancel()
 		self.quit()
 
 	def __resetEvent(self):
