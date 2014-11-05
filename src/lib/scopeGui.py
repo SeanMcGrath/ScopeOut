@@ -101,10 +101,6 @@ class ThreadedClient(QtWidgets.QApplication):
 						self.lock.acquire()
 						self.activeScope.makeWaveform()
 						wave = self.activeScope.getNextWaveform()
-						if wave['error'] is None:
-							self.logger.info("Successfully acquired waveform from %s", wave['dataChannel'])
-							self.waveList.append(wave);
-							self.__waveCount(len(self.waveList))
 					except AttributeError:
 						wave = None
 					finally:
@@ -116,15 +112,20 @@ class ThreadedClient(QtWidgets.QApplication):
 							self.logger.debug("Wave error: %s", wave['error'])
 							self.__status(wave['error'])
 						else:
-							self.logger.info('Waveform acquired on ' +wave['dataChannel'])
 							try:
-								wave['peakStart'] = WU.findPeakStart(wave, self.waveOptions.getThresholds()[0])
+								self.logger.info("Successfully acquired waveform from %s", wave['dataChannel'])
+								self.__status('Waveform acquired on ' +wave['dataChannel'])
+								start, end = WU.findPeakEnds(wave, self.waveOptions.getThresholds()[0], self.waveOptions.getThresholds()[1])
+								wave['peakStart'] = start
+								wave['peakEnd'] = end
+								self.waveList.append(wave);
+								self.__waveCount(len(self.waveList))
 								self.plot.showPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'],plotHeld())
 								if self.waveOptions.peakStart():
-									self.plot.vertLines([wave['peakStart']])
-								self.__status('Waveform acquired on ' +wave['dataChannel'])
-							except KeyError:
-								self.__status('Waveform not complete')
+									self.plot.vertLines([wave['peakStart'],wave['peakEnd']])
+							except Exception as e:
+								self.__status('Error occurred during wave plotting. Check log for details.')
+								self.logger.error(e)
 					else:
 						self.__status('Error on Waveform Acquisition')
 
