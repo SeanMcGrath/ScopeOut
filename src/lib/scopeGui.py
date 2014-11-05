@@ -118,7 +118,7 @@ class ThreadedClient(QtWidgets.QApplication):
 						else:
 							self.logger.info('Waveform acquired on ' +wave['dataChannel'])
 							try:
-								wave['peakStart'] = WU.findPeakStart(wave, self.waveOptions.getThreshold())
+								wave['peakStart'] = WU.findPeakStart(wave, self.waveOptions.getThresholds()[0])
 								self.plot.showPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'],plotHeld())
 								if self.waveOptions.peakStart():
 									self.plot.vertLines([wave['peakStart']])

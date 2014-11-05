@@ -132,10 +132,9 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 						openTheme = os.path.join(path,theme)
 						self.themes.append(openTheme)
 					except Exception as e:
-						print('Could not process ' + theme + ', ignoring')
+						self.logger.info('Could not process ' + theme + ', ignoring')
 		except Exception as e:
-			print(e)
-			print('No themes folder found')
+			self.logger.error(e)
 
 		return self.themes
 
@@ -152,7 +151,7 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 			self.setStyleSheet(style.read())
 			self.update()
 		except Exception as e:
-			logging.warning(themePath + ' could not be loaded')
+			self.logger.error(themePath + ' could not be loaded')
 			return False
 
 		return True
@@ -315,7 +314,6 @@ class WavePlotWidget(FigureCanvas):
 		xArray, prefix = self.autosetUnits(xArray)
 		for x in xArray:
 			if x != 0:
-				print(x)
 				self.axes.axvline(x)
 
 		self.fig.canvas.draw()
@@ -433,18 +431,25 @@ class waveOptionsWidget(QtWidgets.QWidget):
 		self.waveCounter = QtWidgets.QLabel("Waveforms acquired: 0", self)
 		self.showStart = QtWidgets.QCheckBox('Show Peak start', self)
 		self.showEnd = QtWidgets.QCheckBox('Show Peak End', self)
-		self.thresholdLabel = QtWidgets.QLabel("Peak Threshold", self)
-		self.thresholdInput = QtWidgets.QSpinBox(self)
-		self.thresholdInput.setMaximum(100)
-		self.thresholdInput.setMinimum(0)
-		self.thresholdInput.setSuffix('%')
+		self.startThresholdLabel = QtWidgets.QLabel("Peak Start Threshold", self)
+		self.endThresholdLabel = QtWidgets.QLabel("Peak End Threshold", self)
+		self.startThresholdInput = QtWidgets.QSpinBox(self)
+		self.startThresholdInput.setMaximum(100)
+		self.startThresholdInput.setMinimum(0)
+		self.startThresholdInput.setSuffix('%')
+		self.endThresholdInput = QtWidgets.QSpinBox(self)
+		self.endThresholdInput.setMaximum(100)
+		self.endThresholdInput.setMinimum(0)
+		self.endThresholdInput.setSuffix('%')
 
 		self.layout = QtWidgets.QGridLayout(self)
 		self.layout.addWidget(self.waveCounter,0,0)
 		self.layout.addWidget(self.showStart,0,1)
-		self.layout.addWidget(self.showEnd,0,2)
-		self.layout.addWidget(self.thresholdLabel,0,3)
-		self.layout.addWidget(self.thresholdInput,0,4)
+		self.layout.addWidget(self.showEnd,1,1)
+		self.layout.addWidget(self.startThresholdLabel,0,2)
+		self.layout.addWidget(self.startThresholdInput,0,3)
+		self.layout.addWidget(self.endThresholdLabel,1,2)
+		self.layout.addWidget(self.endThresholdInput,1,3)
 		self.setLayout(self.layout)
 
 	def updateCount(self, waves):
@@ -457,12 +462,14 @@ class waveOptionsWidget(QtWidgets.QWidget):
 
 		self.waveCounter.setText("Waveforms acquired: " + str(waves))
 
-	def getThreshold(self):
+	def getThresholds(self):
 		"""
-		Returns the threshold as a decimal.
+		Returns the thresholds as decimals.
+
+		:Returns: An array containting the start threshold followed by the end threshold.
 		"""
 
-		return self.thresholdInput.value()/100.0
+		return [self.startThresholdInput.value()/100.0, self.endThresholdInput.value()/100.0]
 
 	def peakStart(self):
 		"""
