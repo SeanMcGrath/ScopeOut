@@ -16,29 +16,39 @@ def findPeakEnds(wave, t1, t2):
 
 	Parameters:
 		:wave: the dictionary containing the wave information.
-		:threshold: the fractional increase in y value defined
-					as the beginning of a wave.
+		:t1: the fractional increase in y value defined as the beginning of a wave.
 	"""
 
 	try:
 		start = 0
 		startIndex = 0
 		y = wave['yData']
-		for i in range(0,len(y)-10):
-			if y[i] != 0.0:
-				if abs((y[i+5]-y[i])/(y[i])) > t1:
-					if y[i+5] != 0.0 and abs((y[i+10]-y[i+5])/(y[i+5])) > t1:
+		for i in range(0,len(y)-250):
+			withinTolerance = 0
+			for j in range(1,6):
+				if y[i+50*(j-1)] != 0.0 and abs((y[i+50*j]-y[i+50*(j-1)])/(y[i+50*(j-1)])) > t1:
+					withinTolerance += 1
+					if withinTolerance == 5:
 						startIndex = i
 						break
+				else: 
+					break
+			if startIndex != 0: break
 
 		if startIndex != 0:
-			for i in range(startIndex,len(y) - 10):
-				if y[i] != 0.0 and abs((y[i+5]-y[i])/(y[i])) < t2:
-					if y[i+5] != 0.0 and abs((y[i+10]-y[i+5])/(y[i+5])) < t2:
-						return wave['xData'][startIndex], wave['xData'][i]
+			for i in range(startIndex,len(y) - 250): 
+				withinTolerance = 0
+				for j in range(1,6):
+					if y[i+50*(j-1)] != 0.0 and abs((y[i+50*j]-y[i+50*(j-1)])/(y[i+50*(j-1)])) < t2:
+						withinTolerance += 1
+						if withinTolerance == 4:
+							return wave['xData'][startIndex], wave['xData'][i]
+					else:
+						break
+						
 
-		return startIndex, len(y)
-		
+		return wave['xData'][startIndex], wave['xData'][-10]
+
 	except Exception as e:
 		logger.error(e)
 		return 0,0

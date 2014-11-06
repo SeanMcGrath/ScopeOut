@@ -115,12 +115,12 @@ class ThreadedClient(QtWidgets.QApplication):
 							try:
 								self.logger.info("Successfully acquired waveform from %s", wave['dataChannel'])
 								self.__status('Waveform acquired on ' +wave['dataChannel'])
+								self.plot.showPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'],plotHeld())
 								start, end = WU.findPeakEnds(wave, self.waveOptions.getThresholds()[0], self.waveOptions.getThresholds()[1])
 								wave['peakStart'] = start
 								wave['peakEnd'] = end
 								self.waveList.append(wave);
 								self.__waveCount(len(self.waveList))
-								self.plot.showPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'],plotHeld())
 								if self.waveOptions.peakStart():
 									self.plot.vertLines([wave['peakStart'],wave['peakEnd']])
 							except Exception as e:
