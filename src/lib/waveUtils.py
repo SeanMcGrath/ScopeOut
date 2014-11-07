@@ -26,10 +26,10 @@ def findPeakEnds(wave, t1, t2):
 		ymax = max(np.absolute(y))
 		for i in range(0,len(y)-250):
 			withinTolerance = 0
-			for j in range(1,6):
+			for j in range(1,3):
 				if y[i+50*(j-1)] != 0.0 and abs(y[i+50*(j-1)]) > 0.05*ymax and abs((y[i+50*j]-y[i+50*(j-1)])/(y[i+50*(j-1)])) > t1:
 					withinTolerance += 1
-					if withinTolerance == 5:
+					if withinTolerance == 2:
 						startIndex = i
 						break
 				else: 
