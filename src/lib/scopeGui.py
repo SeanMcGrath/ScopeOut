@@ -119,10 +119,13 @@ class ThreadedClient(QtWidgets.QApplication):
 								start, end = WU.findPeakEnds(wave, self.waveOptions.getThresholds()[0], self.waveOptions.getThresholds()[1])
 								wave['peakStart'] = start
 								wave['peakEnd'] = end
+								integral = WU.integratePeak(wave)
+								wave['peakIntegral'] = integral
 								self.waveList.append(wave);
 								self.__waveCount(len(self.waveList))
 								if self.waveOptions.peakStart():
-									self.plot.vertLines([wave['peakStart'],wave['peakEnd']])
+									if start >= 0:
+										self.plot.vertLines([ wave['xData'][start], wave['xData'][end] ])
 							except Exception as e:
 								self.__status('Error occurred during wave plotting. Check log for details.')
 								self.logger.error(e)
