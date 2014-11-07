@@ -476,6 +476,17 @@ class waveOptionsWidget(QtWidgets.QWidget):
 
 		return self.showStart.isChecked()
 
+	def setEnabled(self, bool):
+		"""
+		Enable/disable this widget.
+
+		Parameters:
+			:bool: True to enable, false to disable.
+		"""
+
+		self.startThresholdInput.setEnabled(bool)
+		self.endThresholdInput.setEnabled(bool)
+
 
 
 

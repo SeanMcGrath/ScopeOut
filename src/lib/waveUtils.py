@@ -23,10 +23,11 @@ def findPeakEnds(wave, t1, t2):
 		start = 0
 		startIndex = 0
 		y = wave['yData']
+		ymax = max(np.absolute(y))
 		for i in range(0,len(y)-250):
 			withinTolerance = 0
 			for j in range(1,6):
-				if y[i+50*(j-1)] != 0.0 and abs((y[i+50*j]-y[i+50*(j-1)])/(y[i+50*(j-1)])) > t1:
+				if y[i+50*(j-1)] != 0.0 and abs(y[i+50*(j-1)]) > 0.05*ymax and abs((y[i+50*j]-y[i+50*(j-1)])/(y[i+50*(j-1)])) > t1:
 					withinTolerance += 1
 					if withinTolerance == 5:
 						startIndex = i
@@ -39,7 +40,7 @@ def findPeakEnds(wave, t1, t2):
 			for i in range(startIndex,len(y) - 250): 
 				withinTolerance = 0
 				for j in range(1,6):
-					if y[i+50*(j-1)] != 0.0 and abs((y[i+50*j]-y[i+50*(j-1)])/(y[i+50*(j-1)])) < t2:
+					if y[i+50*(j-1)] != 0.0 and abs(y[i+50*(j-1)]) < 0.2*ymax and  abs((y[i+50*j]-y[i+50*(j-1)])/(y[i+50*(j-1)])) < t2:
 						withinTolerance += 1
 						if withinTolerance == 4:
 							return wave['xData'][startIndex], wave['xData'][i]
