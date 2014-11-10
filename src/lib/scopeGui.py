@@ -86,6 +86,35 @@ class ThreadedClient(QtWidgets.QApplication):
 			held = self.scopeControl.plotHeld()
 			return held
 
+		def processWave(wave):
+			"""
+			Run desired calculations on acquired wave and display plots.
+
+			Parameters:
+				:wave: The dictionary containing waveform information.
+			"""
+
+			if wave['error'] is not None:
+				self.logger.debug("Wave error: %s", wave['error'])
+				self.__status(wave['error'])
+			else:
+				try:
+					self.logger.info("Successfully acquired waveform from %s", wave['dataChannel'])
+					self.__status('Waveform acquired on ' +wave['dataChannel'])
+					self.plot.showPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'],plotHeld())
+					start, end = WU.findPeakEnds(wave, self.waveOptions.getThresholds()[0], self.waveOptions.getThresholds()[1])
+					wave['peakStart'] = start
+					wave['peakEnd'] = end
+					integral = WU.integratePeak(wave)
+					wave['peakIntegral'] = integral
+					self.waveList.append(wave);
+					self.__waveCount(len(self.waveList))
+					if self.waveOptions.peakStart() and start >= 0:
+						self.plot.vertLines([ wave['xData'][start], wave['xData'][end] ])
+				except Exception as e:
+					self.__status('Error occurred during wave plotting. Check log for details.')
+					self.logger.error(e)
+
 		def __immAcqThread():
 
 			self.channelSetFlag.clear()
@@ -108,27 +137,7 @@ class ThreadedClient(QtWidgets.QApplication):
 							self.lock.release()
 
 					if wave is not None and (not self.stopFlag.isSet()):
-						if wave['error'] is not None:
-							self.logger.debug("Wave error: %s", wave['error'])
-							self.__status(wave['error'])
-						else:
-							try:
-								self.logger.info("Successfully acquired waveform from %s", wave['dataChannel'])
-								self.__status('Waveform acquired on ' +wave['dataChannel'])
-								self.plot.showPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'],plotHeld())
-								start, end = WU.findPeakEnds(wave, self.waveOptions.getThresholds()[0], self.waveOptions.getThresholds()[1])
-								wave['peakStart'] = start
-								wave['peakEnd'] = end
-								integral = WU.integratePeak(wave)
-								wave['peakIntegral'] = integral
-								self.waveList.append(wave);
-								self.__waveCount(len(self.waveList))
-								if self.waveOptions.peakStart():
-									if start >= 0:
-										self.plot.vertLines([ wave['xData'][start], wave['xData'][end] ])
-							except Exception as e:
-								self.__status('Error occurred during wave plotting. Check log for details.')
-								self.logger.error(e)
+						processWave(wave)
 					else:
 						self.__status('Error on Waveform Acquisition')
 
@@ -147,10 +156,6 @@ class ThreadedClient(QtWidgets.QApplication):
 							self.activeScope.makeWaveform()
 							self.lock.release()
 							wave = self.activeScope.getNextWaveform()
-							if wave['error'] is None:
-								self.logger.info("Successfully acquired waveform from %s", wave['dataChannel'])
-								self.waveList.append(wave);
-								self.__waveCount(len(self.waveList))
 						except Exception as e:
 							self.logger.error(e)
 							wave = None
@@ -159,14 +164,7 @@ class ThreadedClient(QtWidgets.QApplication):
 								self.lock.release()				
 
 						if wave is not None and (not self.stopFlag.isSet()):
-							if wave['error'] is not None:
-								self.__status(wave['error'])
-							else: 
-								try:
-									self.plot.showPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'],True)
-									self.__status('Waveform acquired on ' +wave['dataChannel'])
-								except KeyError:
-									self.__status('Waveform not complete')
+							processWave(wave)
 						else:
 							self.__status('Error on Waveform Acquisition')
 
@@ -186,10 +184,6 @@ class ThreadedClient(QtWidgets.QApplication):
 			try:
 				self.activeScope.makeWaveform()
 				wave = self.activeScope.getNextWaveform()
-				if wave['error'] is None:
-					self.logger.info("Successfully acquired waveform from %s", wave['dataChannel'])
-					self.waveList.append(wave);
-					self.__waveCount(len(self.waveList))
 			except AttributeError:
 				wave = None
 			finally:
@@ -197,14 +191,7 @@ class ThreadedClient(QtWidgets.QApplication):
 					self.lock.release()
 
 			if wave is not None and (not self.stopFlag.isSet()):
-				if wave['error'] is not None:
-					self.__status(wave['error'])
-				else: 
-					try:
-						self.plot.showPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'],plotHeld)
-						self.__status('Waveform acquired on ' +wave['dataChannel'])
-					except KeyError:
-						self.__status('Waveform not complete')
+				processWave(wave)
 			else:
 				self.__status('Error on Waveform Acquisition')
 
