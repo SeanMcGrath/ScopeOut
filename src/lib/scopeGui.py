@@ -181,7 +181,6 @@ class ThreadedClient(QtWidgets.QApplication):
 
 		def __trigAcqThread():
 
-			self.__status("Waiting for trigger...")
 			self.lock.acquire()
 			trigState = self.activeScope.checkTrigger()
 			
@@ -203,21 +202,31 @@ class ThreadedClient(QtWidgets.QApplication):
 			else:
 				self.__status('Error on Waveform Acquisition')
 
+		def __contAcqThread():
+
+			while not self.stopFlag.isSet():
+				self.acquireFlag.wait()
+				acqThread = threading.Thread(target=__trigAcqThread)
+				acqThread.start()
+				self.acquireFlag.clear()
+
+
 		if mode == 'now':
 			self.logger.info("Immediate acquisition Event")
 			acqThread = threading.Thread(target = __immAcqThread)
 			acqThread.start()
 		elif mode == 'trig':
+			self.__status("Waiting for trigger...")
 			self.logger.info("Acquisition on trigger event")
 			acqThread = threading.Thread(target=__trigAcqThread)
 			acqThread.start()
 		elif mode == 'cont':
+			self.logger.info('Continuous Acquisition Event')
+			self.__status("Acquiring Continuously...")
 			self.acquireFlag.set()
-			while not self.stopFlag.isSet():
-				acqThread = threading.Thread(target=__trigAcqThread)
-				self.acquireFlag.wait()
-				acqThread.start()
-				self.acquireFlag.clear()
+			acqThread = threading.Thread(target = __contAcqThread)
+			acqThread.start()
+			
 
 	def __scopeFind(self):
 		"""
