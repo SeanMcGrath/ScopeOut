@@ -378,6 +378,7 @@ class scopeControlWidget(QtWidgets.QWidget):
 		Set up the subwidgets
 		"""
 		self.acqButton = QtWidgets.QPushButton('Acquire',self)
+		self.contAcqButton = QtWidgets.QPushButton('Acquire Continuously', self)
 		self.autoSetButton = QtWidgets.QPushButton('Autoset',self)
 		self.acqOnTrigButton = QtWidgets.QPushButton('Acquire on Trigger', self)
 		self.channelComboLabel = QtWidgets.QLabel('Data Channel',self)
@@ -394,9 +395,10 @@ class scopeControlWidget(QtWidgets.QWidget):
 		self.layout.addWidget(self.autoSetButton,0,0)
 		self.layout.addWidget(self.acqButton,2,0)
 		self.layout.addWidget(self.acqOnTrigButton,3,0)
-		self.layout.addWidget(self.keepPlotCheckBox,4,0)
-		self.layout.addWidget(self.channelComboLabel,6,0)
-		self.layout.addWidget(self.channelComboBox,7,0)
+		self.layout.addWidget(self.contAcqButton,4,0)
+		self.layout.addWidget(self.keepPlotCheckBox,6,0)
+		self.layout.addWidget(self.channelComboLabel,7,0)
+		self.layout.addWidget(self.channelComboBox,8,0)
 		self.setLayout(self.layout)
 
 	def setScope(self, scope):
