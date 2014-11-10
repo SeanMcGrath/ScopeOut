@@ -24,6 +24,7 @@ class ThreadedClient(QtWidgets.QApplication):
 	channelSetFlag = threading.Event()
 	continuousFlag = threading.Event()
 	continuousFlag.set()
+	acquireFlag = threading.Event()
 	statusChange = QtCore.pyqtSignal(str)
 	scopeChange = QtCore.pyqtSignal(GenericOscilloscope)
 	
@@ -66,6 +67,7 @@ class ThreadedClient(QtWidgets.QApplication):
 
 		self.scopeControl.acqButton.clicked.connect(partial(self.__acqEvent,'now'))
 		self.scopeControl.acqOnTrigButton.clicked.connect(partial(self.__acqEvent,'trig'))
+		self.scopeControl.contAcqButton.clicked.connect(partial(self.__acqEvent,'cont'))
 		self.scopeControl.channelComboBox.currentIndexChanged.connect(self.__setChannel)
 		self.scopeControl.autoSetButton.clicked.connect(self.__autosetEvent)
 		self.mainWindow.resetAction.triggered.connect(self.__resetEvent)
@@ -192,6 +194,7 @@ class ThreadedClient(QtWidgets.QApplication):
 			except AttributeError:
 				wave = None
 			finally:
+				self.acquireFlag.set()
 				if self.lock.locked():
 					self.lock.release()
 
@@ -203,11 +206,18 @@ class ThreadedClient(QtWidgets.QApplication):
 		if mode == 'now':
 			self.logger.info("Immediate acquisition Event")
 			acqThread = threading.Thread(target = __immAcqThread)
+			acqThread.start()
 		elif mode == 'trig':
 			self.logger.info("Acquisition on trigger event")
 			acqThread = threading.Thread(target=__trigAcqThread)
-		
-		acqThread.start()
+			acqThread.start()
+		elif mode == 'cont':
+			self.acquireFlag.set()
+			while not self.stopFlag.isSet():
+				acqThread = threading.Thread(target=__trigAcqThread)
+				self.acquireFlag.wait()
+				acqThread.start()
+				self.acquireFlag.clear()
 
 	def __scopeFind(self):
 		"""

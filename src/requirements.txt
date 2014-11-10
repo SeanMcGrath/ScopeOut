@@ -1,3 +1,6 @@
 # ScopeOut Package Requirements
 visa
 matplotlib
+numpy
+
+# Also Required: PyQt5
