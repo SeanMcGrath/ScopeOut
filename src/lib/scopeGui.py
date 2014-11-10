@@ -40,6 +40,8 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.logger.info("Threaded Client initialized")
 
 		self.waveList = []
+		self.integralList = []
+		self.histMode = False
 
 		self.scopeControl = sw.scopeControlWidget(None)
 		self.plot = sw.WavePlotWidget()
@@ -53,7 +55,6 @@ class ThreadedClient(QtWidgets.QApplication):
 			
 		scopeFinderThread = threading.Thread(target=self.__scopeFind, name='ScopeFind')
 		scopeFinderThread.start()
-
 		self.checkTimer = threading.Timer(5.0, self.__scopeCheck)
 
 		self.mainWindow.show()
@@ -101,15 +102,19 @@ class ThreadedClient(QtWidgets.QApplication):
 				try:
 					self.logger.info("Successfully acquired waveform from %s", wave['dataChannel'])
 					self.__status('Waveform acquired on ' +wave['dataChannel'])
-					self.plot.showPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'],plotHeld())
+					if not self.__histogramMode():
+						self.plot.showPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'],plotHeld())
 					start, end = WU.findPeakEnds(wave, self.waveOptions.getThresholds()[0], self.waveOptions.getThresholds()[1])
 					wave['peakStart'] = start
 					wave['peakEnd'] = end
 					integral = WU.integratePeak(wave)
 					wave['peakIntegral'] = integral
+					self.integralList.append(integral)
+					if self.__histogramMode() and len(self.integralList)>1:
+						self.plot.showHist(self.integralList)
 					self.waveList.append(wave);
 					self.__waveCount(len(self.waveList))
-					if self.waveOptions.peakStart() and start >= 0:
+					if self.waveOptions.peakStart() and start >= 0 and not self.__histogramMode():
 						self.plot.vertLines([ wave['xData'][start], wave['xData'][end] ])
 				except Exception as e:
 					self.__status('Error occurred during wave plotting. Check log for details.')
@@ -416,3 +421,10 @@ class ThreadedClient(QtWidgets.QApplication):
 	def __waveCount(self, waves):
 
 		self.waveOptions.updateCount(waves)
+
+	def __histogramMode(self):
+		"""
+		Check whether to display histogram or wave plot.
+		"""
+
+		return self.mainWindow.histogramModeAction.isChecked()

@@ -70,6 +70,20 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 		self.resetAction.setShortcut('Ctrl+R')
 		self.resetAction.setStatusTip('Clear all waveforms in memory')
 
+		# Data->Mode
+		self.modeGroup = QtWidgets.QActionGroup(self)
+
+		# Data->Mode->Wave Capture
+		self.captureModeAction = QtWidgets.QAction('Wave Display', self.modeGroup)
+		self.captureModeAction.setStatusTip('Display acquired waveforms')
+		self.captureModeAction.setCheckable(True)
+		self.captureModeAction.setChecked(True)
+
+		# Data->Mode->Histogram
+		self.histogramModeAction = QtWidgets.QAction('Histogram Display', self.modeGroup)
+		self.histogramModeAction.setStatusTip('Display wave integration histogram')
+		self.histogramModeAction.setCheckable(True)
+
         # Put title on window
 		self.setWindowTitle('ScopeOut')
 
@@ -81,8 +95,14 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 		self.fileMenu = self.menubar.addMenu('&File')
 		self.fileMenu.addAction(exitAction)
 		self.fileMenu.addAction(saveAction)
+
+		# "Data" Menu
 		self.dataMenu = self.menubar.addMenu('&Data')
 		self.dataMenu.addAction(self.resetAction)
+		acqModeMenu = self.dataMenu.addMenu('Acquisition Mode')
+		acqModeMenu.addActions(self.modeGroup.findChildren(QtWidgets.QAction))
+
+		# "View" Menu
 		viewMenu = self.menubar.addMenu('&View')
 		themeMenu = viewMenu.addMenu('Change Theme')
 		if self.themes:
@@ -318,6 +338,20 @@ class WavePlotWidget(FigureCanvas):
 
 		self.fig.canvas.draw()
 
+	def showHist(self, x, bins=100):
+		"""
+		Plot the histogram of integrated wave values.x`
+
+		Parameters:
+			:x: the histogram x data.
+			:bins: the number of bins desired.
+		"""
+
+		self.fig.suptitle("Peak Histogram")
+		self.axes.clear()
+		self.axes.hist(x,bins)
+		self.fig.canvas.draw()
+
 
 class scopeControlWidget(QtWidgets.QWidget):
 	"""
@@ -370,7 +404,7 @@ class scopeControlWidget(QtWidgets.QWidget):
 		Change the oscilloscope that this widget is controlling.
 
 		Parameters:
-			:scope: the new oscilloscope bject to be controlled.
+			:scope: the new oscilloscope object to be controlled.
 		"""
 
 		self.scope = scope
@@ -393,7 +427,7 @@ class scopeControlWidget(QtWidgets.QWidget):
 		self.autoSetButton.setEnabled(bool)
 		self.channelComboBox.setEnabled(bool)
 		self.acqOnTrigButton.setEnabled(bool)
-		if bool:
+		if bool and self.scope is not None:
 			channels =list(map(str,range(1,self.scope.numChannels+1)))
 			self.channelComboBox.addItems(channels)
 			self.channelComboBox.addItem('All')
@@ -462,7 +496,7 @@ class waveOptionsWidget(QtWidgets.QWidget):
 
 	def getThresholds(self):
 		"""
-		Returns the thresholds as decimals.
+		Returns the peak thresholds as decimals.
 
 		:Returns: An array containting the start threshold followed by the end threshold.
 		"""
@@ -486,9 +520,4 @@ class waveOptionsWidget(QtWidgets.QWidget):
 
 		self.startThresholdInput.setEnabled(bool)
 		self.endThresholdInput.setEnabled(bool)
-
-
-
-
-
 
