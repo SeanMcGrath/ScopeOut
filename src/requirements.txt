@@ -1,0 +1,3 @@
+# ScopeOut Package Requirements
+visa
+matplotlib
