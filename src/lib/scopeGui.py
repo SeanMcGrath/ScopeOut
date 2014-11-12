@@ -15,19 +15,38 @@ class ThreadedClient(QtWidgets.QApplication):
 	"""
 	Launches the GUI and handles I/O.
 
-	GUI components reside within the body of the class itself, while actual serial communication
-	is in a separate thread.
+	GUI components reside within the body of the class itself. This client acquires and maniuplates
+	data from attached scopes and feeds it to the GUI. Various threads are created to carry out
+	USB communication asynchronously.
+
+	NOTES:
+		Initially, the client is not connected to any scopes, and searches for them continuously.
+		This occurs in the scopeFind thread. when a scope is found, this thread returns, and
+		periodic scope checking begins in the scopeCheck thread. A loss of connection should disable
+		the interface and initiate scopeFind again.
+
+		Creation of the widgets that make up the actual interface is done in the constructor of this 
+		class. All Qt Signals that facilitate the interaction of the client with these widgets are
+		connected in the __connectSignals method.
+
+		The actions of GUI components that interact with scopes and their data occur in the "event"
+		methods of this client.
+
+		It is essential that the Qt "signaling" mechanism be used to interact between threads
+		(The GUI is considered a thread indpendent of this client). Directly modifying the
+		appearance or contents of a GUI widget can cause a program crash; instead, emit the data
+		you wish to send as a signal which the widget will receive safely.
 	"""
 
-	lock = threading.Lock()
-	stopFlag = threading.Event()
-	acqStopFlag = threading.Event()
-	channelSetFlag = threading.Event()
-	continuousFlag = threading.Event()
+	lock = threading.Lock() # Lock for scope resource
+	stopFlag = threading.Event() # Event representing termination of program
+	acqStopFlag = threading.Event() # Event representing termination of continuous acquisition/
+	channelSetFlag = threading.Event() # Set when data channel has been successfully changed.
+	continuousFlag = threading.Event() # Set while program is finding scopes continuously
 	continuousFlag.set()
-	acquireFlag = threading.Event()
-	statusChange = QtCore.pyqtSignal(str)
-	scopeChange = QtCore.pyqtSignal(GenericOscilloscope)
+	acquireFlag = threading.Event() # Set during continuous acquisition when a waveform has been acquired.
+	statusChange = QtCore.pyqtSignal(str) # Signal sent to GUI waveform counter.
+	scopeChange = QtCore.pyqtSignal(GenericOscilloscope) # Signal sent to change the active oscilloscope.
 	
 	def __init__(self, *args):
 		"""
@@ -326,7 +345,8 @@ class ThreadedClient(QtWidgets.QApplication):
 		"""
 
 		self.waveList = []
-		self.__waveCount(len(self.waveList))
+		self.integralList = []
+		self.__waveCount(0)
 		self.plot.resetPlot()
 		self.__status('Data Reset.')
 

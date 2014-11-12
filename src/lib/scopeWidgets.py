@@ -60,9 +60,9 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 		exitAction.triggered.connect(self.closeEvent)
 
         # File->Save
-		saveAction = QtWidgets.QAction(QtGui.QIcon('save.png'), '&Save Waveform', self)
+		saveAction = QtWidgets.QAction(QtGui.QIcon('save.png'), '&Save Waveforms', self)
 		saveAction.setShortcut('Ctrl+S')
-		saveAction.setStatusTip('Save Waveform to .csv file')
+		saveAction.setStatusTip('Save Acquired Waveforms to .csv file')
 		saveAction.triggered.connect(self.saveCommand)
 
 		# Data->Reset
