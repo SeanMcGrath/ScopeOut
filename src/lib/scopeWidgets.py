@@ -435,6 +435,7 @@ class scopeControlWidget(QtWidgets.QWidget):
 			channels =list(map(str,range(1,self.scope.numChannels+1)))
 			self.channelComboBox.addItems(channels)
 			self.channelComboBox.addItem('All')
+			self.channelComboBox.setCurrentIndex(0)
 		else:
 			self.channelComboBox.clear()
 
@@ -471,13 +472,15 @@ class waveOptionsWidget(QtWidgets.QWidget):
 		self.startThresholdLabel = QtWidgets.QLabel("Peak Start Threshold", self)
 		self.endThresholdLabel = QtWidgets.QLabel("Peak End Threshold", self)
 		self.startThresholdInput = QtWidgets.QSpinBox(self)
-		self.startThresholdInput.setMaximum(100)
+		self.startThresholdInput.setMaximum(500)
 		self.startThresholdInput.setMinimum(0)
 		self.startThresholdInput.setSuffix('%')
+		self.startThresholdInput.setValue(10)
 		self.endThresholdInput = QtWidgets.QDoubleSpinBox(self)
-		self.endThresholdInput.setMaximum(100.0)
+		self.endThresholdInput.setMaximum(500.0)
 		self.endThresholdInput.setMinimum(0.0)
 		self.endThresholdInput.setSuffix('%')
+		self.endThresholdInput.setValue(100)
 
 		self.layout = QtWidgets.QGridLayout(self)
 		self.layout.addWidget(self.waveCounter,0,0)
