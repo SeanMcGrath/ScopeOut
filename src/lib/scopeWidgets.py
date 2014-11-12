@@ -381,6 +381,7 @@ class scopeControlWidget(QtWidgets.QWidget):
 		self.contAcqButton = QtWidgets.QPushButton('Acquire Continuously', self)
 		self.autoSetButton = QtWidgets.QPushButton('Autoset',self)
 		self.acqOnTrigButton = QtWidgets.QPushButton('Acquire on Trigger', self)
+		self.acqStopButton = QtWidgets.QPushButton('Stop Acquisition', self)
 		self.channelComboLabel = QtWidgets.QLabel('Data Channel',self)
 		self.channelComboBox = QtWidgets.QComboBox(self)
 		self.keepPlotCheckBox = QtWidgets.QCheckBox('Hold plot',self)
@@ -391,14 +392,15 @@ class scopeControlWidget(QtWidgets.QWidget):
 
 		self.layout = QtWidgets.QGridLayout(self)
 		self.layout.setRowMinimumHeight(1,100)
-		self.layout.setRowMinimumHeight(5,100)
+		self.layout.setRowMinimumHeight(7,100)
 		self.layout.addWidget(self.autoSetButton,0,0)
 		self.layout.addWidget(self.acqButton,2,0)
 		self.layout.addWidget(self.acqOnTrigButton,3,0)
 		self.layout.addWidget(self.contAcqButton,4,0)
+		self.layout.addWidget(self.acqStopButton,5,0)
 		self.layout.addWidget(self.keepPlotCheckBox,6,0)
-		self.layout.addWidget(self.channelComboLabel,7,0)
-		self.layout.addWidget(self.channelComboBox,8,0)
+		self.layout.addWidget(self.channelComboLabel,8,0)
+		self.layout.addWidget(self.channelComboBox,9,0)
 		self.setLayout(self.layout)
 
 	def setScope(self, scope):

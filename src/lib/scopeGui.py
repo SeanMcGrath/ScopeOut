@@ -21,6 +21,7 @@ class ThreadedClient(QtWidgets.QApplication):
 
 	lock = threading.Lock()
 	stopFlag = threading.Event()
+	acqStopFlag = threading.Event()
 	channelSetFlag = threading.Event()
 	continuousFlag = threading.Event()
 	continuousFlag.set()
@@ -70,6 +71,7 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.scopeControl.contAcqButton.clicked.connect(partial(self.__acqEvent,'cont'))
 		self.scopeControl.channelComboBox.currentIndexChanged.connect(self.__setChannel)
 		self.scopeControl.autoSetButton.clicked.connect(self.__autosetEvent)
+		self.scopeControl.acqStopButton.clicked.connect(self.acqStopFlag.set)
 		self.mainWindow.resetAction.triggered.connect(self.__resetEvent)
 		self.statusChange.connect(self.mainWindow.status)
 		self.scopeChange.connect(self.scopeControl.setScope)
@@ -123,6 +125,10 @@ class ThreadedClient(QtWidgets.QApplication):
 					self.logger.error(e)
 
 		def __immAcqThread():
+			"""
+			Contains instructions for acquiring and storing waveforms ASAP.
+			self.multiAcq serves as the flag to intiate multi-channel acquisition.
+			"""
 
 			self.channelSetFlag.clear()
 
@@ -180,6 +186,9 @@ class ThreadedClient(QtWidgets.QApplication):
 					self.mainWindow.update()
 
 		def __trigAcqThread():
+			"""
+			Waits for the scope to trigger, then acquires and stores waveforms in the same way as immAcq.
+			"""
 
 			self.lock.acquire()
 			trigState = self.activeScope.checkTrigger()
@@ -203,30 +212,40 @@ class ThreadedClient(QtWidgets.QApplication):
 				self.__status('Error on Waveform Acquisition')
 
 		def __contAcqThread():
+			"""
+			Continually runs trigAcqThread until the stop signal is received.
+			"""
 
-			while not self.stopFlag.isSet():
+			self.scopeControl.contAcqButton.setEnabled(False)
+
+			while not self.stopFlag.isSet() and not self.acqStopFlag.isSet():
 				self.acquireFlag.wait()
 				acqThread = threading.Thread(target=__trigAcqThread)
 				acqThread.start()
 				self.acquireFlag.clear()
 
+			self.acqStopFlag.clear()
+			self.__status("Continuous Acquisiton Halted.")
+			self.scopeControl.contAcqButton.setEnabled(True)
 
-		if mode == 'now':
+
+		if mode == 'now': # Single, Immediate acquisition
 			self.logger.info("Immediate acquisition Event")
 			acqThread = threading.Thread(target = __immAcqThread)
 			acqThread.start()
-		elif mode == 'trig':
+
+		elif mode == 'trig': # Acquire on trigger
 			self.__status("Waiting for trigger...")
 			self.logger.info("Acquisition on trigger event")
 			acqThread = threading.Thread(target=__trigAcqThread)
 			acqThread.start()
-		elif mode == 'cont':
+
+		elif mode == 'cont': # Continuous Acquisiton
 			self.logger.info('Continuous Acquisition Event')
 			self.__status("Acquiring Continuously...")
 			self.acquireFlag.set()
 			acqThread = threading.Thread(target = __contAcqThread)
-			acqThread.start()
-			
+			acqThread.start()			
 
 	def __scopeFind(self):
 		"""
