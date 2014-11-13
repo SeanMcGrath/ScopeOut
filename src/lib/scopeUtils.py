@@ -67,7 +67,10 @@ class ScopeFinder:
 			self.logger.info("%d VISA Resource(s) found", len(self.resources))
 			self.instruments = []
 			for resource in self.resources:
-				self.instruments.append(rm.get_instrument(resource))
+				try:
+					self.instruments.append(rm.get_instrument(resource))
+				except Exception as e:
+					self.logger.error(e)
 			for ins in self.instruments:
 
 				try:

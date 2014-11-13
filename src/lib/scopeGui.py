@@ -76,7 +76,6 @@ class ThreadedClient(QtWidgets.QApplication):
 			
 		scopeFinderThread = threading.Thread(target=self.__scopeFind, name='ScopeFind')
 		scopeFinderThread.start()
-		self.checkTimer = threading.Timer(5.0, self.__scopeCheck)
 
 		self.mainWindow.show()
 
@@ -305,6 +304,7 @@ class ThreadedClient(QtWidgets.QApplication):
 							self.__status('Found ' + str(self.activeScope))
 							self.mainWindow.setEnabled(True)
 							self.continuousFlag.clear()
+							self.checkTimer = threading.Timer(5.0, self.__scopeCheck)
 							self.checkTimer.start()
 
 		self.logger.info("Scope acquisition Thread ended")
