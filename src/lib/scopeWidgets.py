@@ -354,9 +354,9 @@ class WavePlotWidget(FigureCanvas):
 		self.fig.canvas.draw()
 
 
-class scopeControlWidget(QtWidgets.QWidget):
+class acqControlWidget(QtWidgets.QWidget):
 	"""
-	Widget containing scope interaction widgets; buttons, selectors, etc.
+	Widget containing acquisition control objects.
 	"""
 
 	def __init__(self, scope, *args):

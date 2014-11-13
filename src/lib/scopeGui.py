@@ -64,13 +64,13 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.integralList = []
 		self.histMode = False
 
-		self.scopeControl = sw.scopeControlWidget(None)
+		self.acqControl = sw.acqControlWidget(None)
 		self.plot = sw.WavePlotWidget()
 		self.waveOptions = sw.waveOptionsWidget()
 		
 		self.logger.info("All Widgets initialized")
 
-		self.mainWindow = sw.ScopeOutMainWindow([self.plot,self.scopeControl,self.waveOptions],self.__closeEvent,self.__saveWaveformEvent)
+		self.mainWindow = sw.ScopeOutMainWindow([self.plot,self.acqControl,self.waveOptions],self.__closeEvent,self.__saveWaveformEvent)
 
 		self.__connectSignals()
 			
@@ -84,15 +84,15 @@ class ThreadedClient(QtWidgets.QApplication):
 		Connects signals from subwidgets to appropriate slots.
 		"""
 
-		self.scopeControl.acqButton.clicked.connect(partial(self.__acqEvent,'now'))
-		self.scopeControl.acqOnTrigButton.clicked.connect(partial(self.__acqEvent,'trig'))
-		self.scopeControl.contAcqButton.clicked.connect(partial(self.__acqEvent,'cont'))
-		self.scopeControl.channelComboBox.currentIndexChanged.connect(self.__setChannel)
-		self.scopeControl.autoSetButton.clicked.connect(self.__autosetEvent)
-		self.scopeControl.acqStopButton.clicked.connect(self.acqStopFlag.set)
+		self.acqControl.acqButton.clicked.connect(partial(self.__acqEvent,'now'))
+		self.acqControl.acqOnTrigButton.clicked.connect(partial(self.__acqEvent,'trig'))
+		self.acqControl.contAcqButton.clicked.connect(partial(self.__acqEvent,'cont'))
+		self.acqControl.channelComboBox.currentIndexChanged.connect(self.__setChannel)
+		self.acqControl.autoSetButton.clicked.connect(self.__autosetEvent)
+		self.acqControl.acqStopButton.clicked.connect(self.acqStopFlag.set)
 		self.mainWindow.resetAction.triggered.connect(self.__resetEvent)
 		self.statusChange.connect(self.mainWindow.status)
-		self.scopeChange.connect(self.scopeControl.setScope)
+		self.scopeChange.connect(self.acqControl.setScope)
 		self.logger.info("Signals connected")
 
 	def __acqEvent(self, mode):
@@ -106,7 +106,7 @@ class ThreadedClient(QtWidgets.QApplication):
 			:Returns: True if plot is to be held, false otherwise
 			"""
 
-			held = self.scopeControl.plotHeld()
+			held = self.acqControl.plotHeld()
 			return held
 
 		def processWave(wave):
@@ -234,7 +234,7 @@ class ThreadedClient(QtWidgets.QApplication):
 			Continually runs trigAcqThread until the stop signal is received.
 			"""
 
-			self.scopeControl.contAcqButton.setEnabled(False)
+			self.acqControl.contAcqButton.setEnabled(False)
 
 			while not self.stopFlag.isSet() and not self.acqStopFlag.isSet():
 				self.acquireFlag.wait()
@@ -244,7 +244,7 @@ class ThreadedClient(QtWidgets.QApplication):
 
 			self.acqStopFlag.clear()
 			self.__status("Continuous Acquisiton Halted.")
-			self.scopeControl.contAcqButton.setEnabled(True)
+			self.acqControl.contAcqButton.setEnabled(True)
 
 
 		if mode == 'now': # Single, Immediate acquisition
@@ -361,7 +361,7 @@ class ThreadedClient(QtWidgets.QApplication):
 
 			try:
 				self.lock.acquire()
-				if self.scopeControl.scope.setDataChannel(channel+1):
+				if self.acqControl.scope.setDataChannel(channel+1):
 					self.logger.info('Successfully set data channel %d', channel+1)
 					self.__status('Data channel set to ' + str(channel + 1))
 				else:
@@ -379,7 +379,7 @@ class ThreadedClient(QtWidgets.QApplication):
 
 		self.channelSetFlag.clear()
 		self.logger.info('Attempting to set data channel %d', channel+1)
-		if channel in range(0,self.scopeControl.scope.numChannels):
+		if channel in range(0,self.acqControl.scope.numChannels):
 			self.multiAcq = False
 			setThread = threading.Thread(target=__channelThread)
 			setThread.start()
@@ -469,7 +469,7 @@ class ThreadedClient(QtWidgets.QApplication):
 			"""
 
 			self.lock.acquire()
-			self.scopeControl.scope.autoSet()
+			self.acqControl.scope.autoSet()
 			self.lock.release()
 
 		self.logger.info("Starting autoSet")
