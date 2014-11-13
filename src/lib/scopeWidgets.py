@@ -349,6 +349,7 @@ class WavePlotWidget(FigureCanvas):
 
 		self.fig.suptitle("Peak Histogram")
 		self.axes.clear()
+		self.axes.set_ylabel('Counts')
 		self.axes.hist(x,bins)
 		self.fig.canvas.draw()
 
@@ -431,6 +432,8 @@ class scopeControlWidget(QtWidgets.QWidget):
 		self.autoSetButton.setEnabled(bool)
 		self.channelComboBox.setEnabled(bool)
 		self.acqOnTrigButton.setEnabled(bool)
+		self.contAcqButton.setEnabled(bool)
+		self.acqStopButton.setEnabled(bool)
 		if bool and self.scope is not None:
 			channels =list(map(str,range(1,self.scope.numChannels+1)))
 			self.channelComboBox.addItems(channels)
