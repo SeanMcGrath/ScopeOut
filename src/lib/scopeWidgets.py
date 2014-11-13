@@ -6,7 +6,7 @@ Widget classes for Scopeout GUI.
 Sean McGrath, 2014
 """
 
-from PyQt5 import QtGui, QtWidgets
+from PyQt5 import QtGui, QtWidgets, QtCore
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from lib.oscilloscopes import GenericOscilloscope
@@ -36,9 +36,13 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 
 		self.central = QtWidgets.QWidget(self)
 		self.layout = QtWidgets.QGridLayout(self.central)
-		self.layout.addWidget(self.widgets[0],0,0)
-		self.layout.addWidget(self.widgets[1],0,1)
-		self.layout.addWidget(self.widgets[2],1,0)
+		self.layout.setSpacing(0)
+		self.layout.setContentsMargins(0,0,0,0)
+		self.layout.setColumnMinimumWidth(0,100)
+		self.layout.addWidget(self.widgets[3],0,0,-1,1)
+		self.layout.addWidget(self.widgets[0],0,1)
+		self.layout.addWidget(self.widgets[1],0,2)
+		self.layout.addWidget(self.widgets[2],2,1)
 		self.central.setLayout(self.layout)
 		self.setCentralWidget(self.central)
 
@@ -226,9 +230,15 @@ class WavePlotWidget(FigureCanvas):
 
 		self.logger = logging.getLogger("ScopeOut.scopeWidgets.WavePlotWidget")
 		self.fig = Figure()
-		self.fig.suptitle("Waveform Capture")
+		self.fig.suptitle("Waveform Capture", color='white')
+		self.fig.patch.set_color('#3C3C3C')
 		self.axes = self.fig.add_subplot(111)
-		FigureCanvas.__init__(self,self.fig) 
+		[t.set_color('white') for t in self.axes.yaxis.get_ticklabels()]
+		[t.set_color('white') for t in self.axes.xaxis.get_ticklabels()]
+		self.axes.xaxis.label.set_color('white')
+		self.axes.yaxis.label.set_color('white')
+		FigureCanvas.__init__(self,self.fig)
+		self.setContentsMargins(5,5,5,5)
 		self.show()
 
 	def showPlot(self, xData, xLabel, yData, yLabel, clear):
@@ -353,7 +363,6 @@ class WavePlotWidget(FigureCanvas):
 		self.axes.hist(x,bins)
 		self.fig.canvas.draw()
 
-
 class acqControlWidget(QtWidgets.QWidget):
 	"""
 	Widget containing acquisition control objects.
@@ -366,7 +375,7 @@ class acqControlWidget(QtWidgets.QWidget):
 		Parameters
 			:scope: The oscilloscope to be controlled by this widget.
 		"""
-		self.logger = logging.getLogger('ScopeOut.scopeWidgets.scopeControlWidget')
+		self.logger = logging.getLogger('ScopeOut.scopeWidgets.acqControlWidget')
 
 		self.scope = scope
 
@@ -530,4 +539,25 @@ class waveOptionsWidget(QtWidgets.QWidget):
 
 		self.startThresholdInput.setEnabled(bool)
 		self.endThresholdInput.setEnabled(bool)
+
+class scopeControlWidget(QtWidgets.QWidget):
+	"""
+	Widget to display and modify oscilloscope parameters.
+	"""
+
+	def __init__(self, scope, *args):
+		"""
+		constructor
+		"""
+		self.logger = logging.getLogger('ScopeOut.scopeWidgets.scopeControlWidget')
+		QtWidgets.QWidget.__init__(self, *args)
+		self.setBackgroundRole(QtGui.QPalette.Base)
+		palette = QtGui.QPalette()
+		palette.setColor(self.backgroundRole(),QtGui.QColor('#1E1E1E'))
+		self.setPalette(palette)
+		self.setAutoFillBackground(True)
+		self.layout = QtWidgets.QGridLayout(self)
+		self.layout.addWidget(QtWidgets.QLabel("Hello"))
+		self.setLayout(self.layout)
+		self.show()
 

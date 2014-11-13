@@ -65,12 +65,13 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.histMode = False
 
 		self.acqControl = sw.acqControlWidget(None)
+		self.scopeControl = sw.scopeControlWidget(None)
 		self.plot = sw.WavePlotWidget()
 		self.waveOptions = sw.waveOptionsWidget()
 		
 		self.logger.info("All Widgets initialized")
 
-		self.mainWindow = sw.ScopeOutMainWindow([self.plot,self.acqControl,self.waveOptions],self.__closeEvent,self.__saveWaveformEvent)
+		self.mainWindow = sw.ScopeOutMainWindow([self.plot,self.acqControl,self.waveOptions,self.scopeControl],self.__closeEvent,self.__saveWaveformEvent)
 
 		self.__connectSignals()
 			
