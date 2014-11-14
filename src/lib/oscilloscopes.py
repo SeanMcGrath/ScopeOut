@@ -5,7 +5,7 @@ Oscilloscope
 Classes to represent, control, and read out VISA Oscilloscopes.
 """
 
-import visa, numpy as np, matplotlib.pyplot as plt
+import visa, numpy as np
 import queue, logging
 
 class GenericOscilloscope:
@@ -229,26 +229,6 @@ class TDS2024B(GenericOscilloscope):
 			return self.waveformQueue.get()
 		else:
 			return None
-
-	def plotCurve(self):
-		"""
-		Create and display a pyplot of captured waveform.
-		"""
-
-		curve = self.getCurve()
-		if(self.waveformSet):
-			xArray = self.getXArray()
-			unitSet = self.autosetUnits(xArray)
-			xArray = unitSet[0]
-			self.xUnit = unitSet[1] + self.xUnit
-			unitSet = self.autosetUnits(curve)
-			curve = unitSet[0]
-			self.yUnit = unitSet[1] + self.yUnit
-			plt.plot(xArray,curve)
-			plt.title("Waveform Capture")
-			plt.ylabel(self.yUnit)
-			plt.xlabel(self.xUnit)
-			plt.show()
 
 	def autosetUnits(self, axisArray):
 		"""
