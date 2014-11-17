@@ -38,11 +38,9 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 		self.layout = QtWidgets.QGridLayout(self.central)
 		self.layout.setSpacing(0)
 		self.layout.setContentsMargins(0,0,0,0)
-		self.layout.setColumnMinimumWidth(0,100)
-		self.layout.addWidget(self.widgets[3],0,0,-1,1)
-		self.layout.addWidget(self.widgets[0],0,1)
-		self.layout.addWidget(self.widgets[1],0,2)
-		self.layout.addWidget(self.widgets[2],2,1)
+		self.layout.addWidget(self.widgets[0],0,0)
+		self.layout.addWidget(self.widgets[1],0,1)
+		self.layout.addWidget(self.widgets[2],2,0)
 		self.central.setLayout(self.layout)
 		self.setCentralWidget(self.central)
 
@@ -539,54 +537,3 @@ class waveOptionsWidget(QtWidgets.QWidget):
 
 		self.startThresholdInput.setEnabled(bool)
 		self.endThresholdInput.setEnabled(bool)
-
-class scopeControlWidget(QtWidgets.QWidget):
-	"""
-	Widget to display and modify oscilloscope parameters.
-	"""
-
-	def __init__(self, scope, *args):
-		"""
-		constructor
-		"""
-		self.logger = logging.getLogger('ScopeOut.scopeWidgets.scopeControlWidget')
-		self.scope = scope
-		QtWidgets.QWidget.__init__(self, *args)
-		self.setBackgroundRole(QtGui.QPalette.Base)
-		palette = QtGui.QPalette()
-		palette.setColor(self.backgroundRole(),QtGui.QColor('#1E1E1E'))
-		self.setPalette(palette)
-		self.setAutoFillBackground(True)
-		self.initWidgets()
-		self.show()
-
-	def initWidgets(self):
-		"""
-		Set up subwidgets.
-		"""
-
-		self.scopeName = QtWidgets.QLabel(str(self.scope),self)
-		self.numPoints = QtWidgets.QLabel("Number of Points",self)
-		self.layout = QtWidgets.QGridLayout(self)
-		self.layout.addWidget(self.scopeName,0,0)
-		self.layout.addWidget(self.numPoints,1,0)
-		self.setLayout(self.layout)
-
-	def setScope(self, scope):
-		"""
-		update the scope object.
-		"""
-
-		self.scope = scope
-		self.update(None)
-
-	def update(self, wave):
-		"""
-		Update the display.
-		"""
-
-		self.scopeName.setText(self.scope.make + ' ' + self.scope.model)
-		if wave is not None:
-			print('Baa')
-			self.numPoints.setText(str(wave['numberOfPoints']))
-

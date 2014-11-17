@@ -47,8 +47,6 @@ class ThreadedClient(QtWidgets.QApplication):
 	acquireFlag = threading.Event() # Set during continuous acquisition when a waveform has been acquired.
 	statusChange = QtCore.pyqtSignal(str) # Signal sent to GUI waveform counter.
 	scopeChange = QtCore.pyqtSignal(GenericOscilloscope) # Signal sent to change the active oscilloscope.
-	waveSig = QtCore.pyqtSignal(dict) # Signal containing waveform object
-
 	def __init__(self, *args):
 		"""
 		Constructor
@@ -66,13 +64,12 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.histMode = False
 
 		self.acqControl = sw.acqControlWidget(None)
-		self.scopeControl = sw.scopeControlWidget(None)
 		self.plot = sw.WavePlotWidget()
 		self.waveOptions = sw.waveOptionsWidget()
 		
 		self.logger.info("All Widgets initialized")
 
-		self.mainWindow = sw.ScopeOutMainWindow([self.plot,self.acqControl,self.waveOptions,self.scopeControl],self.__closeEvent,self.__saveWaveformEvent)
+		self.mainWindow = sw.ScopeOutMainWindow([self.plot,self.acqControl,self.waveOptions],self.__closeEvent,self.__saveWaveformEvent)
 
 		self.__connectSignals()
 			
@@ -95,8 +92,6 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.mainWindow.resetAction.triggered.connect(self.__resetEvent)
 		self.statusChange.connect(self.mainWindow.status)
 		self.scopeChange.connect(self.acqControl.setScope)
-		self.scopeChange.connect(self.scopeControl.setScope)
-		self.waveSig.connect(self.scopeControl.update)
 		self.logger.info("Signals connected")
 
 	def __acqEvent(self, mode):

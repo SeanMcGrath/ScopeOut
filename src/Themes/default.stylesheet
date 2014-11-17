@@ -62,13 +62,3 @@ acqControlWidget {
   max-width: 200px;
   padding: 10px;
 }
-
-scopeControlWidget {
-  min-width: 250px;
-  min-height: 200px;
-}
-
-scopeControlWidget QLabel {
-  min-width: 200px;
-  qproperty-alignment: AlignLeft;
-}
