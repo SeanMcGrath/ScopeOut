@@ -550,14 +550,43 @@ class scopeControlWidget(QtWidgets.QWidget):
 		constructor
 		"""
 		self.logger = logging.getLogger('ScopeOut.scopeWidgets.scopeControlWidget')
+		self.scope = scope
 		QtWidgets.QWidget.__init__(self, *args)
 		self.setBackgroundRole(QtGui.QPalette.Base)
 		palette = QtGui.QPalette()
 		palette.setColor(self.backgroundRole(),QtGui.QColor('#1E1E1E'))
 		self.setPalette(palette)
 		self.setAutoFillBackground(True)
-		self.layout = QtWidgets.QGridLayout(self)
-		self.layout.addWidget(QtWidgets.QLabel("Hello"))
-		self.setLayout(self.layout)
+		self.initWidgets()
 		self.show()
+
+	def initWidgets(self):
+		"""
+		Set up subwidgets.
+		"""
+
+		self.scopeName = QtWidgets.QLabel(str(self.scope),self)
+		self.numPoints = QtWidgets.QLabel("Number of Points",self)
+		self.layout = QtWidgets.QGridLayout(self)
+		self.layout.addWidget(self.scopeName,0,0)
+		self.layout.addWidget(self.numPoints,1,0)
+		self.setLayout(self.layout)
+
+	def setScope(self, scope):
+		"""
+		update the scope object.
+		"""
+
+		self.scope = scope
+		self.update(None)
+
+	def update(self, wave):
+		"""
+		Update the display.
+		"""
+
+		self.scopeName.setText(self.scope.make + ' ' + self.scope.model)
+		if wave is not None:
+			print('Baa')
+			self.numPoints.setText(str(wave['numberOfPoints']))
 

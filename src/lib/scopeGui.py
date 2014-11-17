@@ -40,14 +40,15 @@ class ThreadedClient(QtWidgets.QApplication):
 
 	lock = threading.Lock() # Lock for scope resource
 	stopFlag = threading.Event() # Event representing termination of program
-	acqStopFlag = threading.Event() # Event representing termination of continuous acquisition/
+	acqStopFlag = threading.Event() # Event representing termination of continuous acquisition
 	channelSetFlag = threading.Event() # Set when data channel has been successfully changed.
 	continuousFlag = threading.Event() # Set while program is finding scopes continuously
 	continuousFlag.set()
 	acquireFlag = threading.Event() # Set during continuous acquisition when a waveform has been acquired.
 	statusChange = QtCore.pyqtSignal(str) # Signal sent to GUI waveform counter.
 	scopeChange = QtCore.pyqtSignal(GenericOscilloscope) # Signal sent to change the active oscilloscope.
-	
+	waveSig = QtCore.pyqtSignal(dict) # Signal containing waveform object
+
 	def __init__(self, *args):
 		"""
 		Constructor
@@ -94,6 +95,8 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.mainWindow.resetAction.triggered.connect(self.__resetEvent)
 		self.statusChange.connect(self.mainWindow.status)
 		self.scopeChange.connect(self.acqControl.setScope)
+		self.scopeChange.connect(self.scopeControl.setScope)
+		self.waveSig.connect(self.scopeControl.update)
 		self.logger.info("Signals connected")
 
 	def __acqEvent(self, mode):
@@ -136,6 +139,7 @@ class ThreadedClient(QtWidgets.QApplication):
 					if self.__histogramMode() and len(self.integralList)>1:
 						self.plot.showHist(self.integralList)
 					self.waveList.append(wave);
+					self.waveSig.emit(wave)
 					self.__waveCount(len(self.waveList))
 					if self.waveOptions.peakStart() and start >= 0 and not self.__histogramMode():
 						self.plot.vertLines([ wave['xData'][start], wave['xData'][end] ])
