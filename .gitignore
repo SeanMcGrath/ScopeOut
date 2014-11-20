@@ -41,3 +41,6 @@ Icon
 
 # log files
 **/*.log
+
+freqs.csv
+getFreqs.py

@@ -269,6 +269,13 @@ class TDS2024B(GenericOscilloscope):
 
 		return self.__getParam("TRIG:STATE?")
 
+	def getTrigFrequency(self):
+		"""
+		Read the trigger frequency.
+		"""
+
+		return self.__getParam("TRIG:MAIN:FREQ?")
+		
 	def setDataChannel(self, channel):
 		"""
 		Set data channel of TDS2024B.
