@@ -35,7 +35,8 @@ class GenericOscilloscope:
 		try:
 			self.scope.write(command)
 			return self.scope.read().strip()
-		except Exception:
+		except Exception as e:
+			print(e)
 			return False
 
 

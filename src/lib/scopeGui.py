@@ -65,7 +65,7 @@ class ThreadedClient(QtWidgets.QApplication):
 
 		self.acqControl = sw.acqControlWidget(None)
 		self.plot = sw.WavePlotWidget()
-		self.waveOptions = sw.waveOptionsWidget()
+		self.waveOptions = sw.waveOptionsTabWidget()
 		
 		self.logger.info("All Widgets initialized")
 

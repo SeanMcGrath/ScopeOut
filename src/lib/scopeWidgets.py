@@ -458,16 +458,17 @@ class acqControlWidget(QtWidgets.QWidget):
 
 		return self.keepPlotCheckBox.isChecked()
 
-class waveOptionsWidget(QtWidgets.QWidget):
+class smartPeakTab(QtWidgets.QWidget):
 	"""
-	Widget containing information and settings for captured waveforms.
+	Widget controlling smart peak detection algorithm.
 	"""
+
 	def __init__(self, *args):
 		"""
 		constructor.
 		"""
 
-		self.logger = logging.getLogger('ScopeOut.scopeWidgets.waveOptionsWidget')
+		self.logger = logging.getLogger('ScopeOut.scopeWidgets.smartPeakTab')
 		QtWidgets.QWidget.__init__(self, *args)
 		self.initWidgets()
 		self.show()
@@ -477,8 +478,7 @@ class waveOptionsWidget(QtWidgets.QWidget):
 		Set up sub-widgets.
 		"""
 
-		self.waveCounter = QtWidgets.QLabel("Waveforms acquired: 0", self)
-		self.showStart = QtWidgets.QCheckBox('Show Peak Window', self)
+		
 		self.startThresholdLabel = QtWidgets.QLabel("Peak Start Threshold", self)
 		self.endThresholdLabel = QtWidgets.QLabel("Peak End Threshold", self)
 		self.startThresholdInput = QtWidgets.QSpinBox(self)
@@ -493,23 +493,12 @@ class waveOptionsWidget(QtWidgets.QWidget):
 		self.endThresholdInput.setValue(100)
 
 		self.layout = QtWidgets.QGridLayout(self)
-		self.layout.addWidget(self.waveCounter,0,0)
-		self.layout.addWidget(self.showStart,0,1)
-		self.layout.addWidget(self.startThresholdLabel,0,2)
-		self.layout.addWidget(self.startThresholdInput,0,3)
-		self.layout.addWidget(self.endThresholdLabel,1,2)
-		self.layout.addWidget(self.endThresholdInput,1,3)
+
+		self.layout.addWidget(self.startThresholdLabel,0,0)
+		self.layout.addWidget(self.startThresholdInput,0,1)
+		self.layout.addWidget(self.endThresholdLabel,1,0)
+		self.layout.addWidget(self.endThresholdInput,1,1)
 		self.setLayout(self.layout)
-
-	def updateCount(self, waves):
-		"""
-		Updates the displayed count of acquired waves.
-
-		Parameters:
-			:waves: the integer number of acquired waves.
-		"""
-
-		self.waveCounter.setText("Waveforms acquired: " + str(waves))
 
 	def getThresholds(self):
 		"""
@@ -519,13 +508,6 @@ class waveOptionsWidget(QtWidgets.QWidget):
 		"""
 
 		return [self.startThresholdInput.value()/100.0, self.endThresholdInput.value()/100.0]
-
-	def peakStart(self):
-		"""
-		Returns checked value of "show peak start" box.
-		"""
-
-		return self.showStart.isChecked()
 
 	def setEnabled(self, bool):
 		"""
@@ -537,3 +519,49 @@ class waveOptionsWidget(QtWidgets.QWidget):
 
 		self.startThresholdInput.setEnabled(bool)
 		self.endThresholdInput.setEnabled(bool)
+
+
+class waveOptionsTabWidget(QtWidgets.QWidget):
+	"""
+	Manages Tabbed display of wave options widgets.
+	"""
+
+	def __init__(self, *args):
+		"""
+		Constructor
+		"""
+
+		self.logger = logging.getLogger('ScopeOut.scopeWidgets.waveOptionsTabWidget')
+		QtWidgets.QWidget.__init__(self, *args)
+
+		self.waveCounter = QtWidgets.QLabel("Waveforms acquired: 0", self)
+		self.showWindow = QtWidgets.QCheckBox('Show Peak Window', self)
+
+		self.tabManager = QtWidgets.QTabWidget(self)
+		self.smart = smartPeakTab(None)
+		self.tabManager.addTab(self.smart, 'Smart')
+		self.tabManager.addTab(QtWidgets.QWidget(),'dummy')
+
+		self.layout = QtWidgets.QGridLayout(self)
+
+		self.layout.addWidget(self.waveCounter,0,0)
+		self.layout.addWidget(self.showWindow,1,0)
+		self.layout.addWidget(self.tabManager,0,1,2,1)
+		self.show()
+
+	def updateCount(self, waves):
+		"""
+		Updates the displayed count of acquired waves.
+
+		Parameters:
+			:waves: the integer number of acquired waves.
+		"""
+
+		self.waveCounter.setText("Waveforms acquired: " + str(waves))
+
+	def peakStart(self):
+		"""
+		Returns checked value of "show peak start" box.
+		"""
+
+		return self.showWindow.isChecked()

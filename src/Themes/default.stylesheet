@@ -6,6 +6,10 @@ QWidget:disabled {
     color: gray;
 }
 
+QTabWidget::pane {
+  border: 1px solid black;
+}
+
 QLabel { 
     color: white;
     background-color: #1E1E1E;
@@ -30,10 +34,10 @@ QCheckBox {
   padding: 8px;
 }
 
-QSpinBox {
+QSpinBox, QDoubleSpinBox {
 	background-color: white;
-    width: 10em;
-    max-width: 10em;
+  width: 10em;
+  max-width: 10em;
 }
 
 QComboBox {
