@@ -1,5 +1,5 @@
 """
-Oscilloscope
+Oscilloscopes
 ================
 
 Classes to represent, control, and read out VISA Oscilloscopes.
