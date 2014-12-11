@@ -328,6 +328,12 @@ class WavePlotWidget(FigureCanvas):
 		"""
 
 		self.axes.clear()
+		self.fig.patch.set_color('#3C3C3C')
+		self.axes = self.fig.add_subplot(111)
+		[t.set_color('white') for t in self.axes.yaxis.get_ticklabels()]
+		[t.set_color('white') for t in self.axes.xaxis.get_ticklabels()]
+		self.axes.xaxis.label.set_color('white')
+		self.axes.yaxis.label.set_color('white')
 		self.fig.canvas.draw()
 		self.logger.info("Plot Reset")
 
@@ -539,8 +545,10 @@ class waveOptionsTabWidget(QtWidgets.QWidget):
 
 		self.tabManager = QtWidgets.QTabWidget(self)
 		self.smart = smartPeakTab(None)
-		self.tabManager.addTab(self.smart, 'Smart')
-		self.tabManager.addTab(QtWidgets.QWidget(),'dummy')
+
+		self.tabTitles = ['Smart', 'Dummy']
+		self.tabManager.addTab(self.smart, self.tabTitles[0])
+		self.tabManager.addTab(QtWidgets.QWidget(),self.tabTitles[1])
 
 		self.layout = QtWidgets.QGridLayout(self)
 
@@ -565,3 +573,11 @@ class waveOptionsTabWidget(QtWidgets.QWidget):
 		"""
 
 		return self.showWindow.isChecked()
+
+
+	def currentWidget(self):
+		"""
+		Get currently displayed tab
+		"""
+
+		return self.tabManager.currentWidget()

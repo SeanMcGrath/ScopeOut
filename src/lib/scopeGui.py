@@ -100,6 +100,16 @@ class ThreadedClient(QtWidgets.QApplication):
 		"""
 		Executed to collect waveform data from scope.
 		"""
+
+		def peakFindMode():
+			"""
+			Determine the desired method of peak detection from the status of the tab options widget.
+			"""
+			mode = self.waveOptions.tabManager.tabText(self.waveOptions.tabManager.currentIndex())
+			print(mode)
+			return mode
+
+
 		def plotHeld():
 			"""
 			Check if 'plot hold' option is selected.
@@ -127,7 +137,8 @@ class ThreadedClient(QtWidgets.QApplication):
 					self.__status('Waveform acquired on ' +wave['dataChannel'])
 					if not self.__histogramMode():
 						self.plot.showPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'],plotHeld())
-					start, end = WU.findPeakEnds(wave, self.waveOptions.getThresholds()[0], self.waveOptions.getThresholds()[1])
+					if peakFindMode() == 'Smart':
+						start, end = WU.smartFindPeakEnds(wave, self.waveOptions.currentWidget().getThresholds()[0], self.waveOptions.currentWidget().getThresholds()[1])
 					wave['peakStart'] = start
 					wave['peakEnd'] = end
 					integral = WU.integratePeak(wave)
@@ -135,8 +146,7 @@ class ThreadedClient(QtWidgets.QApplication):
 					self.integralList.append(integral)
 					if self.__histogramMode() and len(self.integralList)>1:
 						self.plot.showHist(self.integralList)
-					self.waveList.append(wave);
-					self.waveSig.emit(wave)
+					self.waveList.append(wave)
 					self.__waveCount(len(self.waveList))
 					if self.waveOptions.peakStart() and start >= 0 and not self.__histogramMode():
 						self.plot.vertLines([ wave['xData'][start], wave['xData'][end] ])
