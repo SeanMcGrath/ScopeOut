@@ -531,6 +531,8 @@ class FixedPeakTab(QtWidgets.QWidget):
 	Widget controlling smart peak detection algorithm.
 	"""
 
+	units = {'S': 1, 'mS': 1e-3, 'uS': 1e-6, 'nS': 1e-9}
+
 	def __init__(self, *args):
 		"""
 		constructor.
@@ -545,26 +547,29 @@ class FixedPeakTab(QtWidgets.QWidget):
 		"""
 		Set up sub-widgets.
 		"""
-
 		
 		self.startTimeLabel = QtWidgets.QLabel("Peak Start Time", self)
 		self.peakWidthLabel = QtWidgets.QLabel("Peak Width", self)
 		self.startTimeInput = QtWidgets.QDoubleSpinBox(self)
 		self.startTimeInput.setMaximum(500)
 		self.startTimeInput.setMinimum(0)
-		self.startTimeInput.setSuffix('s')
 		self.startTimeInput.setValue(10)
+		self.startTimeUnits = QtWidgets.QComboBox(self)
+		self.startTimeUnits.addItems(self.units.keys())
 		self.peakWidthInput = QtWidgets.QDoubleSpinBox(self)
 		self.peakWidthInput.setMinimum(0)
-		self.peakWidthInput.setSuffix('s')
 		self.peakWidthInput.setValue(10)
+		self.peakWidthUnits = QtWidgets.QComboBox(self)
+		self.peakWidthUnits.addItems(self.units.keys())
 
 		self.layout = QtWidgets.QGridLayout(self)
 
 		self.layout.addWidget(self.startTimeLabel,0,0)
 		self.layout.addWidget(self.startTimeInput,0,1)
+		self.layout.addWidget(self.startTimeUnits,0,2)
 		self.layout.addWidget(self.peakWidthLabel,1,0)
 		self.layout.addWidget(self.peakWidthInput,1,1)
+		self.layout.addWidget(self.peakWidthUnits,1,2)
 		self.setLayout(self.layout)
 
 	def getParameters(self):
@@ -574,7 +579,7 @@ class FixedPeakTab(QtWidgets.QWidget):
 		:Returns: An array containting the start threshold followed by the end threshold.
 		"""
 
-		return [self.startThresholdInput.value()/100.0, self.endThresholdInput.value()/100.0]
+		return [self.startTimeInput.value()*self.units[self.startTimeUnits.currentText()], self.peakWidthInput.value()*self.units[self.peakWidthUnits.currentText()]]
 
 	def setEnabled(self, bool):
 		"""
