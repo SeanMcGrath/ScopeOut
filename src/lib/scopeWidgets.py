@@ -464,7 +464,7 @@ class acqControlWidget(QtWidgets.QWidget):
 
 		return self.keepPlotCheckBox.isChecked()
 
-class smartPeakTab(QtWidgets.QWidget):
+class SmartPeakTab(QtWidgets.QWidget):
 	"""
 	Widget controlling smart peak detection algorithm.
 	"""
@@ -474,7 +474,7 @@ class smartPeakTab(QtWidgets.QWidget):
 		constructor.
 		"""
 
-		self.logger = logging.getLogger('ScopeOut.scopeWidgets.smartPeakTab')
+		self.logger = logging.getLogger('ScopeOut.scopeWidgets.SmartPeakTab')
 		QtWidgets.QWidget.__init__(self, *args)
 		self.initWidgets()
 		self.show()
@@ -506,7 +506,68 @@ class smartPeakTab(QtWidgets.QWidget):
 		self.layout.addWidget(self.endThresholdInput,1,1)
 		self.setLayout(self.layout)
 
-	def getThresholds(self):
+	def getParameters(self):
+		"""
+		Returns the peak thresholds as decimals.
+
+		:Returns: An array containting the start threshold followed by the end threshold.
+		"""
+
+		return [self.startThresholdInput.value()/100.0, self.endThresholdInput.value()/100.0]
+
+	def setEnabled(self, bool):
+		"""
+		Enable/disable this widget.
+
+		Parameters:
+			:bool: True to enable, false to disable.
+		"""
+
+		self.startThresholdInput.setEnabled(bool)
+		self.endThresholdInput.setEnabled(bool)
+
+class FixedPeakTab(QtWidgets.QWidget):
+	"""
+	Widget controlling smart peak detection algorithm.
+	"""
+
+	def __init__(self, *args):
+		"""
+		constructor.
+		"""
+
+		self.logger = logging.getLogger('ScopeOut.scopeWidgets.FixedPeakTab')
+		QtWidgets.QWidget.__init__(self, *args)
+		self.initWidgets()
+		self.show()
+
+	def initWidgets(self):
+		"""
+		Set up sub-widgets.
+		"""
+
+		
+		self.startTimeLabel = QtWidgets.QLabel("Peak Start Time", self)
+		self.peakWidthLabel = QtWidgets.QLabel("Peak Width", self)
+		self.startTimeInput = QtWidgets.QDoubleSpinBox(self)
+		self.startTimeInput.setMaximum(500)
+		self.startTimeInput.setMinimum(0)
+		self.startTimeInput.setSuffix('s')
+		self.startTimeInput.setValue(10)
+		self.peakWidthInput = QtWidgets.QDoubleSpinBox(self)
+		self.peakWidthInput.setMinimum(0)
+		self.peakWidthInput.setSuffix('s')
+		self.peakWidthInput.setValue(10)
+
+		self.layout = QtWidgets.QGridLayout(self)
+
+		self.layout.addWidget(self.startTimeLabel,0,0)
+		self.layout.addWidget(self.startTimeInput,0,1)
+		self.layout.addWidget(self.peakWidthLabel,1,0)
+		self.layout.addWidget(self.peakWidthInput,1,1)
+		self.setLayout(self.layout)
+
+	def getParameters(self):
 		"""
 		Returns the peak thresholds as decimals.
 
@@ -529,7 +590,7 @@ class smartPeakTab(QtWidgets.QWidget):
 
 class waveOptionsTabWidget(QtWidgets.QWidget):
 	"""
-	Manages Tabbed display of wave options widgets.
+	Manages Tabbed display of wave options widgets. Also holds wave counter and peak window checkbox
 	"""
 
 	def __init__(self, *args):
@@ -544,11 +605,12 @@ class waveOptionsTabWidget(QtWidgets.QWidget):
 		self.showWindow = QtWidgets.QCheckBox('Show Peak Window', self)
 
 		self.tabManager = QtWidgets.QTabWidget(self)
-		self.smart = smartPeakTab(None)
+		self.smart = SmartPeakTab(None)
+		self.fixed = FixedPeakTab(None)
 
-		self.tabTitles = ['Smart', 'Dummy']
+		self.tabTitles = ['Smart', 'Fixed']
 		self.tabManager.addTab(self.smart, self.tabTitles[0])
-		self.tabManager.addTab(QtWidgets.QWidget(),self.tabTitles[1])
+		self.tabManager.addTab(self.fixed,self.tabTitles[1])
 
 		self.layout = QtWidgets.QGridLayout(self)
 
@@ -581,3 +643,17 @@ class waveOptionsTabWidget(QtWidgets.QWidget):
 		"""
 
 		return self.tabManager.currentWidget()
+
+	def getParameters(self):
+		"""
+		Fetch the relevant peak-detection parameters from the current tab
+		"""
+
+		return self.currentWidget().getParameters()
+
+	def getMode(self):
+		"""
+		Fetch a string indicating the current peak detection mode
+		"""
+
+		return self.tabTitles[self.tabManager.currentIndex()]

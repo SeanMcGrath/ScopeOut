@@ -105,10 +105,8 @@ class ThreadedClient(QtWidgets.QApplication):
 			"""
 			Determine the desired method of peak detection from the status of the tab options widget.
 			"""
-			mode = self.waveOptions.tabManager.tabText(self.waveOptions.tabManager.currentIndex())
-			print(mode)
+			mode = self.waveOptions.getMode()
 			return mode
-
 
 		def plotHeld():
 			"""
@@ -129,7 +127,7 @@ class ThreadedClient(QtWidgets.QApplication):
 			"""
 
 			if wave['error'] is not None:
-				self.logger.debug("Wave error: %s", wave['error'])
+				self.logger.error("Wave error: %s", wave['error'])
 				self.__status(wave['error'])
 			else:
 				try:
@@ -138,7 +136,9 @@ class ThreadedClient(QtWidgets.QApplication):
 					if not self.__histogramMode():
 						self.plot.showPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'],plotHeld())
 					if peakFindMode() == 'Smart':
-						start, end = WU.smartFindPeakEnds(wave, self.waveOptions.currentWidget().getThresholds()[0], self.waveOptions.currentWidget().getThresholds()[1])
+						start, end = WU.smartFindPeakEnds(wave, self.waveOptions.getParameters())
+					elif peakFindMode() == 'Fixed':
+						start, end = WU.smartFindPeakEnds(wave, self.waveOptions.getParameters())
 					wave['peakStart'] = start
 					wave['peakEnd'] = end
 					integral = WU.integratePeak(wave)

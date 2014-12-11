@@ -9,7 +9,7 @@ import logging, numpy as np
 
 logger = logging.getLogger("waveUtils")
 
-def smartFindPeakEnds(wave, t1, t2):
+def smartFindPeakEnds(wave, thresholds):
 	"""
 	Finds and returns the indices at which the wave peak begins and ends, with
 	sensitivity determined by the thresholds.
@@ -17,10 +17,12 @@ def smartFindPeakEnds(wave, t1, t2):
 	Parameters:
 		:wave: the dictionary containing the wave information.
 		:t1: the fractional increase in y value defined as the beginning of a wave.
-		:t2: The threshold within which the valuen of the wave must remain for the peak to be considered over.
+		:t2: The threshold within which the value of the wave must remain for the peak to be considered over.
 	
 	:Returns: The index of the start of the peak (-1 if not found) and the index of the end of the peak (-1 if not found).
 	"""
+	t1 = thresholds[0]
+	t2= thresholds[1]
 
 	try:
 		startIndex = -1
