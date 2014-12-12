@@ -239,7 +239,7 @@ class WavePlotWidget(FigureCanvas):
 		self.setContentsMargins(5,5,5,5)
 		self.show()
 
-	def showPlot(self, xData, xLabel, yData, yLabel, clear):
+	def showPlot(self, xData, xLabel, yData, yLabel, hold):
 		'''
 		Fill plot with data and draw it on the screen.
 
@@ -255,11 +255,11 @@ class WavePlotWidget(FigureCanvas):
 		:yLabel:
 			string to label y axis
 
-		:clear:
-			True to draw new plot, false to add to existing plot
+		:hold:
+			True to hold existing plot, false to make new plot
 		'''
 
-		if not clear: self.axes.clear()
+		if not hold: self.resetPlot()
 		xData, xPrefix = self.autosetUnits(xData)
 		yData, yPrefix = self.autosetUnits(yData)
 		self.axes.set_ylabel(yPrefix + yLabel)
@@ -576,7 +576,7 @@ class FixedPeakTab(QtWidgets.QWidget):
 		"""
 		Returns the peak thresholds as decimals.
 
-		:Returns: An array containting the start threshold followed by the end threshold.
+		:Returns: An array containing the peak start time and the peak width in seconds
 		"""
 
 		return [self.startTimeInput.value()*self.units[self.startTimeUnits.currentText()], self.peakWidthInput.value()*self.units[self.peakWidthUnits.currentText()]]

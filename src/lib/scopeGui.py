@@ -138,7 +138,7 @@ class ThreadedClient(QtWidgets.QApplication):
 					if peakFindMode() == 'Smart':
 						start, end = WU.smartFindPeakEnds(wave, self.waveOptions.getParameters())
 					elif peakFindMode() == 'Fixed':
-						start, end = WU.smartFindPeakEnds(wave, self.waveOptions.getParameters())
+						start, end = WU.fixedFindPeakEnds(wave, self.waveOptions.getParameters())
 					wave['peakStart'] = start
 					wave['peakEnd'] = end
 					integral = WU.integratePeak(wave)

@@ -51,12 +51,28 @@ def smartFindPeakEnds(wave, thresholds):
 					else:
 						break
 						
-
 		return startIndex, -1
 
 	except Exception as e:
 		logger.error(e)
 		return 0,0
+
+def fixedFindPeakEnds(wave, parameters):
+	"""
+	Determine the start and end index from the start time and fixed peak width
+	"""
+
+	start = parameters[0]
+	width = parameters[1]
+	xData = wave["xData"]
+	startIndex = 0
+	while xData[startIndex] < start and startIndex < len(xData):
+		startIndex += 1
+
+	endIndex = startIndex + int(width/wave["xIncr"])
+
+	return startIndex, endIndex
+
 
 def integratePeak(wave):
 	"""
