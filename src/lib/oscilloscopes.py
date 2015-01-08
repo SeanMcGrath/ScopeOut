@@ -13,7 +13,6 @@ class GenericOscilloscope:
 	Object representation of scope of unknown make.
 	"""
 
-
 	def __init__(self, VISA):
 		"""
 		Constructor.
@@ -23,10 +22,12 @@ class GenericOscilloscope:
 		"""
 		self.scope = VISA
 		self.logger = logging.getLogger("oscilloscopes.GenericOscilloscope")
+		self.waveformQueue = queue.Queue()
 
 		self.make = "Generic"
 		self.model = "Generic Oscilloscope"
 		self.serialNumber = '0'
+		self.commands = {}
 
 	def query(self, command):
 		"""
@@ -111,6 +112,50 @@ class GenericOscilloscope:
 		except Exception as err:
 			self.logger.error(err)
 
+	def autosetUnits(self, axisArray):
+		"""
+		Set the X units of the pyplot to the correct size based on the values in axisArray.
+
+		Parameters:
+			:axisArray: the array of values representing one dimension of the waveform.
+		"""
+		xMax = np.amax(axisArray)
+		if xMax > 1e-9:
+			if xMax > 1e-6:
+				if xMax > 1e-3:
+					if xMax > 1:
+						prefix = ''
+						return [axisArray,prefix]
+
+					prefix = 'milli'
+					axisArray = np.multiply(axisArray,1000)
+					return [axisArray,prefix]
+
+				prefix = 'micro'
+				axisArray = np.multiply(axisArray,1e6)
+				return [axisArray,prefix]
+
+			prefix = 'nano'
+			axisArray = np.multiply(axisArray,1e9)
+			return [axisArray,prefix]
+
+		prefix = ''
+		return [axisArray,prefix]
+
+	"""
+	AUTOSET COMMAND
+	"""
+
+	def autoSet(self):
+		"""
+		Executes automatic setup of scope window.
+		"""
+
+		try:
+			return self.setParam(self.commands['autoSetCommand'])
+		except KeyError:
+			self.logger.error('AutoSet function not available')
+
 class TDS2024B(GenericOscilloscope):
 	"""
 	Class representing Tektronix 2024B.
@@ -140,10 +185,11 @@ class TDS2024B(GenericOscilloscope):
 		self.serialNumber = serialNum
 		self.firmwareVersion = firmware
 		self.waveformSet = False
-		self.waveformQueue = queue.Queue()
 		self.numChannels = 4 # 4-channel oscilloscope
 		if(self.eventStatus()):
 			self.logger.info(self.getAllEvents())
+
+		self.commands = {'autoSetCommand': 'AUTOS EXEC' }
 		
 	def waveformSetup(self):
 		"""
@@ -239,36 +285,6 @@ class TDS2024B(GenericOscilloscope):
 		else:
 			return None
 
-	def autosetUnits(self, axisArray):
-		"""
-		Set the X units of the pyplot to the correct size based on the values in axisArray.
-
-		Parameters:
-			:axisArray: the array of values representing one dimension of the waveform.
-		"""
-		xMax = np.amax(axisArray)
-		if xMax > 1e-9:
-			if xMax > 1e-6:
-				if xMax > 1e-3:
-					if xMax > 1:
-						prefix = ''
-						return [axisArray,prefix]
-
-					prefix = 'milli'
-					axisArray = np.multiply(axisArray,1000)
-					return [axisArray,prefix]
-
-				prefix = 'micro'
-				axisArray = np.multiply(axisArray,1e6)
-				return [axisArray,prefix]
-
-			prefix = 'nano'
-			axisArray = np.multiply(axisArray,1e9)
-			return [axisArray,prefix]
-
-		prefix = ''
-		return [axisArray,prefix]
-
 	def checkTrigger(self):
 		"""
 		Read trigger status of TDS2024B.
@@ -309,8 +325,6 @@ class TDS2024B(GenericOscilloscope):
 			else:
 				self.logger.error('Invalid data channel: %s', channel)
 				return False
-
-		
 
 	"""
 	END UTILITY METHODS
@@ -590,14 +604,6 @@ class TDS2024B(GenericOscilloscope):
 	"""
 	END STATUS AND ERROR COMMANDS
 	"""
-
-	"""
-	AUTOSET COMMAND
-	"""
-
-	def autoSet(self):
-
-		return self.setParam("AUTOS EXEC")
 
 
 
