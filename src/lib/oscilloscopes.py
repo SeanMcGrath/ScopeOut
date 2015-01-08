@@ -21,6 +21,7 @@ class GenericOscilloscope:
 			:VISA: object representing VISA instrument, on which PyVisa can be used.
 		"""
 		self.scope = VISA
+		self.logger = logging.getLogger("oscilloscopes.GenericOscilloscope")
 
 	def query(self, command):
 		"""
@@ -36,7 +37,7 @@ class GenericOscilloscope:
 			self.scope.write(command)
 			return self.scope.read().strip()
 		except Exception as e:
-			print(e)
+			self.logger.error(e)
 			return False
 
 
@@ -58,9 +59,9 @@ class GenericOscilloscope:
 		try:
 			return self.scope.read().strip()
 		except visa.VisaIOError:
-			print("VISA Error: Command timed out.")
-		except Exception:
-			print("Error")
+			self.logger.error("VISA Error: Command timed out.")
+		except Exception as e:
+			self.logger.error(e)
 
 class TDS2024B(GenericOscilloscope):
 	"""

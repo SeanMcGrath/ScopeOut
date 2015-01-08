@@ -256,35 +256,10 @@ class WavePlotWidget(FigureCanvas):
 			string to label y axis
 
 		:hold:
-			True to hold existing plot, false to make new plot
+			True to add to existing plot, false to make new plot
 		'''
 
 		if not hold: self.resetPlot()
-		xData, xPrefix = self.autosetUnits(xData)
-		yData, yPrefix = self.autosetUnits(yData)
-		self.axes.set_ylabel(yPrefix + yLabel)
-		self.axes.set_xlabel(xPrefix + xLabel)
-		self.axes.plot(xData,yData)
-		self.fig.canvas.draw()
-
-	def showMultiPlot(self, xData, xLabel, yData, yLabel):
-		'''
-		Fill plot with data and draw it on the screen.
-
-		:xData:
-		    X data for plot (usually time)
-
-		:xLabel:
-			string to label x axis.
-
-		:yData:
-		    Y data for plot.
-
-		:yLabel:
-			string to label y axis
-
-		'''
-
 		xData, xPrefix = self.autosetUnits(xData)
 		yData, yPrefix = self.autosetUnits(yData)
 		self.axes.set_ylabel(yPrefix + yLabel)
@@ -536,7 +511,7 @@ class SmartPeakTab(QtWidgets.QWidget):
 
 class FixedPeakTab(QtWidgets.QWidget):
 	"""
-	Widget controlling smart peak detection algorithm.
+	Widget controlling Fixed-width peak detection algorithm.
 	"""
 
 	units = {'S': 1, 'mS': 1e-3, 'uS': 1e-6, 'nS': 1e-9}

@@ -395,6 +395,9 @@ class ThreadedClient(QtWidgets.QApplication):
 
 		self.channelSetFlag.clear()
 		self.logger.info('Attempting to set data channel %s', channels[channel])
+		self.acqControl.contAcqButton.setEnabled(True)
+		self.acqControl.acqOnTrigButton.setEnabled(True)
+		
 		if channel in range(0,self.acqControl.scope.numChannels):
 			self.multiAcq = False
 			setThread = threading.Thread(target=__channelThread)
@@ -409,6 +412,9 @@ class ThreadedClient(QtWidgets.QApplication):
 			self.multiAcq = False
 			setThread = threading.Thread(target=__channelThread)
 			setThread.start()
+			# No triggering in math mode
+			self.acqControl.contAcqButton.setEnabled(False)
+			self.acqControl.acqOnTrigButton.setEnabled(False)
 
 	def __saveWaveformEvent(self):
 		"""
