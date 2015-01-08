@@ -135,6 +135,8 @@ class TDS2024B(GenericOscilloscope):
 	def __str__(self):
 		"""
 		Object to String.
+
+		:Returns: A string containing the make, model and serial number of the scope.
 		"""
 		return "{:s} {:s} Oscilloscope. Serial Number: {:s}.".format(self.make,self.model,self.serialNumber)
 
