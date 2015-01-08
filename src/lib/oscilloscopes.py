@@ -13,6 +13,7 @@ class GenericOscilloscope:
 	Object representation of scope of unknown make.
 	"""
 
+
 	def __init__(self, VISA):
 		"""
 		Constructor.
@@ -22,6 +23,10 @@ class GenericOscilloscope:
 		"""
 		self.scope = VISA
 		self.logger = logging.getLogger("oscilloscopes.GenericOscilloscope")
+
+		self.make = "Generic"
+		self.model = "Generic Oscilloscope"
+		self.serialNumber = '0'
 
 	def query(self, command):
 		"""
@@ -62,6 +67,49 @@ class GenericOscilloscope:
 			self.logger.error("VISA Error: Command timed out.")
 		except Exception as e:
 			self.logger.error(e)
+
+	def __str__(self):
+		"""
+		Object to String.
+
+		:Returns: A string containing the make, model and serial number of the scope.
+		"""
+		return "{:s} {:s} Oscilloscope. Serial Number: {:s}.".format(self.make,self.model,self.serialNumber)
+
+	def setParam(self, command):
+		"""
+		Set a scope parameter by issuing a command.
+
+		:Parameters:
+			:command: Full command to set parameter, in string form.
+
+		:Returns: True if setting is successful, descriptive error message if unsuccessful.
+		"""
+
+		try:
+			self.write(command)
+			result = self.query("*ESR?")
+			if result is None:
+				return True
+			else:
+				return self.eventMessage().split(',')[1].strip('"')
+		except AttributeError as e:
+			self.logger.error(e)
+			return False
+
+	def getParam(self, command):
+		"""
+		get a scope parameter by issuing a command.
+
+		:Parameters:
+			:command: Full command to set parameter, in string form.
+
+		:Returns: desired Parameter if communication is successful, False otherwise.
+		"""
+
+		try: return self.query(command).strip("'")
+		except Exception as err:
+			self.logger.error(err)
 
 class TDS2024B(GenericOscilloscope):
 	"""
@@ -131,49 +179,6 @@ class TDS2024B(GenericOscilloscope):
 				self.waveformSet = False
 		except Exception as e:
 			self.logger.error(e)
-
-	def __str__(self):
-		"""
-		Object to String.
-
-		:Returns: A string containing the make, model and serial number of the scope.
-		"""
-		return "{:s} {:s} Oscilloscope. Serial Number: {:s}.".format(self.make,self.model,self.serialNumber)
-
-	def __setParam(self, command):
-		"""
-		Set a scope parameter by issuing a command.
-
-		:Parameters:
-			:command: Full command to set parameter, in string form.
-
-		:Returns: True if setting is successful, descriptive error message if unsuccessful.
-		"""
-
-		try:
-			self.write(command)
-			result = self.query("*ESR?")
-			if result is None:
-				return True
-			else:
-				return self.eventMessage().split(',')[1].strip('"')
-		except AttributeError as e:
-			self.logger.error(e)
-			return False
-
-	def __getParam(self, command):
-		"""
-		get a scope parameter by issuing a command.
-
-		:Parameters:
-			:command: Full command to set parameter, in string form.
-
-		:Returns: desired Parameter if communication is successful, False otherwise.
-		"""
-
-		try: return self.query(command).strip("'")
-		except Exception as err:
-			self.logger.error(err)
 
 	def getCurve(self):
 		"""
@@ -271,14 +276,14 @@ class TDS2024B(GenericOscilloscope):
 		:Returns: a string describing trigger status: {AUTO | READY | TRIGGER | ARMED}
 		"""
 
-		return self.__getParam("TRIG:STATE?")
+		return self.getParam("TRIG:STATE?")
 
 	def getTrigFrequency(self):
 		"""
 		Read the trigger frequency.
 		"""
 
-		return self.__getParam("TRIG:MAIN:FREQ?")
+		return self.getParam("TRIG:MAIN:FREQ?")
 		
 	def setDataChannel(self, channel):
 		"""
@@ -293,14 +298,14 @@ class TDS2024B(GenericOscilloscope):
 		try:
 			if int(channel) in range(1,self.numChannels+1):
 				ch_string = "CH" + channel
-				return self.__setParam("DAT:SOU " + ch_string)
+				return self.setParam("DAT:SOU " + ch_string)
 			else:
 				self.logger.error('Invalid data channel: %d', int(channel))
 				return False
 		except:
 			if channel.lower() == 'math':
 				ch_string = "MATH"
-				return self.__setParam("DAT:SOU " + ch_string)
+				return self.setParam("DAT:SOU " + ch_string)
 			else:
 				self.logger.error('Invalid data channel: %s', channel)
 				return False
@@ -320,7 +325,7 @@ class TDS2024B(GenericOscilloscope):
 		:Returns: scope acquisition parameters as a string.
 		"""
 
-		return self.__getParam("ACQ?")
+		return self.getParam("ACQ?")
 
 	def setAcquisitionMode(self, mode):
 		"""
@@ -332,21 +337,21 @@ class TDS2024B(GenericOscilloscope):
 		:Returns: True if setting is successful, false otherwise.
 		"""
 
-		return self.__setParam("ACQ:MOD " + str(mode))
+		return self.setParam("ACQ:MOD " + str(mode))
 
 	def getAcquisitionMode(self):
 		"""
 		:Returns: String naming current acquisition mode.
 		"""
 
-		return self.__getParam("ACQ:MOD?")
+		return self.getParam("ACQ:MOD?")
 
 	def getNumberOfAcquisitions(self):
 		"""
 		:Returns: the number of acquisitions made.
 		"""
 
-		return self.__getParam('ACQ:NUMAC?')
+		return self.getParam('ACQ:NUMAC?')
 
 	def setAcqsForAverage(self, acqs):
 		"""
@@ -360,14 +365,14 @@ class TDS2024B(GenericOscilloscope):
 
 		if acqs not in [4,16,64,128]: return False
 
-		return self.__setParam("ACQ:NUMAV " +str(acqs))
+		return self.setParam("ACQ:NUMAV " +str(acqs))
 
 	def getAcqsForAverage(self):
 		"""
 		:Returns: the current number of acquisitions taken to find an average waveform in AVERAGE mode.
 		"""
 
-		return self.__getParam('ACQ:NUMAV?')
+		return self.getParam('ACQ:NUMAV?')
 
 	def setAcqState(self, state):
 		"""
@@ -379,14 +384,14 @@ class TDS2024B(GenericOscilloscope):
 		:Returns: True if setting is successful, false otherwise.
 		"""
 
-		return self.__setParam("ACQ:STATE " +str(state))
+		return self.setParam("ACQ:STATE " +str(state))
 
 	def getAcqState(self):
 		"""
 		:Returns: '0' for off, '1' for on.
 		"""
 
-		return self.__getParam("ACQ:STATE?")
+		return self.getParam("ACQ:STATE?")
 
 	def setAcqStop(self, stop):
 		"""
@@ -395,14 +400,14 @@ class TDS2024B(GenericOscilloscope):
 		:Returns: True if setting is successful, False otherwise.
 		"""
 
-		return self.__setParam("ACQ:STOPA " +str(stop))
+		return self.setParam("ACQ:STOPA " +str(stop))
 
 	def getAcqStop(self):
 		"""
 		:Returns: string describing when the scope stops taking acquisitions, or False if this fails.
 		"""
 
-		return self.__getParam("ACQ:STOPA?")
+		return self.getParam("ACQ:STOPA?")
 
 	"""
 	END ACQUISITION COMMANDS
@@ -419,7 +424,7 @@ class TDS2024B(GenericOscilloscope):
 		:Returns: string describing result of calibration.
 		"""
 
-		return self.__getParam("*CAL?")
+		return self.getParam("*CAL?")
 
 	def abortCalibrate(self):
 		"""
@@ -428,7 +433,7 @@ class TDS2024B(GenericOscilloscope):
 		:Returns: True if setting is successful, False otherwise.
 		"""
 
-		return self.__setParam("CAL:ABO")
+		return self.setParam("CAL:ABO")
 
 	def continueCalibrate(self):
 		"""
@@ -437,7 +442,7 @@ class TDS2024B(GenericOscilloscope):
 		:Returns: True if command is successful, False otherwise.
 		"""
 
-		return self.__setParam("CAL:CONTINUE")
+		return self.setParam("CAL:CONTINUE")
 
 	def factoryCalibrate(self):
 		"""
@@ -446,7 +451,7 @@ class TDS2024B(GenericOscilloscope):
 		:Returns: True if command is successful, False otherwise.
 		"""
 
-		return self.__setParam("CAL:FAC")
+		return self.setParam("CAL:FAC")
 
 	def internalCalibrate(self):
 		"""
@@ -455,7 +460,7 @@ class TDS2024B(GenericOscilloscope):
 		:Returns: True if command is successful, False otherwise.
 		"""
 
-		return self.__setParam("CAL:INTERNAL")
+		return self.setParam("CAL:INTERNAL")
 
 	def getCalStatus(self):
 		"""
@@ -464,7 +469,7 @@ class TDS2024B(GenericOscilloscope):
 		:Returns: "PASS" if last calibration was successful, "FAIL" otherwise.
 		"""
 
-		return self.__getParam("CAL:STATUS?")
+		return self.getParam("CAL:STATUS?")
 
 	def getDiagnosticResult(self):
 		"""
@@ -473,7 +478,7 @@ class TDS2024B(GenericOscilloscope):
 		:Returns: "PASS" if scope passes all diagnostic tests, "FAIL" otherwise.
 		"""
 
-		return self.__getParam("DIA:RESUL:FLA?")
+		return self.getParam("DIA:RESUL:FLA?")
 
 	def getDiagnosticLog(self):
 		"""
@@ -482,7 +487,7 @@ class TDS2024B(GenericOscilloscope):
 		:Returns: A comma-separated string containing the results of internal diagnostic routines.
 		"""
 
-		return self.__getParam("DIA:RESUL:LOG?").strip()
+		return self.getParam("DIA:RESUL:LOG?").strip()
 
 	def getFirstError(self):
 		"""
@@ -491,7 +496,7 @@ class TDS2024B(GenericOscilloscope):
 		:Returns: a string describing an internal scope error, empty string if error queue is empty.
 		"""
 
-		return self.__getParam("ERRLOG:FIRST?")
+		return self.getParam("ERRLOG:FIRST?")
 
 	def getNextError(self):
 		"""
@@ -500,7 +505,7 @@ class TDS2024B(GenericOscilloscope):
 		:Returns: a string describing an internal scope error, empty string if error queue is empty.
 		"""
 
-		return self.__getParam("ERRLOG:NEXT?")
+		return self.getParam("ERRLOG:NEXT?")
 
 	"""
 	END CALIBRATION COMMANDS
@@ -517,7 +522,7 @@ class TDS2024B(GenericOscilloscope):
 		:Returns: comma-separated string containing cursor settings.
 		"""
 
-		return self.__getParam("CURS?")
+		return self.getParam("CURS?")
 
 
 	"""
@@ -533,7 +538,7 @@ class TDS2024B(GenericOscilloscope):
 		:Returns: all events in the event queue in string format.
 		"""
 
-		return self.__getParam("ALLE?")
+		return self.getParam("ALLE?")
 
 	def isBusy(self):
 		"""
@@ -542,7 +547,7 @@ class TDS2024B(GenericOscilloscope):
 		:Returns: 0 for not busy, 1 for busy.
 		"""
 
-		return int(self.__getParam("BUSY?"))
+		return int(self.getParam("BUSY?"))
 
 	def clearStatus(self):
 		"""
@@ -551,7 +556,7 @@ class TDS2024B(GenericOscilloscope):
 		:Returns: True if command is successful, False otherwise.
 		"""
 
-		return self.__getParam("*CLS?")
+		return self.getParam("*CLS?")
 
 	def eventStatus(self):
 		"""
@@ -560,7 +565,7 @@ class TDS2024B(GenericOscilloscope):
 		:Returns: the integer value held in the ESR.
 		"""
 
-		status = self.__getParam("*ESR?")
+		status = self.getParam("*ESR?")
 		if status:
 			return int(status)
 
@@ -571,7 +576,7 @@ class TDS2024B(GenericOscilloscope):
 		:Returns: integer error code.
 		"""
 
-		return self.__getParam("EVENT?")
+		return self.getParam("EVENT?")
 
 	def eventMessage(self):
 		"""
@@ -580,7 +585,7 @@ class TDS2024B(GenericOscilloscope):
 		:Returns: event code and event message string, separated by a comma.
 		"""
 
-		return self.__getParam("EVMSG?")
+		return self.getParam("EVMSG?")
 
 	"""
 	END STATUS AND ERROR COMMANDS
@@ -592,7 +597,7 @@ class TDS2024B(GenericOscilloscope):
 
 	def autoSet(self):
 
-		return self.__setParam("AUTOS EXEC")
+		return self.setParam("AUTOS EXEC")
 
 
 
