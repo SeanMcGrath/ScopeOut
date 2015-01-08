@@ -449,8 +449,9 @@ class acqControlWidget(QtWidgets.QWidget):
 		self.acqStopButton.setEnabled(bool)
 		if bool and self.scope is not None:
 			channels =list(map(str,range(1,self.scope.numChannels+1)))
+			channels.append('All')
+			channels.append('Math')
 			self.channelComboBox.addItems(channels)
-			self.channelComboBox.addItem('All')
 			self.channelComboBox.setCurrentIndex(0)
 		else:
 			self.channelComboBox.clear()
@@ -463,6 +464,13 @@ class acqControlWidget(QtWidgets.QWidget):
 		"""
 
 		return self.keepPlotCheckBox.isChecked()
+
+	def getChannels(self):
+		"""
+		Returns a list of the available data channels.
+		"""
+
+		return [self.channelComboBox.itemText(i) for i in range(self.channelComboBox.count())]
 
 class SmartPeakTab(QtWidgets.QWidget):
 	"""
@@ -640,7 +648,6 @@ class waveOptionsTabWidget(QtWidgets.QWidget):
 		"""
 
 		return self.showWindow.isChecked()
-
 
 	def currentWidget(self):
 		"""

@@ -15,7 +15,7 @@ class ThreadedClient(QtWidgets.QApplication):
 	"""
 	Launches the GUI and handles I/O.
 
-	GUI components reside within the body of the class itself. This client acquires and maniuplates
+	GUI components reside within the body of the class itself. This client acquires and manipulates
 	data from attached scopes and feeds it to the GUI. Various threads are created to carry out
 	USB communication asynchronously.
 
@@ -369,16 +369,20 @@ class ThreadedClient(QtWidgets.QApplication):
 		Parameters:
 			:channel: desired data channel
 		"""
+
+		channels = self.acqControl.getChannels()
+		print(channels[channel])
+
 		def __channelThread():
 
 			try:
 				self.lock.acquire()
-				if self.acqControl.scope.setDataChannel(channel+1):
-					self.logger.info('Successfully set data channel %d', channel+1)
-					self.__status('Data channel set to ' + str(channel + 1))
+				if self.acqControl.scope.setDataChannel(channels[channel]):
+					self.logger.info('Successfully set data channel %s', channels[channel])
+					self.__status('Data channel set to ' + channels[channel])
 				else:
-					self.logger.debug('Failed to set data channel set to ' + str(channel + 1))
-					self.__status('Failed to set data channel ' + str(channel + 1))
+					self.logger.debug('Failed to set data channel set to ' + channels[channel])
+					self.__status('Failed to set data channel ' + channels[channel])
 			except Exception as e:
 				self.logger.error(e)
 			finally:
@@ -390,15 +394,21 @@ class ThreadedClient(QtWidgets.QApplication):
 					logger.error(e)
 
 		self.channelSetFlag.clear()
-		self.logger.info('Attempting to set data channel %d', channel+1)
+		self.logger.info('Attempting to set data channel %s', channels[channel])
 		if channel in range(0,self.acqControl.scope.numChannels):
 			self.multiAcq = False
 			setThread = threading.Thread(target=__channelThread)
 			setThread.start()
-		else:
+		elif channels[channel] == 'All':
 			self.logger.info("Selected all data channels")
 			self.__status("Selected all data channels")
 			self.multiAcq = True
+		elif channels[channel] == 'Math':
+			self.logger.info("selected Math data channel")
+			self.__status("selected Math data channel")
+			self.multiAcq = False
+			setThread = threading.Thread(target=__channelThread)
+			setThread.start()
 
 	def __saveWaveformEvent(self):
 		"""

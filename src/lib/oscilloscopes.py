@@ -282,10 +282,27 @@ class TDS2024B(GenericOscilloscope):
 		Set data channel of TDS2024B.
 
 		Parameters:
-			:channel: an integer between 1 and 4.
+			:channel: a string representing the desired data channel
+
+		:Returns: True if a valid channel is passed, False otherwise
 		"""
 
-		return self.__setParam("DAT:SOU CH" + str(channel))
+		try:
+			if int(channel) in range(1,self.numChannels+1):
+				ch_string = "CH" + channel
+				return self.__setParam("DAT:SOU " + ch_string)
+			else:
+				self.logger.error('Invalid data channel: %d', int(channel))
+				return False
+		except:
+			if channel.lower() == 'math':
+				ch_string = "MATH"
+				return self.__setParam("DAT:SOU " + ch_string)
+			else:
+				self.logger.error('Invalid data channel: %s', channel)
+				return False
+
+		
 
 	"""
 	END UTILITY METHODS
