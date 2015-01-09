@@ -11,6 +11,12 @@ import queue, logging
 class GenericOscilloscope:
 	"""
 	Object representation of scope of unknown make.
+
+	All common scope commands are accessible here. These functions wrap text-based VISA commands,
+	which are stored in the 'commands' dictionary object which is re-implemented for each
+	supported oscilloscope. Calling these functions invokes execCommand(), which searches the dictionary
+	for the associated command string and executes it if it is supported.
+
 	"""
 
 	def __init__(self, VISA):
@@ -88,7 +94,7 @@ class GenericOscilloscope:
 
 		try:
 			self.write(command)
-			result = self.query("*ESR?")
+			result = self.execCommand('eventStatus')
 			if result is None:
 				return True
 			else:
@@ -453,6 +459,30 @@ class GenericOscilloscope:
 	END STATUS AND ERROR COMMANDS
 	"""
 
+	"""
+	TRIGGER COMMANDS
+	"""
+
+	def getTriggerStatus(self):
+		"""
+		Read trigger status of TDS2024B.
+
+		:Returns: a string describing trigger status: {AUTO | READY | TRIGGER | ARMED}
+		"""
+
+		return self.execCommand('getTriggerStatus')
+
+	def getTrigFrequency(self):
+		"""
+		Read the trigger frequency.
+		"""
+
+		return self.execCommand('getTrigFrequency')
+
+	"""
+	END TRIGGER COMMANDS
+	"""
+
 
 class TDS2024B(GenericOscilloscope):
 	"""
@@ -520,10 +550,10 @@ class TDS2024B(GenericOscilloscope):
 						 'eventCode': 'EVENT?',
 						 'eventMessage': 'EVMSG?',
 						 'getFirstError': 'ERRLOG:FIRST?',
-						 'getNextError': 'ERRLOG:NEXT?'
+						 'getNextError': 'ERRLOG:NEXT?',
 
-
-
+						 'getTriggerStatus': 'TRIG:STATE?',
+						 'getTrigFrequency': 'TRIG:MAIN:FREQ?',
 						}
 		
 	def waveformSetup(self):
@@ -619,22 +649,6 @@ class TDS2024B(GenericOscilloscope):
 			return self.waveformQueue.get()
 		else:
 			return None
-
-	def checkTrigger(self):
-		"""
-		Read trigger status of TDS2024B.
-
-		:Returns: a string describing trigger status: {AUTO | READY | TRIGGER | ARMED}
-		"""
-
-		return self.getParam("TRIG:STATE?")
-
-	def getTrigFrequency(self):
-		"""
-		Read the trigger frequency.
-		"""
-
-		return self.getParam("TRIG:MAIN:FREQ?")
 		
 	def setDataChannel(self, channel):
 		"""
