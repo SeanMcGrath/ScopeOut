@@ -94,11 +94,11 @@ class GenericOscilloscope:
 
 		try:
 			self.write(command)
-			result = self.execCommand('eventStatus')
-			if result is None:
+			result = self.query(self.commands['eventStatus'])
+			if int(result) == 0:
 				return True
 			else:
-				return self.eventMessage().split(',')[1].strip('"')
+				return False
 		except AttributeError as e:
 			self.logger.error(e)
 			return False
@@ -116,6 +116,7 @@ class GenericOscilloscope:
 		try: return self.query(command).strip("'")
 		except Exception as err:
 			self.logger.error(err)
+			return False
 
 	def execCommand(self, command, args=[]):
 		"""
@@ -269,7 +270,7 @@ class GenericOscilloscope:
 		:Returns: True if setting is successful, False otherwise.
 		"""
 
-		return self.execcommand('setAcqStop',[str(stop)])
+		return self.execCommand('setAcqStop',[str(stop)])
 
 	def getAcqStop(self):
 		"""
@@ -418,6 +419,8 @@ class GenericOscilloscope:
 		status = self.execCommand('eventStatus')
 		if status:
 			return int(status)
+		else:
+			return None
 
 	def eventCode(self):
 		"""
@@ -508,17 +511,7 @@ class TDS2024B(GenericOscilloscope):
 		GenericOscilloscope.__init__(self,VISA)
 		self.logger = logging.getLogger("oscilloscopes.TDS2024B")
 
-		self.make = make
-		self.model = model
-		self.serialNumber = serialNum
-		self.firmwareVersion = firmware
-		self.waveformSet = False
-		self.numChannels = 4 # 4-channel oscilloscope
-		if(self.eventStatus()):
-			self.logger.info(self.getAllEvents())
-
 		self.commands = {'autoSet': 'AUTOS EXEC',
-
 						 'getAcquisitionParams': 'ACQ?',
 						 'setAcquisitionMode': 'ACQ:MOD',
 						 'getAcquisitionMode': 'ACQ:MOD?',
@@ -529,9 +522,6 @@ class TDS2024B(GenericOscilloscope):
 						 'getAcqState': 'ACQ:STATE?',
 						 'setAcqStop': 'ACQ:STOPA',
 						 'getAcqStop': 'ACQ:STOPA?',
-
-						 'checkTrigger': 'TRIG:STATE?',
-
 						 'calibrate': '*CAL?',
 						 'abortCalibrate:': 'CAL:ABO',
 						 'continueCalibrate': 'CAL:CONTINUE',
@@ -540,9 +530,7 @@ class TDS2024B(GenericOscilloscope):
 						 'getCalStatus': 'CAL:STATUS?',
 						 'getDiagnosticResult': 'DIA:RESUL:FLA?',
 						 'getDiagnosticLog': 'DIA:RESUL:LOG?',
-
 						 'getCursor': 'CURS?',
-
 						 'getAllEvents': 'ALLE?',
 						 'isBusy': 'BUSY?',
 						 'clearStatus': '*CLS?',
@@ -551,10 +539,18 @@ class TDS2024B(GenericOscilloscope):
 						 'eventMessage': 'EVMSG?',
 						 'getFirstError': 'ERRLOG:FIRST?',
 						 'getNextError': 'ERRLOG:NEXT?',
-
 						 'getTriggerStatus': 'TRIG:STATE?',
 						 'getTrigFrequency': 'TRIG:MAIN:FREQ?',
 						}
+
+		self.make = make
+		self.model = model
+		self.serialNumber = serialNum
+		self.firmwareVersion = firmware
+		self.waveformSet = False
+		self.numChannels = 4 # 4-channel oscilloscope
+		# if(self.eventStatus()):
+		# 	self.logger.info(self.getAllEvents())
 		
 	def waveformSetup(self):
 		"""
@@ -660,6 +656,7 @@ class TDS2024B(GenericOscilloscope):
 		:Returns: True if a valid channel is passed, False otherwise
 		"""
 
+		self.logger.info('Received request to set data channel ' + channel)
 		try:
 			if int(channel) in range(1,self.numChannels+1):
 				ch_string = "CH" + channel

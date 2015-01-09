@@ -69,13 +69,13 @@ class ScopeFinder:
 			for resource in self.resources:
 				try:
 					self.instruments.append(rm.get_instrument(resource))
+					self.logger.info('Resource converted to instrument')
 				except Exception as e:
 					self.logger.error(e)
 			for ins in self.instruments:
 
 				try:
 					info = self.query(ins, '*IDN?').split(',') # Parse identification string
-
 					if info[1] == 'TDS 2024B': # TDS 2024B oscilloscope
 						info.append(info.pop().split()[1][3:]) # get our identification string into array format
 						scope = oscilloscopes.TDS2024B(ins, info[0],info[1],info[2],info[3])
