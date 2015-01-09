@@ -507,17 +507,55 @@ class GenericOscilloscope:
 
 		return execCommand('setDataChannel',[str(channel)])
 
-
+	"""
+	END DATA CHANNEL COMMANDS
+	"""
 
 class TDS2024B(GenericOscilloscope):
 	"""
 	Class representing Tektronix 2024B.
+
+	Contains the command dictionary specifying the coorect VISA commands for this oscilloscope,
+	And defines how to handle waveforms that this scope generates.
 	"""
 
-	"""
-	UTILITY METHODS
-	"""
+	self.commands = {'autoSet': 'AUTOS EXEC',
+					 'getAcquisitionParams': 'ACQ?',
+					 'setAcquisitionMode': 'ACQ:MOD',
+					 'getAcquisitionMode': 'ACQ:MOD?',
+					 'getNumberOfAcquisitions': 'ACQ:NUMAC?',
+					 'setAcqsForAverage': 'ACQ:NUMAV',
+					 'getAcqsForAverage': 'ACQ:NUMAV?',
+					 'setAcqState': 'ACQ:STATE',
+					 'getAcqState': 'ACQ:STATE?',
+					 'setAcqStop': 'ACQ:STOPA',
+					 'getAcqStop': 'ACQ:STOPA?',
 
+					 'calibrate': '*CAL?',
+					 'abortCalibrate:': 'CAL:ABO',
+					 'continueCalibrate': 'CAL:CONTINUE',
+					 'factoryCalibrate': 'CAL:FAC',
+					 'internalCalibrate': 'CAL:INTERNAL',
+					 'getCalStatus': 'CAL:STATUS?',
+					 'getDiagnosticResult': 'DIA:RESUL:FLA?',
+					 'getDiagnosticLog': 'DIA:RESUL:LOG?',
+
+					 'getCursor': 'CURS?',
+
+					 'getAllEvents': 'ALLE?',
+					 'isBusy': 'BUSY?',
+					 'clearStatus': '*CLS?',
+					 'eventStatus': '*ESR?',
+					 'eventCode': 'EVENT?',
+					 'eventMessage': 'EVMSG?',
+					 'getFirstError': 'ERRLOG:FIRST?',
+					 'getNextError': 'ERRLOG:NEXT?',
+					 'getTriggerStatus': 'TRIG:STATE?',
+					 'getTrigFrequency': 'TRIG:MAIN:FREQ?',
+
+					 'getDataChannel': 'DAT:SOU?',
+					}
+						
 	def __init__(self, VISA, make, model, serialNum, firmware):
 		"""
 		Constructor.
@@ -533,43 +571,6 @@ class TDS2024B(GenericOscilloscope):
 		GenericOscilloscope.__init__(self,VISA)
 		self.logger = logging.getLogger("oscilloscopes.TDS2024B")
 
-		self.commands = {'autoSet': 'AUTOS EXEC',
-						 'getAcquisitionParams': 'ACQ?',
-						 'setAcquisitionMode': 'ACQ:MOD',
-						 'getAcquisitionMode': 'ACQ:MOD?',
-						 'getNumberOfAcquisitions': 'ACQ:NUMAC?',
-						 'setAcqsForAverage': 'ACQ:NUMAV',
-						 'getAcqsForAverage': 'ACQ:NUMAV?',
-						 'setAcqState': 'ACQ:STATE',
-						 'getAcqState': 'ACQ:STATE?',
-						 'setAcqStop': 'ACQ:STOPA',
-						 'getAcqStop': 'ACQ:STOPA?',
-
-						 'calibrate': '*CAL?',
-						 'abortCalibrate:': 'CAL:ABO',
-						 'continueCalibrate': 'CAL:CONTINUE',
-						 'factoryCalibrate': 'CAL:FAC',
-						 'internalCalibrate': 'CAL:INTERNAL',
-						 'getCalStatus': 'CAL:STATUS?',
-						 'getDiagnosticResult': 'DIA:RESUL:FLA?',
-						 'getDiagnosticLog': 'DIA:RESUL:LOG?',
-
-						 'getCursor': 'CURS?',
-
-						 'getAllEvents': 'ALLE?',
-						 'isBusy': 'BUSY?',
-						 'clearStatus': '*CLS?',
-						 'eventStatus': '*ESR?',
-						 'eventCode': 'EVENT?',
-						 'eventMessage': 'EVMSG?',
-						 'getFirstError': 'ERRLOG:FIRST?',
-						 'getNextError': 'ERRLOG:NEXT?',
-						 'getTriggerStatus': 'TRIG:STATE?',
-						 'getTrigFrequency': 'TRIG:MAIN:FREQ?',
-
-						 'getDataChannel': 'DAT:SOU?',
-						}
-
 		self.make = make
 		self.model = model
 		self.serialNumber = serialNum
@@ -578,6 +579,10 @@ class TDS2024B(GenericOscilloscope):
 		self.numChannels = 4 # 4-channel oscilloscope
 		if(self.eventStatus()):
 			self.logger.info(self.getAllEvents())
+
+	"""
+	WAVEFORM COMMANDS
+	"""
 		
 	def waveformSetup(self):
 		"""
@@ -671,6 +676,14 @@ class TDS2024B(GenericOscilloscope):
 			return self.waveformQueue.get()
 		else:
 			return None
+
+	"""
+	END WAVEFORM COMMANDS
+	"""
+
+	"""
+	DATA CHANNEL COMMANDS
+	"""
 		
 	def setDataChannel(self, channel):
 		"""
@@ -699,7 +712,7 @@ class TDS2024B(GenericOscilloscope):
 				return False
 
 	"""
-	END UTILITY METHODS
+	END DATA CHANNEL COMMANDS
 	"""
 
 
