@@ -111,12 +111,13 @@ class GenericOscilloscope:
 		except Exception as err:
 			self.logger.error(err)
 
-	def execCommand(self, command):
+	def execCommand(self, command, args=[]):
 		"""
 		Searches the command dictionary for a command key, and executes the command if it is supported.
 
 		Parameters:
 			:command: a key to the command dictionary, usually the name of a function in string form.
+			:args: an array of arguments for the desired command
 
 		:returns: a parameter value if requested, True if a parameter is set successfully, or False if communication fails.
 		"""
@@ -125,9 +126,19 @@ class GenericOscilloscope:
 			if command[-1] == '?':
 				return self.getParam(self.commands[command])
 			else:
-				return self.setParam(self.commands[command])
+				argString = ''
+
+				if args:
+					argString = ' '
+					for arg in args:
+						argString += str(arg) + ' '
+
+				return self.setParam(self.commands[command] + argString)
+
 		except KeyError:
 			self.logger.error("Command '{:s}' not supported".format(command))
+		except Exception as e:
+			self.logger.error(e)
 
 	def autosetUnits(self, axisArray):
 		"""
@@ -179,11 +190,11 @@ class GenericOscilloscope:
 		:Returns: scope acquisition parameters as a string.
 		"""
 
-		return self.getParam(self.commands['getAcquisitionParams'])
+		return self.execCommand('getAcquisitionParams')
 
 	def setAcquisitionMode(self, mode):
 		"""
-		Set TDS2024B acquisition mode.
+		Set scope acquisition mode.
 
 		:Parameters:
 			:mode: Desired mode of scope operation: {SAMPLE | PEAK | AVERAGE}
@@ -191,21 +202,21 @@ class GenericOscilloscope:
 		:Returns: True if setting is successful, false otherwise.
 		"""
 
-		return self.setParam("ACQ:MOD " + str(mode))
+		return self.execCommand('setAcquisitionMode',[str(mode)])
 
 	def getAcquisitionMode(self):
 		"""
 		:Returns: String naming current acquisition mode.
 		"""
 
-		return self.getParam("ACQ:MOD?")
+		return self.execCommand('getAcquisitionMode')
 
 	def getNumberOfAcquisitions(self):
 		"""
 		:Returns: the number of acquisitions made.
 		"""
 
-		return self.getParam('ACQ:NUMAC?')
+		return self.execCommand('getNumberOfAcquisitions')
 
 	def setAcqsForAverage(self, acqs):
 		"""
@@ -217,16 +228,14 @@ class GenericOscilloscope:
 		:Returns: True if setting is successful, false otherwise.
 		"""
 
-		if acqs not in [4,16,64,128]: return False
-
-		return self.setParam("ACQ:NUMAV " +str(acqs))
+		return self.execCommand('setAcqsForAverage',[str(acqs)])
 
 	def getAcqsForAverage(self):
 		"""
 		:Returns: the current number of acquisitions taken to find an average waveform in AVERAGE mode.
 		"""
 
-		return self.getParam('ACQ:NUMAV?')
+		return self.execCommand('getAcqsForAverage')
 
 	def setAcqState(self, state):
 		"""
@@ -238,14 +247,14 @@ class GenericOscilloscope:
 		:Returns: True if setting is successful, false otherwise.
 		"""
 
-		return self.setParam("ACQ:STATE " +str(state))
+		return self.execCommand('setAcqState',[str(state)])
 
 	def getAcqState(self):
 		"""
 		:Returns: '0' for off, '1' for on.
 		"""
 
-		return self.getParam("ACQ:STATE?")
+		return self.execCommand('getAcqState')
 
 	def setAcqStop(self, stop):
 		"""
@@ -254,14 +263,195 @@ class GenericOscilloscope:
 		:Returns: True if setting is successful, False otherwise.
 		"""
 
-		return self.setParam("ACQ:STOPA " +str(stop))
+		return self.execcommand('setAcqStop',[str(stop)])
 
 	def getAcqStop(self):
 		"""
 		:Returns: string describing when the scope stops taking acquisitions, or False if this fails.
 		"""
 
-		return self.getParam("ACQ:STOPA?")
+		return self.execCommand('getAcqStop')
+
+	"""
+	END ACQUISITON COMMANDS
+	"""
+
+	"""
+	CALIBRATION COMMANDS
+	"""
+
+	def calibrate(self):
+		"""
+		Perform an internal self-calibration and return result status.
+
+		:Returns: string describing result of calibration.
+		"""
+
+		return self.execCommand('calibrate')
+
+	def abortCalibrate(self):
+		"""
+		Stops an in-progress factory calibration process.
+
+		:Returns: True if setting is successful, False otherwise.
+		"""
+
+		return self.execCommand('abortCalibrate')
+
+	def continueCalibrate(self):
+		"""
+		Perform the next step in the factory calibration sequence.
+
+		:Returns: True if command is successful, False otherwise.
+		"""
+
+		return self.execCommand('continueCalibrate')
+
+	def factoryCalibrate(self):
+		"""
+		Initialize factory calibration sequence.
+
+		:Returns: True if command is successful, False otherwise.
+		"""
+
+		return self.execCommand('factoryCalibrate')
+
+	def internalCalibrate(self):
+		"""
+		Initialize internal calibration sequence.
+
+		:Returns: True if command is successful, False otherwise.
+		"""
+
+		return self.execCommand('internalCalibrate')
+
+	def getCalStatus(self):
+		"""
+		Return PASS or FAIL status of the last self or factory-calibration operation.
+
+		:Returns: "PASS" if last calibration was successful, "FAIL" otherwise.
+		"""
+
+		return self.execCommand('getCalStatus')
+
+	def getDiagnosticResult(self):
+		"""
+		Return diagnostic tests status.
+
+		:Returns: "PASS" if scope passes all diagnostic tests, "FAIL" otherwise.
+		"""
+
+		return self.execCommand('getDiagnosticResult')
+
+	def getDiagnosticLog(self):
+		"""
+		Return diagnostic test sequence results.
+
+		:Returns: A comma-separated string containing the results of internal diagnostic routines.
+		"""
+
+		return self.execCommand('getDiagnosticLog').strip()
+
+	"""
+	END CALIBRATION COMMANDS
+	"""
+
+	"""
+	CURSOR COMMANDS
+	"""
+
+	def getCursor(self):
+		"""
+		Get cursor settings.
+
+		:Returns: comma-separated string containing cursor settings.
+		"""
+
+		return self.execCommand('getCursor')
+
+	"""
+	END CURSOR COMMANDS
+	"""
+
+	"""
+	STATUS AND ERROR COMMANDS
+	"""
+
+	def getAllEvents(self):
+		"""
+		:Returns: all events in the event queue in string format.
+		"""
+
+		return self.execCommand('getAllEvents')
+
+	def isBusy(self):
+		"""
+		Check if the scope is busy.
+
+		:Returns: 0 for not busy, 1 for busy.
+		"""
+
+		return int(self.execCommand('isBusy'))
+
+	def clearStatus(self):
+		"""
+		Clears scope event queue and status registers.
+
+		:Returns: True if command is successful, False otherwise.
+		"""
+
+		return self.execCommand('clearStatus')
+
+	def eventStatus(self):
+		"""
+		Check event status register.
+
+		:Returns: the integer value held in the ESR.
+		"""
+
+		status = self.execCommand('eventStatus')
+		if status:
+			return int(status)
+
+	def eventCode(self):
+		"""
+		Get code of last event.
+
+		:Returns: integer error code.
+		"""
+
+		return self.execCommand('eventCode')
+
+	def eventMessage(self):
+		"""
+		Get message associated with last scope event.
+
+		:Returns: event code and event message string, separated by a comma.
+		"""
+
+		return self.execCommand('eventMessage')
+
+	def getFirstError(self):
+		"""
+		Returns first message in error log.
+
+		:Returns: a string describing an internal scope error, empty string if error queue is empty.
+		"""
+
+		return self.execCommand('getFirstError')
+
+	def getNextError(self):
+		"""
+		Returns next message in error log.
+
+		:Returns: a string describing an internal scope error, empty string if error queue is empty.
+		"""
+
+		return self.getParam('getNextError')
+
+	"""
+	END STATUS AND ERROR COMMANDS
+	"""
 
 
 class TDS2024B(GenericOscilloscope):
@@ -298,8 +488,39 @@ class TDS2024B(GenericOscilloscope):
 			self.logger.info(self.getAllEvents())
 
 		self.commands = {'autoSet': 'AUTOS EXEC',
-						 'getAcquisitionParams': 'ACQ?',
 
+						 'getAcquisitionParams': 'ACQ?',
+						 'setAcquisitionMode': 'ACQ:MOD',
+						 'getAcquisitionMode': 'ACQ:MOD?',
+						 'getNumberOfAcquisitions': 'ACQ:NUMAC?',
+						 'setAcqsForAverage': 'ACQ:NUMAV',
+						 'getAcqsForAverage': 'ACQ:NUMAV?',
+						 'setAcqState': 'ACQ:STATE',
+						 'getAcqState': 'ACQ:STATE?',
+						 'setAcqStop': 'ACQ:STOPA',
+						 'getAcqStop': 'ACQ:STOPA?',
+
+						 'checkTrigger': 'TRIG:STATE?',
+
+						 'calibrate': '*CAL?',
+						 'abortCalibrate:': 'CAL:ABO',
+						 'continueCalibrate': 'CAL:CONTINUE',
+						 'factoryCalibrate': 'CAL:FAC',
+						 'internalCalibrate': 'CAL:INTERNAL',
+						 'getCalStatus': 'CAL:STATUS?',
+						 'getDiagnosticResult': 'DIA:RESUL:FLA?',
+						 'getDiagnosticLog': 'DIA:RESUL:LOG?',
+
+						 'getCursor': 'CURS?',
+
+						 'getAllEvents': 'ALLE?',
+						 'isBusy': 'BUSY?',
+						 'clearStatus': '*CLS?',
+						 'eventStatus': '*ESR?',
+						 'eventCode': 'EVENT?',
+						 'eventMessage': 'EVMSG?',
+						 'getFirstError': 'ERRLOG:FIRST?',
+						 'getNextError': 'ERRLOG:NEXT?'
 
 
 
@@ -442,188 +663,6 @@ class TDS2024B(GenericOscilloscope):
 
 	"""
 	END UTILITY METHODS
-	"""
-
-	"""
-	END ACQUISITION COMMANDS
-	"""
-
-	"""
-	CALIBRATION COMMANDS
-	"""
-
-	def calibrate(self):
-		"""
-		Perform an internal self-calibration and return result status.
-
-		:Returns: string describing result of calibration.
-		"""
-
-		return self.getParam("*CAL?")
-
-	def abortCalibrate(self):
-		"""
-		Stops an in-progress factory calibration process.
-
-		:Returns: True if setting is successful, False otherwise.
-		"""
-
-		return self.setParam("CAL:ABO")
-
-	def continueCalibrate(self):
-		"""
-		Perform the next step in the factory calibration sequence.
-
-		:Returns: True if command is successful, False otherwise.
-		"""
-
-		return self.setParam("CAL:CONTINUE")
-
-	def factoryCalibrate(self):
-		"""
-		Initialize factory calibration sequence.
-
-		:Returns: True if command is successful, False otherwise.
-		"""
-
-		return self.setParam("CAL:FAC")
-
-	def internalCalibrate(self):
-		"""
-		Initialize internal calibration sequence.
-
-		:Returns: True if command is successful, False otherwise.
-		"""
-
-		return self.setParam("CAL:INTERNAL")
-
-	def getCalStatus(self):
-		"""
-		Return PASS or FAIL status of the last self or factory-calibration operation.
-
-		:Returns: "PASS" if last calibration was successful, "FAIL" otherwise.
-		"""
-
-		return self.getParam("CAL:STATUS?")
-
-	def getDiagnosticResult(self):
-		"""
-		Return diagnostic tests status.
-
-		:Returns: "PASS" if scope passes all diagnostic tests, "FAIL" otherwise.
-		"""
-
-		return self.getParam("DIA:RESUL:FLA?")
-
-	def getDiagnosticLog(self):
-		"""
-		Return diagnostic test sequence results.
-
-		:Returns: A comma-separated string containing the results of internal diagnostic routines.
-		"""
-
-		return self.getParam("DIA:RESUL:LOG?").strip()
-
-	def getFirstError(self):
-		"""
-		Returns first message in error log.
-
-		:Returns: a string describing an internal scope error, empty string if error queue is empty.
-		"""
-
-		return self.getParam("ERRLOG:FIRST?")
-
-	def getNextError(self):
-		"""
-		Returns next message in error log.
-
-		:Returns: a string describing an internal scope error, empty string if error queue is empty.
-		"""
-
-		return self.getParam("ERRLOG:NEXT?")
-
-	"""
-	END CALIBRATION COMMANDS
-	"""
-
-	"""
-	CURSOR COMMANDS
-	"""
-
-	def getCursor(self):
-		"""
-		Get cursor settings.
-
-		:Returns: comma-separated string containing cursor settings.
-		"""
-
-		return self.getParam("CURS?")
-
-
-	"""
-	END CURSOR COMMANDS
-	"""
-
-	"""
-	STATUS AND ERROR COMMANDS
-	"""
-
-	def getAllEvents(self):
-		"""
-		:Returns: all events in the event queue in string format.
-		"""
-
-		return self.getParam("ALLE?")
-
-	def isBusy(self):
-		"""
-		Check if the scope is busy.
-
-		:Returns: 0 for not busy, 1 for busy.
-		"""
-
-		return int(self.getParam("BUSY?"))
-
-	def clearStatus(self):
-		"""
-		Clears scope event queue and status registers.
-
-		:Returns: True if command is successful, False otherwise.
-		"""
-
-		return self.getParam("*CLS?")
-
-	def eventStatus(self):
-		"""
-		Check event status register.
-
-		:Returns: the integer value held in the ESR.
-		"""
-
-		status = self.getParam("*ESR?")
-		if status:
-			return int(status)
-
-	def eventCode(self):
-		"""
-		Get code of last event.
-
-		:Returns: integer error code.
-		"""
-
-		return self.getParam("EVENT?")
-
-	def eventMessage(self):
-		"""
-		Get message associated with last scope event.
-
-		:Returns: event code and event message string, separated by a comma.
-		"""
-
-		return self.getParam("EVMSG?")
-
-	"""
-	END STATUS AND ERROR COMMANDS
 	"""
 
 
