@@ -486,6 +486,28 @@ class GenericOscilloscope:
 	END TRIGGER COMMANDS
 	"""
 
+	"""
+	DATA CHANNEL COMMANDS
+	"""
+
+	def getDataChannel(self):
+		"""
+		:Returns: The name of the active data channel.
+		"""
+
+		return self.execCommand('getDataChannel')
+
+	def setDataChannel(self, channel):
+		"""
+		Sets the scope's active data channel for USB readout.
+
+		Parameters:
+			:channel: the desired data channel.
+		"""
+
+		return execCommand('setDataChannel',[str(channel)])
+
+
 
 class TDS2024B(GenericOscilloscope):
 	"""
@@ -533,7 +555,7 @@ class TDS2024B(GenericOscilloscope):
 						 'getDiagnosticLog': 'DIA:RESUL:LOG?',
 
 						 'getCursor': 'CURS?',
-						 
+
 						 'getAllEvents': 'ALLE?',
 						 'isBusy': 'BUSY?',
 						 'clearStatus': '*CLS?',
@@ -544,6 +566,8 @@ class TDS2024B(GenericOscilloscope):
 						 'getNextError': 'ERRLOG:NEXT?',
 						 'getTriggerStatus': 'TRIG:STATE?',
 						 'getTrigFrequency': 'TRIG:MAIN:FREQ?',
+
+						 'getDataChannel': 'DAT:SOU?',
 						}
 
 		self.make = make
@@ -561,8 +585,7 @@ class TDS2024B(GenericOscilloscope):
 		"""
 		self.waveform = {'error' : None}
 
-		self.query("DAT:SOU?")
-		self.waveform['dataChannel'] = self.query("DAT:SOU?") 	# get active channel
+		self.waveform['dataChannel'] = self.getDataChannel() 	# get active channel
 		try:
 			preamble = self.query("WFMP?").split(';')	# get waveform preamble and parse it
 			self.waveform['dataWidth']= int(preamble[0])
