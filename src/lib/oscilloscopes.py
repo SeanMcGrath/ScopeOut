@@ -29,23 +29,13 @@ class GenericOscilloscope:
 		self.serialNumber = '0'
 		self.commands = {}
 
-	def query(self, command):
+	def __str__(self):
 		"""
-		Issues query to scope and returns output.
+		Object to String.
 
-		Parameters:
-			:command: command to be written to scope.
-
-		:Returns: the output of the scope given in response to command, False if command fails.
+		:Returns: A string containing the make, model and serial number of the scope.
 		"""
-
-		try:
-			self.scope.write(command)
-			return self.scope.read().strip()
-		except Exception as e:
-			self.logger.error(e)
-			return False
-
+		return "{:s} {:s} Oscilloscope. Serial Number: {:s}.".format(self.make,self.model,self.serialNumber)
 
 	def write(self, toWrite):
 		"""
@@ -69,13 +59,22 @@ class GenericOscilloscope:
 		except Exception as e:
 			self.logger.error(e)
 
-	def __str__(self):
+	def query(self, command):
 		"""
-		Object to String.
+		Issues query to scope and returns output.
 
-		:Returns: A string containing the make, model and serial number of the scope.
+		Parameters:
+			:command: command to be written to scope.
+
+		:Returns: the output of the scope given in response to command, False if command fails.
 		"""
-		return "{:s} {:s} Oscilloscope. Serial Number: {:s}.".format(self.make,self.model,self.serialNumber)
+
+		try:
+			self.scope.write(command)
+			return self.scope.read().strip()
+		except Exception as e:
+			self.logger.error(e)
+			return False
 
 	def setParam(self, command):
 		"""
@@ -111,6 +110,24 @@ class GenericOscilloscope:
 		try: return self.query(command).strip("'")
 		except Exception as err:
 			self.logger.error(err)
+
+	def execCommand(self, command):
+		"""
+		Searches the command dictionary for a command key, and executes the command if it is supported.
+
+		Parameters:
+			:command: a key to the command dictionary, usually the name of a function in string form.
+
+		:returns: a parameter value if requested, True if a parameter is set successfully, or False if communication fails.
+		"""
+
+		try:
+			if command[-1] == '?':
+				return self.getParam(self.commands[command])
+			else:
+				return self.setParam(self.commands[command])
+		except KeyError:
+			self.logger.error("Command '{:s}' not supported".format(command))
 
 	def autosetUnits(self, axisArray):
 		"""
@@ -151,10 +168,101 @@ class GenericOscilloscope:
 		Executes automatic setup of scope window.
 		"""
 
-		try:
-			return self.setParam(self.commands['autoSetCommand'])
-		except KeyError:
-			self.logger.error('AutoSet function not available')
+		return self.execCommand('autoSet')
+
+	"""
+	ACQUISITION COMMANDS
+	"""
+
+	def getAcquisitionParams(self):
+		"""
+		:Returns: scope acquisition parameters as a string.
+		"""
+
+		return self.getParam(self.commands['getAcquisitionParams'])
+
+	def setAcquisitionMode(self, mode):
+		"""
+		Set TDS2024B acquisition mode.
+
+		:Parameters:
+			:mode: Desired mode of scope operation: {SAMPLE | PEAK | AVERAGE}
+
+		:Returns: True if setting is successful, false otherwise.
+		"""
+
+		return self.setParam("ACQ:MOD " + str(mode))
+
+	def getAcquisitionMode(self):
+		"""
+		:Returns: String naming current acquisition mode.
+		"""
+
+		return self.getParam("ACQ:MOD?")
+
+	def getNumberOfAcquisitions(self):
+		"""
+		:Returns: the number of acquisitions made.
+		"""
+
+		return self.getParam('ACQ:NUMAC?')
+
+	def setAcqsForAverage(self, acqs):
+		"""
+		Set the number of acquisitions made to find an average waveform in AVERAGE mode.
+
+		:Parameters:
+			:acqs: desired number of acquisitions per average reading: {4 | 16 | 64 | 128}
+
+		:Returns: True if setting is successful, false otherwise.
+		"""
+
+		if acqs not in [4,16,64,128]: return False
+
+		return self.setParam("ACQ:NUMAV " +str(acqs))
+
+	def getAcqsForAverage(self):
+		"""
+		:Returns: the current number of acquisitions taken to find an average waveform in AVERAGE mode.
+		"""
+
+		return self.getParam('ACQ:NUMAV?')
+
+	def setAcqState(self, state):
+		"""
+		Sets the scope's acquisition state.
+
+		:Parameters:
+			:state: a string naming the desired acquisition state: { OFF | ON | RUN | STOP | <NR1> }
+
+		:Returns: True if setting is successful, false otherwise.
+		"""
+
+		return self.setParam("ACQ:STATE " +str(state))
+
+	def getAcqState(self):
+		"""
+		:Returns: '0' for off, '1' for on.
+		"""
+
+		return self.getParam("ACQ:STATE?")
+
+	def setAcqStop(self, stop):
+		"""
+		Tells the oscilloscope when to stop taking acquisitions.
+
+		:Returns: True if setting is successful, False otherwise.
+		"""
+
+		return self.setParam("ACQ:STOPA " +str(stop))
+
+	def getAcqStop(self):
+		"""
+		:Returns: string describing when the scope stops taking acquisitions, or False if this fails.
+		"""
+
+		return self.getParam("ACQ:STOPA?")
+
 
 class TDS2024B(GenericOscilloscope):
 	"""
@@ -189,7 +297,13 @@ class TDS2024B(GenericOscilloscope):
 		if(self.eventStatus()):
 			self.logger.info(self.getAllEvents())
 
-		self.commands = {'autoSetCommand': 'AUTOS EXEC' }
+		self.commands = {'autoSet': 'AUTOS EXEC',
+						 'getAcquisitionParams': 'ACQ?',
+
+
+
+
+						}
 		
 	def waveformSetup(self):
 		"""
@@ -329,99 +443,6 @@ class TDS2024B(GenericOscilloscope):
 	"""
 	END UTILITY METHODS
 	"""
-
-	"""
-	ACQUISITION COMMANDS
-	"""
-
-	def getAcquisitionParams(self):
-		"""
-		:Returns: scope acquisition parameters as a string.
-		"""
-
-		return self.getParam("ACQ?")
-
-	def setAcquisitionMode(self, mode):
-		"""
-		Set TDS2024B acquisition mode.
-
-		:Parameters:
-			:mode: Desired mode of scope operation: {SAMPLE | PEAK | AVERAGE}
-
-		:Returns: True if setting is successful, false otherwise.
-		"""
-
-		return self.setParam("ACQ:MOD " + str(mode))
-
-	def getAcquisitionMode(self):
-		"""
-		:Returns: String naming current acquisition mode.
-		"""
-
-		return self.getParam("ACQ:MOD?")
-
-	def getNumberOfAcquisitions(self):
-		"""
-		:Returns: the number of acquisitions made.
-		"""
-
-		return self.getParam('ACQ:NUMAC?')
-
-	def setAcqsForAverage(self, acqs):
-		"""
-		Set the number of acquisitions made to find an average waveform in AVERAGE mode.
-
-		:Parameters:
-			:acqs: desired number of acquisitions per average reading: {4 | 16 | 64 | 128}
-
-		:Returns: True if setting is successful, false otherwise.
-		"""
-
-		if acqs not in [4,16,64,128]: return False
-
-		return self.setParam("ACQ:NUMAV " +str(acqs))
-
-	def getAcqsForAverage(self):
-		"""
-		:Returns: the current number of acquisitions taken to find an average waveform in AVERAGE mode.
-		"""
-
-		return self.getParam('ACQ:NUMAV?')
-
-	def setAcqState(self, state):
-		"""
-		Sets the scope's acquisition state.
-
-		:Parameters:
-			:state: a string naming the desired acquisition state: { OFF | ON | RUN | STOP | <NR1> }
-
-		:Returns: True if setting is successful, false otherwise.
-		"""
-
-		return self.setParam("ACQ:STATE " +str(state))
-
-	def getAcqState(self):
-		"""
-		:Returns: '0' for off, '1' for on.
-		"""
-
-		return self.getParam("ACQ:STATE?")
-
-	def setAcqStop(self, stop):
-		"""
-		Tells the oscilloscope when to stop taking acquisitions.
-
-		:Returns: True if setting is successful, False otherwise.
-		"""
-
-		return self.setParam("ACQ:STOPA " +str(stop))
-
-	def getAcqStop(self):
-		"""
-		:Returns: string describing when the scope stops taking acquisitions, or False if this fails.
-		"""
-
-		return self.getParam("ACQ:STOPA?")
 
 	"""
 	END ACQUISITION COMMANDS
