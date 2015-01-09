@@ -522,6 +522,7 @@ class TDS2024B(GenericOscilloscope):
 						 'getAcqState': 'ACQ:STATE?',
 						 'setAcqStop': 'ACQ:STOPA',
 						 'getAcqStop': 'ACQ:STOPA?',
+
 						 'calibrate': '*CAL?',
 						 'abortCalibrate:': 'CAL:ABO',
 						 'continueCalibrate': 'CAL:CONTINUE',
@@ -530,7 +531,9 @@ class TDS2024B(GenericOscilloscope):
 						 'getCalStatus': 'CAL:STATUS?',
 						 'getDiagnosticResult': 'DIA:RESUL:FLA?',
 						 'getDiagnosticLog': 'DIA:RESUL:LOG?',
+
 						 'getCursor': 'CURS?',
+						 
 						 'getAllEvents': 'ALLE?',
 						 'isBusy': 'BUSY?',
 						 'clearStatus': '*CLS?',
@@ -549,8 +552,8 @@ class TDS2024B(GenericOscilloscope):
 		self.firmwareVersion = firmware
 		self.waveformSet = False
 		self.numChannels = 4 # 4-channel oscilloscope
-		# if(self.eventStatus()):
-		# 	self.logger.info(self.getAllEvents())
+		if(self.eventStatus()):
+			self.logger.info(self.getAllEvents())
 		
 	def waveformSetup(self):
 		"""
