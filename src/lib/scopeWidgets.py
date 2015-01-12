@@ -668,7 +668,8 @@ class waveColumnWidget(QtWidgets.QWidget):
 		self.setAutoFillBackground(True)
 
 		self.layout = QtWidgets.QVBoxLayout(self)
-		self.layout.addWidget(QtWidgets.QLabel('', self))
+		self.layout.setSpacing(0)
+		self.layout.setContentsMargins(0,0,0,0)
 		self.setLayout(self.layout)
 
 		self.show()
@@ -689,8 +690,21 @@ class waveColumnWidget(QtWidgets.QWidget):
 		"""
 
 		item = waveColumnItem(wave)
-
 		self.addItem(item)
+
+	def reset(self):
+		"""
+		Clear all waves from the list
+		"""
+
+		self.logger.info("Resetting Wave Column")
+		i = self.layout.takeAt(0)
+		while i is not None:
+			i.widget().hide()
+			del i
+			i = self.layout.takeAt(0)
+
+		self.show()
 
 class waveColumnItem(QtWidgets.QWidget):
 	"""
@@ -705,6 +719,12 @@ class waveColumnItem(QtWidgets.QWidget):
 
 		self.logger = logging.getLogger('ScopeOut.scopeWidgets.waveColumnWidget')
 		QtWidgets.QWidget.__init__(self, *args)
+
+		self.setBackgroundRole(QtGui.QPalette.Base)
+		palette = QtGui.QPalette()
+		palette.setColor(self.backgroundRole(),QtGui.QColor('#FFFFFF'))
+		self.setPalette(palette)
+		self.setAutoFillBackground(True)
 
 		self.waveTime = QtWidgets.QLabel(wave['acqTime'], self)
 

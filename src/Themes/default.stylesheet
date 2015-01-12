@@ -70,8 +70,19 @@ acqControlWidget {
 waveColumnWidget {
   min-width: 250px;
   min-height: 200px;
+  padding: 0px;
 }
 
-waveColumnWidget * {
-  qproperty-alignment: AlignCenter;
+waveColumnItem {
+  max-height: 50px;
+  min-width: 250px;
+  width: 250px;
+}
+
+waveColumnItem QLabel {
+  min-width: 250px;
+  max-width: 250px;
+  border-radius: 0px;
+  padding: 0px;
+  qproperty-alignment: AlignLeft;
 }

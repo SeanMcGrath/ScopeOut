@@ -94,6 +94,7 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.acqControl.autoSetButton.clicked.connect(self.__autosetEvent)
 		self.acqControl.acqStopButton.clicked.connect(self.acqStopFlag.set)
 		self.mainWindow.resetAction.triggered.connect(self.__resetEvent)
+		self.mainWindow.resetAction.triggered.connect(self.waveColumn.reset)
 		self.statusChange.connect(self.mainWindow.status)
 		self.scopeChange.connect(self.acqControl.setScope)
 		self.waveSignal.connect(self.waveColumn.addWave)
