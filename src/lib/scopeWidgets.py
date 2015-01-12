@@ -661,15 +661,9 @@ class waveColumnWidget(QtWidgets.QWidget):
 
 		self.items = []
 
-		self.setBackgroundRole(QtGui.QPalette.Base)
-		palette = QtGui.QPalette()
-		palette.setColor(self.backgroundRole(),QtGui.QColor('#1E1E1E'))
-		self.setPalette(palette)
-		self.setAutoFillBackground(True)
-
+		self.blank = QtWidgets.QLabel('', self)
 		self.layout = QtWidgets.QVBoxLayout(self)
-		self.layout.setSpacing(0)
-		self.layout.setContentsMargins(0,0,0,0)
+		self.layout.addWidget(self.blank)
 		self.setLayout(self.layout)
 
 		self.show()
@@ -681,7 +675,6 @@ class waveColumnWidget(QtWidgets.QWidget):
 
 		self.items.append(item)
 		self.layout.addWidget(item)
-
 		self.show()
 
 	def addWave(self, wave):
@@ -706,6 +699,13 @@ class waveColumnWidget(QtWidgets.QWidget):
 
 		self.show()
 
+	def paintEvent(self, pe):
+		opt = QtWidgets.QStyleOption()
+		opt.initFrom(self)
+		p = QtGui.QPainter(self)
+		s = self.style()
+		s.drawPrimitive(QtWidgets.QStyle.PE_Widget, opt, p, self)
+
 class waveColumnItem(QtWidgets.QWidget):
 	"""
 	A rectangular box showing basic information about a captured waveform.
@@ -726,10 +726,13 @@ class waveColumnItem(QtWidgets.QWidget):
 		self.setPalette(palette)
 		self.setAutoFillBackground(True)
 
+		self.wave = wave
 		self.waveTime = QtWidgets.QLabel(wave['acqTime'], self)
 
 		self.layout = QtWidgets.QGridLayout(self)
 
-		self.layout.addWidget(self.waveTime)
+		self.layout.addWidget(self.waveTime,0,0)
+
+		self.setLayout(self.layout)
 
 		self.show()

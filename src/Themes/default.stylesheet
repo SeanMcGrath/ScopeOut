@@ -71,6 +71,7 @@ waveColumnWidget {
   min-width: 250px;
   min-height: 200px;
   padding: 0px;
+  background-color: #1E1E1E;
 }
 
 waveColumnItem {
