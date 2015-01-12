@@ -6,7 +6,7 @@ Classes to represent, control, and read out VISA Oscilloscopes.
 """
 
 import visa, numpy as np
-import queue, logging
+import queue, logging, datetime
 
 class GenericOscilloscope:
 	"""
@@ -113,7 +113,8 @@ class GenericOscilloscope:
 		:Returns: desired Parameter if communication is successful, False otherwise.
 		"""
 
-		try: return self.query(command).strip("'")
+		try:
+			return self.query(command).strip("'")
 		except Exception as err:
 			self.logger.error(err)
 			return False
@@ -130,7 +131,7 @@ class GenericOscilloscope:
 		"""
 
 		try:
-			if command[-1] == '?':
+			if self.commands[command][-1] == '?':
 				return self.getParam(self.commands[command])
 			else:
 				argString = ''
@@ -144,8 +145,10 @@ class GenericOscilloscope:
 
 		except KeyError:
 			self.logger.error("Command '{:s}' not supported".format(command))
+			return False
 		except Exception as e:
 			self.logger.error(e)
+			return False
 
 	def autosetUnits(self, axisArray):
 		"""
@@ -487,7 +490,7 @@ class GenericOscilloscope:
 	"""
 
 	"""
-	DATA CHANNEL COMMANDS
+	DATA COMMANDS
 	"""
 
 	def getDataChannel(self):
@@ -508,18 +511,35 @@ class GenericOscilloscope:
 		return execCommand('setDataChannel',[str(channel)])
 
 	"""
-	END DATA CHANNEL COMMANDS
+	END DATA COMMANDS
 	"""
 
 class TDS2024B(GenericOscilloscope):
 	"""
 	Class representing Tektronix 2024B.
 
-	Contains the command dictionary specifying the coorect VISA commands for this oscilloscope,
+	Contains the command dictionary specifying the correct VISA commands for this oscilloscope,
 	And defines how to handle waveforms that this scope generates.
 	"""
 
-	self.commands = {'autoSet': 'AUTOS EXEC',
+	
+						
+	def __init__(self, VISA, make, model, serialNum, firmware):
+		"""
+		Constructor.
+
+		Parameters:
+			:VISA: object representing VISA instrument, on which PyVisa can be used.
+			:brand: brand of scope
+			:model: model of scope
+			:serial: serial number of scope
+			:firmware: scope firmware version
+		"""
+
+		GenericOscilloscope.__init__(self,VISA)
+		self.logger = logging.getLogger("oscilloscopes.TDS2024B")
+
+		self.commands = {'autoSet': 'AUTOS EXEC',
 					 'getAcquisitionParams': 'ACQ?',
 					 'setAcquisitionMode': 'ACQ:MOD',
 					 'getAcquisitionMode': 'ACQ:MOD?',
@@ -555,21 +575,6 @@ class TDS2024B(GenericOscilloscope):
 
 					 'getDataChannel': 'DAT:SOU?',
 					}
-						
-	def __init__(self, VISA, make, model, serialNum, firmware):
-		"""
-		Constructor.
-
-		Parameters:
-			:VISA: object representing VISA instrument, on which PyVisa can be used.
-			:brand: brand of scope
-			:model: model of scope
-			:serial: serial number of scope
-			:firmware: scope firmware version
-		"""
-
-		GenericOscilloscope.__init__(self,VISA)
-		self.logger = logging.getLogger("oscilloscopes.TDS2024B")
 
 		self.make = make
 		self.model = model
@@ -653,6 +658,7 @@ class TDS2024B(GenericOscilloscope):
 
 		if self.waveformSet:
 			try:
+				self.waveform['acqTime'] = str(datetime.datetime.now())
 				curveData = self.query("CURV?").split(',')
 				curveData = list(map(int,curveData))
 				for i in range(0,len(curveData)):

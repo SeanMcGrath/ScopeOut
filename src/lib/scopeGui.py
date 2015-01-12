@@ -47,7 +47,8 @@ class ThreadedClient(QtWidgets.QApplication):
 	acquireFlag = threading.Event() # Set during continuous acquisition when a waveform has been acquired.
 	statusChange = QtCore.pyqtSignal(str) # Signal sent to GUI waveform counter.
 	scopeChange = QtCore.pyqtSignal(GenericOscilloscope) # Signal sent to change the active oscilloscope.
-	
+	waveSignal = QtCore.pyqtSignal(dict) # signal containing wave Dictionary
+
 	def __init__(self, *args):
 		"""
 		Constructor
@@ -67,10 +68,11 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.acqControl = sw.acqControlWidget(None)
 		self.plot = sw.WavePlotWidget()
 		self.waveOptions = sw.waveOptionsTabWidget()
+		self.waveColumn = sw.waveColumnWidget()
 		
 		self.logger.info("All Widgets initialized")
 
-		widgets = [self.plot,self.acqControl,self.waveOptions]
+		widgets = [self.waveColumn,self.plot,self.acqControl,self.waveOptions]
 		self.mainWindow = sw.ScopeOutMainWindow(widgets,self.__closeEvent,self.__saveWaveformEvent)
 
 		self.__connectSignals()
@@ -94,6 +96,7 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.mainWindow.resetAction.triggered.connect(self.__resetEvent)
 		self.statusChange.connect(self.mainWindow.status)
 		self.scopeChange.connect(self.acqControl.setScope)
+		self.waveSignal.connect(self.waveColumn.addWave)
 		self.logger.info("Signals connected")
 
 	def __acqEvent(self, mode):
@@ -147,6 +150,7 @@ class ThreadedClient(QtWidgets.QApplication):
 					if self.__histogramMode() and len(self.integralList)>1:
 						self.plot.showHist(self.integralList)
 					self.waveList.append(wave)
+					self.waveSignal.emit(wave)
 					self.__waveCount(len(self.waveList))
 					if self.waveOptions.peakStart() and start >= 0 and not self.__histogramMode():
 						self.plot.vertLines([ wave['xData'][start], wave['xData'][end] ])

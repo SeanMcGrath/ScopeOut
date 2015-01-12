@@ -22,7 +22,7 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 	def __init__(self, widgets, endCommand, saveCommand, *args):
 		"""
 		Constructor.
-		will be passed widgets from threaded client (probably as array).
+		Is passed widgets from threaded client as an array.
 		"""
 
 		self.logger = logging.getLogger('ScopeOut.scopeWidgets.ScopeOutMainWindow')
@@ -36,11 +36,12 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 
 		self.central = QtWidgets.QWidget(self)
 		self.layout = QtWidgets.QGridLayout(self.central)
-		self.layout.setSpacing(0)
-		self.layout.setContentsMargins(0,0,0,0)
-		self.layout.addWidget(self.widgets[0],0,0)
-		self.layout.addWidget(self.widgets[1],0,1)
-		self.layout.addWidget(self.widgets[2],2,0)
+		self.layout.setSpacing(10)
+		self.layout.setContentsMargins(0,0,4,4)
+		self.layout.addWidget(self.widgets[0],0,0,2,1) # Column
+		self.layout.addWidget(self.widgets[1],0,1) # plot
+		self.layout.addWidget(self.widgets[2],0,2,2,1) # acqControl
+		self.layout.addWidget(self.widgets[3],1,1) # waveOptions
 		self.central.setLayout(self.layout)
 		self.setCentralWidget(self.central)
 
@@ -644,3 +645,71 @@ class waveOptionsTabWidget(QtWidgets.QWidget):
 		"""
 
 		return self.tabTitles[self.tabManager.currentIndex()]
+
+class waveColumnWidget(QtWidgets.QWidget):
+	"""
+	A column display showing acquired waveforms.
+	"""
+
+	def __init__(self, *args):
+		"""
+		constructor
+		"""
+
+		self.logger = logging.getLogger('ScopeOut.scopeWidgets.waveColumnWidget')
+		QtWidgets.QWidget.__init__(self, *args)
+
+		self.items = []
+
+		self.setBackgroundRole(QtGui.QPalette.Base)
+		palette = QtGui.QPalette()
+		palette.setColor(self.backgroundRole(),QtGui.QColor('#1E1E1E'))
+		self.setPalette(palette)
+		self.setAutoFillBackground(True)
+
+		self.layout = QtWidgets.QVBoxLayout(self)
+		self.layout.addWidget(QtWidgets.QLabel('', self))
+		self.setLayout(self.layout)
+
+		self.show()
+
+	def addItem(self, item):
+		"""
+		Add a waveColumnItem to the column and display it.
+		"""
+
+		self.items.append(item)
+		self.layout.addWidget(item)
+
+		self.show()
+
+	def addWave(self, wave):
+		"""
+		Receive a wave dict, package it as a waveColumnItem, and add it to the column.
+		"""
+
+		item = waveColumnItem(wave)
+
+		self.addItem(item)
+
+class waveColumnItem(QtWidgets.QWidget):
+	"""
+	A rectangular box showing basic information about a captured waveform.
+	Used to dynamically populate the waveColumnWidget.
+	"""
+
+	def __init__(self, wave, *args):
+		"""
+		constructor
+		"""
+
+		self.logger = logging.getLogger('ScopeOut.scopeWidgets.waveColumnWidget')
+		QtWidgets.QWidget.__init__(self, *args)
+
+		self.waveTime = QtWidgets.QLabel(wave['acqTime'], self)
+
+		self.layout = QtWidgets.QGridLayout(self)
+
+		self.layout.addWidget(self.waveTime)
+
+		self.show()

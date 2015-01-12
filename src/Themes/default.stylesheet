@@ -66,3 +66,12 @@ acqControlWidget {
   max-width: 200px;
   padding: 10px;
 }
+
+waveColumnWidget {
+  min-width: 250px;
+  min-height: 200px;
+}
+
+waveColumnWidget * {
+  qproperty-alignment: AlignCenter;
+}
