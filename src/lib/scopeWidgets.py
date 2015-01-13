@@ -646,6 +646,17 @@ class waveOptionsTabWidget(QtWidgets.QWidget):
 
 		return self.tabTitles[self.tabManager.currentIndex()]
 
+	def paintEvent(self, pe):
+		"""
+		allows stylesheet to be used for custom widget.
+		"""
+		
+		opt = QtWidgets.QStyleOption()
+		opt.initFrom(self)
+		p = QtGui.QPainter(self)
+		s = self.style()
+		s.drawPrimitive(QtWidgets.QStyle.PE_Widget, opt, p, self)
+
 class waveColumnWidget(QtWidgets.QWidget):
 	"""
 	A column display showing acquired waveforms.
@@ -661,9 +672,9 @@ class waveColumnWidget(QtWidgets.QWidget):
 
 		self.items = []
 
-		self.blank = QtWidgets.QLabel('', self)
 		self.layout = QtWidgets.QVBoxLayout(self)
-		self.layout.addWidget(self.blank)
+		self.layout.setContentsMargins(0,0,0,0)
+		self.layout.setSpacing(0)
 		self.setLayout(self.layout)
 
 		self.show()
@@ -700,6 +711,10 @@ class waveColumnWidget(QtWidgets.QWidget):
 		self.show()
 
 	def paintEvent(self, pe):
+		"""
+		allows stylesheet to be used for custom widget.
+		"""
+		
 		opt = QtWidgets.QStyleOption()
 		opt.initFrom(self)
 		p = QtGui.QPainter(self)
@@ -730,9 +745,22 @@ class waveColumnItem(QtWidgets.QWidget):
 		self.waveTime = QtWidgets.QLabel(wave['acqTime'], self)
 
 		self.layout = QtWidgets.QGridLayout(self)
+		self.layout.setContentsMargins(0,0,0,0)
+		self.layout.setSpacing(0)
 
 		self.layout.addWidget(self.waveTime,0,0)
 
 		self.setLayout(self.layout)
 
 		self.show()
+
+	def paintEvent(self, pe):
+		"""
+		allows stylesheet to be used for custom widget.
+		"""
+		
+		opt = QtWidgets.QStyleOption()
+		opt.initFrom(self)
+		p = QtGui.QPainter(self)
+		s = self.style()
+		s.drawPrimitive(QtWidgets.QStyle.PE_Widget, opt, p, self)
