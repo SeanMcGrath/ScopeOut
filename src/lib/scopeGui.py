@@ -226,10 +226,10 @@ class ThreadedClient(QtWidgets.QApplication):
 			"""
 
 			self.lock.acquire()
-			trigState = self.activeScope.checkTrigger()
+			trigState = self.activeScope.getTriggerStatus()
 			
 			while trigState != 'TRIGGER' and not self.stopFlag.isSet():
-				trigState = self.activeScope.checkTrigger()
+				trigState = self.activeScope.getTriggerStatus()
 
 			try:
 				self.activeScope.makeWaveform()
