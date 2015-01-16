@@ -736,24 +736,27 @@ class waveColumnItem(QtWidgets.QWidget):
 		self.logger = logging.getLogger('ScopeOut.scopeWidgets.waveColumnWidget')
 		QtWidgets.QWidget.__init__(self, *args)
 
-		self.setBackgroundRole(QtGui.QPalette.Base)
-		palette = QtGui.QPalette()
-		palette.setColor(self.backgroundRole(),QtGui.QColor('#FFFFFF'))
-		self.setPalette(palette)
-		self.setAutoFillBackground(True)
-
 		self.wave = wave
-		self.waveTime = QtWidgets.QLabel(wave['acqTime'], self)
+		time = wave['acqTime']
+		dispTime = time.split(' ')[-1]
+		self.waveTime = QtWidgets.QLabel(dispTime, self)
 
 		self.layout = QtWidgets.QGridLayout(self)
 		self.layout.setContentsMargins(0,0,0,0)
-		self.layout.setSpacing(0)
+		self.layout.setSpacing(2)
 
 		self.layout.addWidget(self.waveTime,0,0)
 
 		self.setLayout(self.layout)
 
 		self.show()
+
+	def getWave(self):
+		"""
+		:Returns: the wave wrapped by this item.
+		"""
+
+		return self.wave
 
 	def paintEvent(self, pe):
 		"""

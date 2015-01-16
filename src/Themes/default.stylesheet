@@ -75,15 +75,22 @@ waveColumnWidget {
 }
 
 waveColumnItem {
+  min-height: 2em;
   max-height: 50px;
   min-width: 250px;
   width: 250px;
+  border-top: 1px solid #FFF;
+}
+
+waveColumnItem::hover {
+  background-color: #3C3C3C
 }
 
 waveColumnItem QLabel {
   min-width: 250px;
   max-width: 250px;
   border-radius: 0px;
-  padding: 0px;
+  padding: 1px;
   qproperty-alignment: AlignLeft;
+  background-color: none;
 }
