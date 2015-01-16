@@ -675,6 +675,7 @@ class waveColumnWidget(QtWidgets.QWidget):
 		self.layout = QtWidgets.QVBoxLayout(self)
 		self.layout.setContentsMargins(0,0,0,0)
 		self.layout.setSpacing(0)
+		self.layout.addStretch(1)
 		self.setLayout(self.layout)
 
 		self.show()
@@ -685,7 +686,7 @@ class waveColumnWidget(QtWidgets.QWidget):
 		"""
 
 		self.items.append(item)
-		self.layout.addWidget(item)
+		self.layout.insertWidget(0,item)
 		self.show()
 
 	def addWave(self, wave):
