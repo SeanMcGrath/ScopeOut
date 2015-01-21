@@ -82,8 +82,12 @@ waveColumnItem {
   border-top: 2px solid #3C3C3C;
 }
 
-waveColumnItem::hover {
-  background-color: #3C3C3C
+waveColumnItem[state="active"] {
+  background-color: #673AB7;
+}
+
+waveColumnItem:hover {
+  background-color: #3C3C3C;
 }
 
 waveColumnItem QLabel {

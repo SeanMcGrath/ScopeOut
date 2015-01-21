@@ -567,7 +567,6 @@ class FixedPeakTab(QtWidgets.QWidget):
 		self.startThresholdInput.setEnabled(bool)
 		self.endThresholdInput.setEnabled(bool)
 
-
 class waveOptionsTabWidget(QtWidgets.QWidget):
 	"""
 	Manages Tabbed display of wave options widgets. Also holds wave counter and peak window checkbox
@@ -653,6 +652,11 @@ class waveColumnWidget(QtWidgets.QWidget):
 	A column display showing acquired waveforms.
 	"""
 
+	# Colors for column items
+	baseColor = "#1E1E1E"
+	hoverColor = "#3C3C3C"
+	activeColor = "#673AB7"
+
 	waveSignal = QtCore.pyqtSignal(dict) # signal to pass wave to plot
 
 	def __init__(self, *args):
@@ -678,10 +682,13 @@ class waveColumnWidget(QtWidgets.QWidget):
 		Add a waveColumnItem to the column and display it.
 		"""
 
+		self.resetColors()
+		item.setBackground(self.activeColor)
 		self.layout.insertWidget(0,item)
 		self.items += 1
 		self.show()
 		item.waveSignal.connect(self.waveSignal)
+		item.waveSignal.connect(self.resetColors)
 
 	def addWave(self, wave):
 		"""
@@ -709,6 +716,14 @@ class waveColumnWidget(QtWidgets.QWidget):
 				break
 
 		self.show()
+
+	def resetColors(self):
+		"""
+		Turn all of the items back to the default color
+		"""
+
+		for i in range(0, self.layout.count()-1):
+			self.layout.itemAt(i).widget().setBackground(self.baseColor)
 
 	def paintEvent(self, pe):
 		"""
@@ -777,3 +792,14 @@ class waveColumnItem(QtWidgets.QWidget):
 		"""
 
 		self.waveSignal.emit(self.wave)
+		self.setBackground("#673AB7")
+
+	def setBackground(self, color):
+		"""
+		Sets this widget's background color to the specified color.
+
+		Parameters:
+			:color: a string representing a Qt-readable color, usually a hex code.
+		"""
+
+		self.setStyleSheet("background-color: {:s};".format(color))
