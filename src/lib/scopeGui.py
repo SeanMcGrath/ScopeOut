@@ -98,7 +98,7 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.statusChange.connect(self.mainWindow.status)
 		self.scopeChange.connect(self.acqControl.setScope)
 		self.waveSignal.connect(self.waveColumn.addWave)
-		self.waveColumn.waveSignal.connect(partial(self.plot.showPlot,True))
+		self.waveColumn.waveSignal.connect(partial(self.plot.showPlot, hold=False))
 		self.logger.info("Signals connected")
 
 	def __acqEvent(self, mode):

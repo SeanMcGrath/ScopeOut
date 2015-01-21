@@ -681,6 +681,7 @@ class waveColumnWidget(QtWidgets.QWidget):
 		self.items.append(item)
 		self.layout.insertWidget(0,item)
 		self.show()
+		item.waveSignal.connect(self.waveSignal)
 
 	def addWave(self, wave):
 		"""
@@ -715,21 +716,13 @@ class waveColumnWidget(QtWidgets.QWidget):
 		s = self.style()
 		s.drawPrimitive(QtWidgets.QStyle.PE_Widget, opt, p, self)
 
-	def emitWave(self, wave):
-		"""
-		Emits a signal to the threaded client containing a wave dictionary from one of the wave items.
-		
-		Parameters:
-			:wave: a wave dictionary object.
-		"""
-
-		self.waveSignal.emit(wave)
-
 class waveColumnItem(QtWidgets.QWidget):
 	"""
 	A rectangular box showing basic information about a captured waveform.
 	Used to dynamically populate the waveColumnWidget.
 	"""
+
+	waveSignal = QtCore.pyqtSignal(dict)
 
 	def __init__(self, wave, *args):
 		"""
@@ -771,3 +764,11 @@ class waveColumnItem(QtWidgets.QWidget):
 		p = QtGui.QPainter(self)
 		s = self.style()
 		s.drawPrimitive(QtWidgets.QStyle.PE_Widget, opt, p, self)
+
+
+	def mousePressEvent(self, event):
+		"""
+		Emits waveSignal on widget click, which should result in the wrapped wave being plotted.
+		"""
+
+		self.waveSignal.emit(self.wave)
