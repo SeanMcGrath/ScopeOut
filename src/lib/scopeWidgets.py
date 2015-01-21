@@ -663,12 +663,12 @@ class waveColumnWidget(QtWidgets.QWidget):
 		self.logger = logging.getLogger('ScopeOut.scopeWidgets.waveColumnWidget')
 		QtWidgets.QWidget.__init__(self, *args)
 
-		self.items = []
+		self.items = 0
 
 		self.layout = QtWidgets.QVBoxLayout(self)
 		self.layout.setContentsMargins(0,0,0,0)
 		self.layout.setSpacing(0)
-		self.layout.addStretch(1)
+		self.layout.addStretch(0)
 		self.setLayout(self.layout)
 
 		self.show()
@@ -678,8 +678,8 @@ class waveColumnWidget(QtWidgets.QWidget):
 		Add a waveColumnItem to the column and display it.
 		"""
 
-		self.items.append(item)
 		self.layout.insertWidget(0,item)
+		self.items += 1
 		self.show()
 		item.waveSignal.connect(self.waveSignal)
 
@@ -697,11 +697,16 @@ class waveColumnWidget(QtWidgets.QWidget):
 		"""
 
 		self.logger.info("Resetting Wave Column")
-		i = self.layout.takeAt(0)
-		while i is not None:
-			i.widget().hide()
-			del i
-			i = self.layout.takeAt(0)
+		while self.items:
+			try:
+				i = self.layout.takeAt(0)
+				print(type(i))
+				i.widget().hide()
+				del i
+				self.items -= 1
+			except Exception as e:
+				self.logger.error(e)
+				break
 
 		self.show()
 
