@@ -98,6 +98,7 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.statusChange.connect(self.mainWindow.status)
 		self.scopeChange.connect(self.acqControl.setScope)
 		self.waveSignal.connect(self.waveColumn.addWave)
+		self.waveColumn.waveSignal.connect(partial(self.plot.showPlot,True))
 		self.logger.info("Signals connected")
 
 	def __acqEvent(self, mode):
@@ -138,7 +139,7 @@ class ThreadedClient(QtWidgets.QApplication):
 					self.logger.info("Successfully acquired waveform from %s", wave['dataChannel'])
 					self.__status('Waveform acquired on ' +wave['dataChannel'])
 					if not self.__histogramMode():
-						self.plot.showPlot(wave['xData'],wave['xUnit'],wave['yData'],wave['yUnit'],plotHeld())
+						self.plot.showPlot(wave,plotHeld())
 					if peakFindMode() == 'Smart':
 						start, end = WU.smartFindPeakEnds(wave, self.waveOptions.getParameters())
 					elif peakFindMode() == 'Fixed':

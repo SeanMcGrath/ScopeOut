@@ -240,31 +240,22 @@ class WavePlotWidget(FigureCanvas):
 		self.setContentsMargins(5,5,5,5)
 		self.show()
 
-	def showPlot(self, xData, xLabel, yData, yLabel, hold):
+	def showPlot(self, wave, hold):
 		'''
 		Fill plot with data and draw it on the screen.
 
-		:xData:
-		    X data for plot (usually time)
-
-		:xLabel:
-			string to label x axis.
-
-		:yData:
-		    Y data for plot.
-
-		:yLabel:
-			string to label y axis
+		:wave:
+			a wave dictionary object
 
 		:hold:
 			True to add to existing plot, false to make new plot
 		'''
 
 		if not hold: self.resetPlot()
-		xData, xPrefix = self.autosetUnits(xData)
-		yData, yPrefix = self.autosetUnits(yData)
-		self.axes.set_ylabel(yPrefix + yLabel)
-		self.axes.set_xlabel(xPrefix + xLabel)
+		xData, xPrefix = self.autosetUnits(wave['xData'])
+		yData, yPrefix = self.autosetUnits(wave['yData'])
+		self.axes.set_ylabel(yPrefix + wave['yUnit'])
+		self.axes.set_xlabel(xPrefix + wave['xUnit'])
 		self.axes.plot(xData,yData)
 		self.fig.canvas.draw()
 
@@ -662,6 +653,8 @@ class waveColumnWidget(QtWidgets.QWidget):
 	A column display showing acquired waveforms.
 	"""
 
+	waveSignal = QtCore.pyqtSignal(dict) # signal to pass wave to plot
+
 	def __init__(self, *args):
 		"""
 		constructor
@@ -721,6 +714,16 @@ class waveColumnWidget(QtWidgets.QWidget):
 		p = QtGui.QPainter(self)
 		s = self.style()
 		s.drawPrimitive(QtWidgets.QStyle.PE_Widget, opt, p, self)
+
+	def emitWave(self, wave):
+		"""
+		Emits a signal to the threaded client containing a wave dictionary from one of the wave items.
+		
+		Parameters:
+			:wave: a wave dictionary object.
+		"""
+
+		self.waveSignal.emit(wave)
 
 class waveColumnItem(QtWidgets.QWidget):
 	"""
