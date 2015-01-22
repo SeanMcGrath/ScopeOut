@@ -233,6 +233,7 @@ class WavePlotWidget(FigureCanvas):
 		self.fig.suptitle("Waveform Capture", color='white')
 		self.fig.patch.set_color('#3C3C3C')
 		self.axes = self.fig.add_subplot(111)
+		self.coords = self.axes.text(0,0,'')
 		[t.set_color('white') for t in self.axes.yaxis.get_ticklabels()]
 		[t.set_color('white') for t in self.axes.xaxis.get_ticklabels()]
 		self.axes.xaxis.label.set_color('white')
@@ -259,14 +260,17 @@ class WavePlotWidget(FigureCanvas):
 		self.axes.set_ylabel(yPrefix + wave['yUnit'])
 		self.axes.set_xlabel(xPrefix + wave['xUnit'])
 		self.axes.plot(xData,yData)
-		cursor = Cursor(self.axes, useblit=True, color='red', linewidth=2 )
-		cursor.connect_event('motion_notify_event', self.printCoords)
+		cursor = Cursor(self.axes, useblit=True, color='black', linewidth=1 )
+		cursor.connect_event('motion_notify_event', self.displayCoords)
 		self.fig.canvas.draw()
 
-	def printCoords(self, event):
+	def displayCoords(self, event):
 
 		if event.inaxes:
-			print(event.xdata)
+			eventString = 'x: {} y: {}'.format(event.xdata, event.ydata)
+			self.coords.remove()
+			self.coords = self.axes.text(0,0,eventString)
+			self.fig.canvas.draw()
 
 	def autosetUnits(self, axisArray):
 		"""
