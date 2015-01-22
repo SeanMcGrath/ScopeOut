@@ -86,6 +86,10 @@ waveColumnItem[state="active"] {
   background-color: #673AB7;
 }
 
+waveColumnItem[state="inactive"] {
+  background-color: none;
+}
+
 waveColumnItem:hover {
   background-color: #3C3C3C;
 }

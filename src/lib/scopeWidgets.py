@@ -683,7 +683,7 @@ class waveColumnWidget(QtWidgets.QWidget):
 		"""
 
 		self.resetColors()
-		item.setBackground(self.activeColor)
+		item.setProperty('state','active')
 		self.layout.insertWidget(0,item)
 		self.items += 1
 		self.show()
@@ -707,7 +707,6 @@ class waveColumnWidget(QtWidgets.QWidget):
 		while self.items:
 			try:
 				i = self.layout.takeAt(0)
-				print(type(i))
 				i.widget().hide()
 				del i
 				self.items -= 1
@@ -723,7 +722,11 @@ class waveColumnWidget(QtWidgets.QWidget):
 		"""
 
 		for i in range(0, self.layout.count()-1):
-			self.layout.itemAt(i).widget().setBackground(self.baseColor)
+			w = self.layout.itemAt(i).widget()
+			w.setProperty('state','inactive')
+			w.style().unpolish(w)
+			w.style().polish(w)
+			w.update()
 
 	def paintEvent(self, pe):
 		"""
@@ -792,14 +795,7 @@ class waveColumnItem(QtWidgets.QWidget):
 		"""
 
 		self.waveSignal.emit(self.wave)
-		self.setBackground("#673AB7")
-
-	def setBackground(self, color):
-		"""
-		Sets this widget's background color to the specified color.
-
-		Parameters:
-			:color: a string representing a Qt-readable color, usually a hex code.
-		"""
-
-		self.setStyleSheet("background-color: {:s};".format(color))
+		self.setProperty('state','active')
+		self.style().unpolish(self)
+		self.style().polish(self)
+		self.update()
