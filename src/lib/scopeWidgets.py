@@ -300,6 +300,7 @@ class WavePlotWidget(FigureCanvas):
 		[t.set_color('white') for t in self.axes.yaxis.get_ticklabels()]
 		[t.set_color('white') for t in self.axes.xaxis.get_ticklabels()]
 		self.axes.xaxis.label.set_color('white')
+		self.axes.xaxis.scale
 		self.axes.yaxis.label.set_color('white')
 		self.fig.canvas.draw()
 		self.logger.info("Plot Reset")
@@ -321,15 +322,15 @@ class WavePlotWidget(FigureCanvas):
 
 	def showHist(self, x, bins=100):
 		"""
-		Plot the histogram of integrated wave values.x`
+		Plot the histogram of integrated wave values.
 
 		Parameters:
 			:x: the histogram x data.
 			:bins: the number of bins desired.
 		"""
 
+		self.resetPlot()
 		self.fig.suptitle("Peak Histogram")
-		self.axes.clear()
 		self.axes.set_ylabel('Counts')
 		self.axes.hist(x,bins)
 		self.fig.canvas.draw()
