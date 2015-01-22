@@ -8,6 +8,7 @@ Sean McGrath, 2014
 
 from PyQt5 import QtGui, QtWidgets, QtCore
 from matplotlib.figure import Figure
+from matplotlib.widgets import Cursor
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from lib.oscilloscopes import GenericOscilloscope
 from functools import partial
@@ -252,12 +253,20 @@ class WavePlotWidget(FigureCanvas):
 		'''
 
 		if not hold: self.resetPlot()
+		self.fig.suptitle("Waveform Capture", color='white')
 		xData, xPrefix = self.autosetUnits(wave['xData'])
 		yData, yPrefix = self.autosetUnits(wave['yData'])
 		self.axes.set_ylabel(yPrefix + wave['yUnit'])
 		self.axes.set_xlabel(xPrefix + wave['xUnit'])
 		self.axes.plot(xData,yData)
+		cursor = Cursor(self.axes, useblit=True, color='red', linewidth=2 )
+		cursor.connect_event('motion_notify_event', self.printCoords)
 		self.fig.canvas.draw()
+
+	def printCoords(self, event):
+
+		if event.inaxes:
+			print(event.xdata)
 
 	def autosetUnits(self, axisArray):
 		"""
@@ -300,7 +309,6 @@ class WavePlotWidget(FigureCanvas):
 		[t.set_color('white') for t in self.axes.yaxis.get_ticklabels()]
 		[t.set_color('white') for t in self.axes.xaxis.get_ticklabels()]
 		self.axes.xaxis.label.set_color('white')
-		self.axes.xaxis.scale
 		self.axes.yaxis.label.set_color('white')
 		self.fig.canvas.draw()
 		self.logger.info("Plot Reset")
@@ -330,7 +338,7 @@ class WavePlotWidget(FigureCanvas):
 		"""
 
 		self.resetPlot()
-		self.fig.suptitle("Peak Histogram")
+		self.fig.suptitle("Peak Histogram", color='white')
 		self.axes.set_ylabel('Counts')
 		self.axes.hist(x,bins)
 		self.fig.canvas.draw()
