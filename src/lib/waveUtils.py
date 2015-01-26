@@ -60,6 +60,11 @@ def smartFindPeakEnds(wave, thresholds):
 def fixedFindPeakEnds(wave, parameters):
 	"""
 	Determine the start and end index from the start time and fixed peak width
+
+	Parameters:
+		:parameters: an array containing the start index of the peak followed by the fixed width.
+
+	:Returns: a tuple of the starting index of the peak and the ending index.
 	"""
 
 	start = parameters[0]
@@ -73,10 +78,14 @@ def fixedFindPeakEnds(wave, parameters):
 
 	return startIndex, endIndex
 
-
 def integratePeak(wave):
 	"""
 	Integrate numerically over a wave's peak window.
+
+	Parameters:
+		:wave: a wave dictionary.
+
+	:Returns: the result of the integral, or 0 if no suitable integration window is found.
 	"""
 
 	try:

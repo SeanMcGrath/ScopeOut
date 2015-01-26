@@ -16,15 +16,18 @@ class ScopeFinder:
 	scopes = []
 	
 	def __init__(self):
-		"""Constructor
+		"""
+		Constructor
 		"""
 		self.logger = logging.getLogger('ScopeOut.scopeUtils.ScopeFinder')
 		self.logger.info("ScopeFinder Initialized")
 
 	def __enter__(self):
+		# Entry point for the *with* statement, which allows this object to close properly on program exit.
 		return self
 
 	def __exit__(self,type,value,traceback):
+		# Exit point for with statement
 		pass
 
 	def query(self, inst, command):
@@ -52,6 +55,8 @@ class ScopeFinder:
 	def refresh(self):
 		"""
 		Re-run scope acquisition to update scope array.
+
+		:Returns: the ScopeFinder object, for convenience.
 		"""
 
 		self.scopes = []
@@ -90,6 +95,9 @@ class ScopeFinder:
 	def checkScope(self, scopeIndex):
 		"""
 		Check if the scope at scopeIndex is still connected.
+
+		Parameters:
+			:scopeIndex: the index of the scopes array to check.
 
 		:Returns: True if connected, false otherwise
 		"""

@@ -166,6 +166,9 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 		"""
 		Loads style sheet from themePath and sets it as the application's style.
 
+		Parameters:
+			:themePath: the absolute path to a styesheet defining a theme.
+
 		:Returns: True if theme is loaded successfully, False otherwise.
 		"""
 
@@ -217,6 +220,9 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 	def status(self, message):
 		"""
 		Slot to print message to statusbar.
+
+		Parameters:
+			:message: The string to be displayed.
 		"""
 
 		self.statusBar().showMessage(message)
@@ -227,6 +233,9 @@ class WavePlotWidget(FigureCanvas):
 	"""
 
 	def __init__(self):
+		"""
+		Constructor
+		"""
 
 		self.logger = logging.getLogger("ScopeOut.scopeWidgets.WavePlotWidget")
 		self.fig = Figure()
@@ -265,6 +274,12 @@ class WavePlotWidget(FigureCanvas):
 		self.fig.canvas.draw()
 
 	def displayCoords(self, event):
+		"""
+		display the coordinates of the mouse on the graph.
+
+		Parameters:
+			:event: an event object containing the mouse location data.
+		"""
 
 		if event.inaxes:
 			eventString = 'x: {} y: {}'.format(event.xdata, event.ydata)
@@ -623,35 +638,35 @@ class waveOptionsTabWidget(QtWidgets.QWidget):
 
 	def peakStart(self):
 		"""
-		Returns checked value of "show peak start" box.
+		:Returns: the boolean value of "show peak start" checkbox.
 		"""
 
 		return self.showWindow.isChecked()
 
 	def currentWidget(self):
 		"""
-		Get currently displayed tab
+		:Returns: a widget object representing the currently displayed tab
 		"""
 
 		return self.tabManager.currentWidget()
 
 	def getParameters(self):
 		"""
-		Fetch the relevant peak-detection parameters from the current tab
+		:Returns: the relevant peak-detection parameters from the current tab
 		"""
 
 		return self.currentWidget().getParameters()
 
 	def getMode(self):
 		"""
-		Fetch a string indicating the current peak detection mode
+		:Returns: a string indicating the current peak detection mode
 		"""
 
 		return self.tabTitles[self.tabManager.currentIndex()]
 
 	def paintEvent(self, pe):
 		"""
-		allows stylesheet to be used for custom widget.
+		allows stylesheet to be used for this custom widget.
 		"""
 		
 		opt = QtWidgets.QStyleOption()
