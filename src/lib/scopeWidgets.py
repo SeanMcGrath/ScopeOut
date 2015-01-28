@@ -250,6 +250,7 @@ class WavePlotWidget(FigureCanvas):
 		FigureCanvas.__init__(self,self.fig)
 		self.setContentsMargins(5,5,5,5)
 		self.show()
+		self.logger.info("Plot initialized")
 
 	def showPlot(self, wave, hold):
 		'''
@@ -282,9 +283,9 @@ class WavePlotWidget(FigureCanvas):
 		"""
 
 		if event.inaxes:
-			eventString = 'x: {} y: {}'.format(event.xdata, event.ydata)
+			eventString = 'x: {} {}   y: {} {}'.format(round(event.xdata,5), self.axes.get_xlabel(), round(event.ydata, 5), self.axes.get_ylabel())
 			self.coords.remove()
-			self.coords = self.axes.text(0,0,eventString)
+			self.coords = self.axes.text(0.05, 0.95,eventString, ha='left', va='center', transform=self.axes.transAxes)
 			self.fig.canvas.draw()
 
 	def autosetUnits(self, axisArray):
@@ -329,6 +330,7 @@ class WavePlotWidget(FigureCanvas):
 		[t.set_color('white') for t in self.axes.xaxis.get_ticklabels()]
 		self.axes.xaxis.label.set_color('white')
 		self.axes.yaxis.label.set_color('white')
+		self.coords = self.axes.text(0,0,'')
 		self.fig.canvas.draw()
 		self.logger.info("Plot Reset")
 
@@ -680,11 +682,6 @@ class waveColumnWidget(QtWidgets.QWidget):
 	A column display showing acquired waveforms.
 	"""
 
-	# Colors for column items
-	baseColor = "#1E1E1E"
-	hoverColor = "#3C3C3C"
-	activeColor = "#673AB7"
-
 	waveSignal = QtCore.pyqtSignal(dict) # signal to pass wave to plot
 
 	def __init__(self, *args):
@@ -720,6 +717,9 @@ class waveColumnWidget(QtWidgets.QWidget):
 	def addWave(self, wave):
 		"""
 		Receive a wave dict, package it as a waveColumnItem, and add it to the column.
+
+		Parameters:
+			:wave: a wave dictionary object.
 		"""
 
 		self.items += 1
@@ -746,7 +746,7 @@ class waveColumnWidget(QtWidgets.QWidget):
 
 	def resetColors(self):
 		"""
-		Turn all of the items back to the default color
+		Turn all of the wave items back to the default color
 		"""
 
 		for i in range(0, self.layout.count()-1):
@@ -778,6 +778,10 @@ class waveColumnItem(QtWidgets.QWidget):
 	def __init__(self, wave, index, *args):
 		"""
 		constructor
+
+		Parameters:
+			:wave: the wave dictionary to be wrapped.
+			:index: the index of the wave in the waveColumnWidget.
 		"""
 
 		self.logger = logging.getLogger('ScopeOut.scopeWidgets.waveColumnWidget')

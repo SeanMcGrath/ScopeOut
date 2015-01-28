@@ -104,6 +104,9 @@ class ThreadedClient(QtWidgets.QApplication):
 	def __acqEvent(self, mode):
 		"""
 		Executed to collect waveform data from scope.
+
+		Parameters:
+			:mode: A string defining the mode of acquisition: {'now' | 'trig' | 'cont'}
 		"""
 
 		def peakFindMode():
@@ -163,7 +166,7 @@ class ThreadedClient(QtWidgets.QApplication):
 		def __immAcqThread():
 			"""
 			Contains instructions for acquiring and storing waveforms ASAP.
-			self.multiAcq serves as the flag to intiate multi-channel acquisition.
+			self.multiAcq serves as the flag to initiate multi-channel acquisition.
 			"""
 
 			self.channelSetFlag.clear()
