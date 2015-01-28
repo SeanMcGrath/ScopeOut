@@ -232,41 +232,67 @@ class ThreadedClient(QtWidgets.QApplication):
 			self.lock.acquire()
 			trigState = self.activeScope.getTriggerStatus()
 			
-			while trigState != 'TRIGGER' and not self.stopFlag.isSet():
+			while trigState != 'TRIGGER' and not self.stopFlag.isSet() and not self.acqStopFlag.isSet():
 				trigState = self.activeScope.getTriggerStatus()
 
-			try:
-				self.activeScope.makeWaveform()
-				wave = self.activeScope.getNextWaveform()
-			except AttributeError:
-				wave = None
-			finally:
-				self.acquireFlag.set()
+			if not self.stopFlag.isSet() and not self.acqStopFlag.isSet(): 
+				try:
+					self.activeScope.makeWaveform()
+					wave = self.activeScope.getNextWaveform()
+				except AttributeError:
+					wave = None
+				finally:
+					self.acquireFlag.set()
+					if self.lock.locked():
+						self.lock.release()
+
+			if not self.stopFlag.isSet() and not self.acqStopFlag.isSet():
+				if wave is not None:
+					processWave(wave)
+			elif self.acqStopFlag.isSet():
+				self.__status('Acquisition terminated')
+				self.logger.info('Acquistion on trigger terminated.')
+				if mode == 'trig':
+					self.acqStopFlag.clear()
+				self.acquireFlag.set() # have to set this for continuous acq to halt properly
 				if self.lock.locked():
 					self.lock.release()
-
-			if wave is not None and (not self.stopFlag.isSet()):
-				processWave(wave)
 			else:
 				self.__status('Error on Waveform Acquisition')
+				self.logger.info('Error on Waveform Acquisition.')
+
+			if mode == 'trig':
+				__enableButtons(True)
 
 		def __contAcqThread():
 			"""
 			Continually runs trigAcqThread until the stop signal is received.
 			"""
 
-			self.acqControl.contAcqButton.setEnabled(False)
-
 			while not self.stopFlag.isSet() and not self.acqStopFlag.isSet():
 				self.acquireFlag.wait()
-				acqThread = threading.Thread(target=__trigAcqThread)
-				acqThread.start()
+				if not self.acqStopFlag.isSet():
+					acqThread = threading.Thread(target=__trigAcqThread)
+					acqThread.start()
 				self.acquireFlag.clear()
 
 			self.acqStopFlag.clear()
 			self.__status("Continuous Acquisiton Halted.")
-			self.acqControl.contAcqButton.setEnabled(True)
+			__enableButtons(True)
 
+		def __enableButtons(bool):
+			"""
+			Disables/enables buttons that should not be active during acquisition.
+
+			Parameters:
+				:bool: True to enable buttons, false to disable.
+			"""
+
+			self.acqControl.acqButton.setEnabled(bool)
+			self.acqControl.acqOnTrigButton.setEnabled(bool)
+			self.acqControl.contAcqButton.setEnabled(bool)
+
+		self.acqStopFlag.clear()
 
 		if mode == 'now': # Single, Immediate acquisition
 			self.logger.info("Immediate acquisition Event")
@@ -274,12 +300,14 @@ class ThreadedClient(QtWidgets.QApplication):
 			acqThread.start()
 
 		elif mode == 'trig': # Acquire on trigger
+			__enableButtons(False)
 			self.__status("Waiting for trigger...")
 			self.logger.info("Acquisition on trigger event")
 			acqThread = threading.Thread(target=__trigAcqThread)
 			acqThread.start()
 
 		elif mode == 'cont': # Continuous Acquisiton
+			__enableButtons(False)
 			self.logger.info('Continuous Acquisition Event')
 			self.__status("Acquiring Continuously...")
 			self.acquireFlag.set()
