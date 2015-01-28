@@ -24,6 +24,11 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 		"""
 		Constructor.
 		Is passed widgets from threaded client as an array.
+
+		Parameters:
+			:widgets: the array containing the child widgets to be displayed by this window.
+			:endCommand: a command to be executed when this wondow is closed.
+			:saveCommand: a command to be executed when the save action is activated.
 		"""
 
 		self.logger = logging.getLogger('ScopeOut.scopeWidgets.ScopeOutMainWindow')

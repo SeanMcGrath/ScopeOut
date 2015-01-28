@@ -356,7 +356,7 @@ class ThreadedClient(QtWidgets.QApplication):
 							self.checkTimer = threading.Timer(5.0, self.__scopeCheck)
 							self.checkTimer.start()
 
-		self.logger.info("Scope acquisition Thread ended")
+		self.logger.info("Scope acquisition thread ended")
 
 	def __scopeCheck(self):
 		"""
