@@ -500,14 +500,16 @@ class ThreadedClient(QtWidgets.QApplication):
 				if not os.path.exists(dayDirectory):
 					os.makedirs(dayDirectory)
 
-				filename = 'Capture' + datetime.now().strftime('%m-%d-%H-%M-%S')+'.csv'
+				defaultFile = 'Capture' + datetime.now().strftime('%m-%d-%H-%M-%S')+'.csv'
+				defaultFile = os.path.join(dayDirectory,defaultFile).replace('\\','/')
 
-				with open(os.path.join(dayDirectory,filename).replace('\\','/'),'w') as saveFile:
+				fileName = QtWidgets.QFileDialog.getSaveFileName(self.mainWindow, 'Save As', defaultFile)[0]
+				with open(fileName,'w') as saveFile:
 					for wave in self.waveList:
 						__writeWave(saveFile,wave)
 
-				self.logger.info("%d waveforms saved to %s", len(self.waveList), filename)
-				self.__status('Waveform saved to ' + filename)
+				self.logger.info("%d waveforms saved to %s", len(self.waveList), fileName)
+				self.__status('Waveform saved to ' + fileName)
 
 			except Exception as e:
 				self.logger.error(e)
