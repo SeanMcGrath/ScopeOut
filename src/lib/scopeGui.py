@@ -99,6 +99,7 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.scopeChange.connect(self.acqControl.setScope)
 		self.waveSignal.connect(self.waveColumn.addWave)
 		self.waveColumn.waveSignal.connect(partial(self.plot.showPlot, hold=False))
+		self.waveColumn.saveSignal.connect(self.__saveWaveformEvent)
 		self.logger.info("Signals connected")
 
 	def __acqEvent(self, mode):
@@ -455,9 +456,12 @@ class ThreadedClient(QtWidgets.QApplication):
 			self.acqControl.acqOnTrigButton.setEnabled(False)
 			self.acqControl.acqStopButton.setEnabled(False)
 
-	def __saveWaveformEvent(self):
+	def __saveWaveformEvent(self, waveform=None):
 		"""
 		Called in order to save in-memory waveforms to disk.
+
+		Parameters:
+			:wave: a particular wave to save, if none is passed then all waves inmemory are saved.
 		"""
 
 		def __writeWave(outFile, wave):
@@ -489,7 +493,32 @@ class ThreadedClient(QtWidgets.QApplication):
 			except Exception as e:
 				self.logger.error(e)
 
-		if self.waveList:
+		if waveform is not None:
+			try:
+				waveDirectory = os.path.join(os.getcwd(), 'waveforms')
+				if not os.path.exists(waveDirectory):
+					os.makedirs(waveDirectory)
+
+				dayDirectory = os.path.join(waveDirectory, date.today().isoformat())
+				if not os.path.exists(dayDirectory):
+					os.makedirs(dayDirectory)
+
+				defaultFile = 'Capture' + datetime.now().strftime('%m-%d-%H-%M-%S')+'.csv'
+				defaultFile = os.path.join(dayDirectory,defaultFile).replace('\\','/')
+
+				fileName = QtWidgets.QFileDialog.getSaveFileName(self.mainWindow, 'Save As', defaultFile)[0]
+				with open(fileName,'w') as saveFile:
+					for wave in self.waveList:
+						__writeWave(saveFile,wave)
+
+				self.logger.info('Waveform saved to ' + fileName)
+				self.__status('Waveform saved to ' + fileName)
+
+			except Exception as e:
+				self.logger.error(e)
+
+
+		elif self.waveList:
 
 			try:
 				waveDirectory = os.path.join(os.getcwd(), 'waveforms')
@@ -509,7 +538,7 @@ class ThreadedClient(QtWidgets.QApplication):
 						__writeWave(saveFile,wave)
 
 				self.logger.info("%d waveforms saved to %s", len(self.waveList), fileName)
-				self.__status('Waveform saved to ' + fileName)
+				self.__status('Waveforms saved to ' + fileName)
 
 			except Exception as e:
 				self.logger.error(e)

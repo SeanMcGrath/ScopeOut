@@ -688,6 +688,7 @@ class waveColumnWidget(QtWidgets.QWidget):
 	"""
 
 	waveSignal = QtCore.pyqtSignal(dict) # signal to pass wave to plot
+	saveSignal = QtCore.pyqtSignal(dict)
 
 	def __init__(self, *args):
 		"""
@@ -718,6 +719,7 @@ class waveColumnWidget(QtWidgets.QWidget):
 		self.show()
 		item.waveSignal.connect(self.waveSignal)
 		item.waveSignal.connect(self.resetColors)
+		item.saveSignal.connect(self.saveSignal)
 
 	def addWave(self, wave):
 		"""
@@ -779,6 +781,7 @@ class waveColumnItem(QtWidgets.QWidget):
 	"""
 
 	waveSignal = QtCore.pyqtSignal(dict)
+	saveSignal = QtCore.pyqtSignal(dict)
 
 	def __init__(self, wave, index, *args):
 		"""
@@ -791,12 +794,17 @@ class waveColumnItem(QtWidgets.QWidget):
 
 		self.logger = logging.getLogger('ScopeOut.scopeWidgets.waveColumnWidget')
 		QtWidgets.QWidget.__init__(self, *args)
+		self.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
 
 		self.wave = wave
 		time = wave['acqTime']
 		dispTime = self.makeDispTime(time)
 		self.waveTime = QtWidgets.QLabel('Time: ' + dispTime, self)
 		self.waveNumber = QtWidgets.QLabel(str(index), self)
+
+		saveAction = QtWidgets.QAction('Save Waveform',self)
+		saveAction.triggered.connect(self.saveWave)
+		self.addAction(saveAction)
 
 		self.layout = QtWidgets.QGridLayout(self)
 		self.layout.setContentsMargins(0,0,0,0)
@@ -845,8 +853,16 @@ class waveColumnItem(QtWidgets.QWidget):
 		Emits waveSignal on widget click, which should result in the wrapped wave being plotted.
 		"""
 
-		self.waveSignal.emit(self.wave)
-		self.setProperty('state','active')
-		self.style().unpolish(self)
-		self.style().polish(self)
-		self.update()
+		if event.button() == QtCore.Qt.LeftButton:
+			self.waveSignal.emit(self.wave)
+			self.setProperty('state','active')
+			self.style().unpolish(self)
+			self.style().polish(self)
+			self.update()
+
+	def saveWave(self):
+		"""
+		Emits the signal for waving the wrapped waveform to disk.
+		"""
+		
+		self.saveSignal.emit(self.getWave())
