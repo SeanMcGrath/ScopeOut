@@ -806,6 +806,10 @@ class waveColumnItem(QtWidgets.QWidget):
 		saveAction.triggered.connect(self.saveWave)
 		self.addAction(saveAction)
 
+		dispAction = QtWidgets.QAction('Display Wavform', self)
+		dispAction.triggered.connect(self.dispWave)
+		self.addAction(dispAction)
+
 		self.layout = QtWidgets.QGridLayout(self)
 		self.layout.setContentsMargins(0,0,0,0)
 		self.layout.setSpacing(2)
@@ -847,22 +851,28 @@ class waveColumnItem(QtWidgets.QWidget):
 		s = self.style()
 		s.drawPrimitive(QtWidgets.QStyle.PE_Widget, opt, p, self)
 
-
 	def mousePressEvent(self, event):
 		"""
 		Emits waveSignal on widget click, which should result in the wrapped wave being plotted.
 		"""
 
 		if event.button() == QtCore.Qt.LeftButton:
-			self.waveSignal.emit(self.wave)
-			self.setProperty('state','active')
-			self.style().unpolish(self)
-			self.style().polish(self)
-			self.update()
-
+			self.dispWave()
+			
 	def saveWave(self):
 		"""
-		Emits the signal for waving the wrapped waveform to disk.
+		Emits the signal for saving the wrapped waveform to disk.
 		"""
-		
+
 		self.saveSignal.emit(self.getWave())
+
+	def dispWave(self):
+		"""
+		Causes the wave to be displayed and updates the column to make this item active.
+		"""
+
+		self.waveSignal.emit(self.wave)
+		self.setProperty('state','active')
+		self.style().unpolish(self)
+		self.style().polish(self)
+		self.update()
