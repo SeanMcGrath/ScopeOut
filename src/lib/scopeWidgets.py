@@ -792,7 +792,7 @@ class waveColumnItem(QtWidgets.QWidget):
 			:index: the index of the wave in the waveColumnWidget.
 		"""
 
-		self.logger = logging.getLogger('ScopeOut.scopeWidgets.waveColumnWidget')
+		self.logger = logging.getLogger('ScopeOut.scopeWidgets.waveColumnItem')
 		QtWidgets.QWidget.__init__(self, *args)
 		self.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
 
@@ -802,6 +802,7 @@ class waveColumnItem(QtWidgets.QWidget):
 		self.waveTime = QtWidgets.QLabel('Time: ' + dispTime, self)
 		self.waveNumber = QtWidgets.QLabel(str(index), self)
 
+		# Actions
 		saveAction = QtWidgets.QAction('Save Waveform',self)
 		saveAction.triggered.connect(self.saveWave)
 		self.addAction(saveAction)
@@ -810,14 +811,17 @@ class waveColumnItem(QtWidgets.QWidget):
 		dispAction.triggered.connect(self.dispWave)
 		self.addAction(dispAction)
 
+		propsAction = QtWidgets.QAction('Properties', self)
+		propsAction.triggered.connect(self.makePopup)
+		self.addAction(propsAction)
+
+		# Layout
 		self.layout = QtWidgets.QGridLayout(self)
 		self.layout.setContentsMargins(0,0,0,0)
 		self.layout.setSpacing(2)
 		self.layout.setColumnStretch(2,1)
-
 		self.layout.addWidget(self.waveTime,0,1)
 		self.layout.addWidget(self.waveNumber,0,0)
-
 		self.setLayout(self.layout)
 
 		self.show()
@@ -876,3 +880,45 @@ class waveColumnItem(QtWidgets.QWidget):
 		self.style().unpolish(self)
 		self.style().polish(self)
 		self.update()
+
+	def makePopup(self):
+		"""
+		Spawns properties popup window when activated.
+		"""
+
+		self.properties = self.PropertiesPopup(self.wave)
+		self.properties.setGeometry(QtCore.QRect(100, 100, 400, 200))
+		self.properties.show()
+
+	class PropertiesPopup(QtWidgets.QWidget):
+		"""
+		Popup window to display wave properties.
+		"""
+
+		def __init__(self, wave, *args):
+			self.logger = logging.getLogger('ScopeOut.scopeWidgets.waveColumnItem.PropertiesPopup')
+			QtWidgets.QWidget.__init__(self, *args)
+
+			layout = QtWidgets.QGridLayout(self)
+
+			y = 0
+			for field in wave:
+				if not isinstance(wave[field], list) and 'data' not in field.lower():
+					label = QtWidgets.QLabel(field, self)
+					layout.addWidget(label,y,0)
+					value = QtWidgets.QLabel(str(wave[field]),self)
+					layout.addWidget(value,y,1)
+					y += 1
+
+			self.setLayout(layout)
+
+		def paintEvent(self, pe):
+			"""
+			allows stylesheet to be used for custom widget.
+			"""
+			
+			opt = QtWidgets.QStyleOption()
+			opt.initFrom(self)
+			p = QtGui.QPainter(self)
+			s = self.style()
+			s.drawPrimitive(QtWidgets.QStyle.PE_Widget, opt, p, self)
