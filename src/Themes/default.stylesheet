@@ -102,3 +102,8 @@ waveColumnItem QLabel {
   qproperty-alignment: AlignLeft;
   background-color: none;
 }
+
+PropertiesPopup {
+  color: white;
+  background-color: #3C3C3C;
+}

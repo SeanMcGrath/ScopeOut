@@ -885,6 +885,7 @@ class waveColumnItem(QtWidgets.QWidget):
 	def makePopup(self):
 		"""
 		Spawns properties popup window when activated.
+		Makes new window if no cahed version exists.
 		"""
 
 		if self.properties is None:
@@ -901,8 +902,11 @@ class waveColumnItem(QtWidgets.QWidget):
 		def __init__(self, wave, *args):
 			self.logger = logging.getLogger('ScopeOut.scopeWidgets.waveColumnItem.PropertiesPopup')
 			QtWidgets.QWidget.__init__(self, *args)
+			self.setWindowTitle('Wave Properties')
 
 			layout = QtWidgets.QGridLayout(self)
+
+			self.setStyleSheet('color: white; background-color: #3C3C3C;')
 
 			y = 0
 			for field in wave:
