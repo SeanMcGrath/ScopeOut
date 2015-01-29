@@ -811,6 +811,7 @@ class waveColumnItem(QtWidgets.QWidget):
 		dispAction.triggered.connect(self.dispWave)
 		self.addAction(dispAction)
 
+		self.properties = None
 		propsAction = QtWidgets.QAction('Properties', self)
 		propsAction.triggered.connect(self.makePopup)
 		self.addAction(propsAction)
@@ -886,8 +887,10 @@ class waveColumnItem(QtWidgets.QWidget):
 		Spawns properties popup window when activated.
 		"""
 
-		self.properties = self.PropertiesPopup(self.wave)
-		self.properties.setGeometry(QtCore.QRect(100, 100, 400, 200))
+		if self.properties is None:
+			self.properties = self.PropertiesPopup(self.wave)
+			self.properties.setGeometry(QtCore.QRect(100, 100, 400, 200))
+
 		self.properties.show()
 
 	class PropertiesPopup(QtWidgets.QWidget):
