@@ -908,7 +908,9 @@ class waveColumnItem(QtWidgets.QWidget):
 
 			self.setStyleSheet('color: white; background-color: #3C3C3C;')
 
-			y = 0
+			layout.addWidget(QtWidgets.QLabel('Wave Properties:',self),0,0)
+
+			y = 1
 			for field in wave:
 				if not isinstance(wave[field], list) and 'data' not in field.lower():
 					label = QtWidgets.QLabel(field, self)
@@ -916,6 +918,18 @@ class waveColumnItem(QtWidgets.QWidget):
 					value = QtWidgets.QLabel(str(wave[field]),self)
 					layout.addWidget(value,y,1)
 					y += 1
+
+			layout.setRowMinimumHeight(y+1,10)
+			layout.addWidget(QtWidgets.QLabel('Peak Properties:',self),y+2,0)
+			if wave['peakStart'] < 0:
+				layout.addWidget(QtWidgets.QLabel('No Peak Detected',self),y+3,0)
+			else:
+				startString = str(wave['xData'][wave['peakStart']]) + ' ' + str(wave['xUnit'])
+				endString = str(wave['xData'][wave['peakEnd']]) + ' ' +  str(wave['xUnit'])
+				layout.addWidget(QtWidgets.QLabel('Peak Start',self),y+3,0)
+				layout.addWidget(QtWidgets.QLabel(startString,self),y+3,1)
+				layout.addWidget(QtWidgets.QLabel('Peak End',self),y+4,0)
+				layout.addWidget(QtWidgets.QLabel(endString,self),y+4,1)
 
 			self.setLayout(layout)
 
