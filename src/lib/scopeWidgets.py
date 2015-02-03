@@ -42,6 +42,7 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 
 		self.central = QtWidgets.QWidget(self)
 		self.layout = QtWidgets.QGridLayout(self.central)
+
 		self.layout.setSpacing(10)
 		self.layout.setContentsMargins(0,0,4,4)
 		self.layout.addWidget(self.widgets[0],0,0,2,1) # Column
@@ -682,7 +683,7 @@ class waveOptionsTabWidget(QtWidgets.QWidget):
 		s = self.style()
 		s.drawPrimitive(QtWidgets.QStyle.PE_Widget, opt, p, self)
 
-class waveColumnWidget(QtWidgets.QWidget):
+class waveColumnWidget(QtWidgets.QScrollArea):
 	"""
 	A column display showing acquired waveforms.
 	"""
@@ -696,7 +697,7 @@ class waveColumnWidget(QtWidgets.QWidget):
 		"""
 
 		self.logger = logging.getLogger('ScopeOut.scopeWidgets.waveColumnWidget')
-		QtWidgets.QWidget.__init__(self, *args)
+		QtWidgets.QScrollArea.__init__(self, *args)
 
 		self.items = 0
 
@@ -704,7 +705,17 @@ class waveColumnWidget(QtWidgets.QWidget):
 		self.layout.setContentsMargins(0,0,0,0)
 		self.layout.setSpacing(0)
 		self.layout.addStretch(0)
-		self.setLayout(self.layout)
+
+		container = QtWidgets.QWidget(self)
+		container.setLayout(self.layout)
+		# outerLayout =  QtWidgets.QVBoxLayout(self)
+		# outerLayout.setContentsMargins(0,0,0,0)
+		# outerLayout.setSpacing(0)
+		# outerLayout.addWidget(container)
+		
+		self.setWidget(container)
+		self.setWidgetResizable(True)
+		# self.setLayout(outerLayout)
 
 		self.show()
 
@@ -763,16 +774,16 @@ class waveColumnWidget(QtWidgets.QWidget):
 			w.style().polish(w)
 			w.update()
 
-	def paintEvent(self, pe):
-		"""
-		allows stylesheet to be used for custom widget.
-		"""
+	# def paintEvent(self, pe):
+	# 	"""
+	# 	allows stylesheet to be used for custom widget.
+	# 	"""
 		
-		opt = QtWidgets.QStyleOption()
-		opt.initFrom(self)
-		p = QtGui.QPainter(self)
-		s = self.style()
-		s.drawPrimitive(QtWidgets.QStyle.PE_Widget, opt, p, self)
+	# 	opt = QtWidgets.QStyleOption()
+	# 	opt.initFrom(self)
+	# 	p = QtGui.QPainter(self)
+	# 	s = self.style()
+	# 	s.drawPrimitive(QtWidgets.QStyle.PE_Widget, opt, p, self)
 
 class waveColumnItem(QtWidgets.QWidget):
 	"""
@@ -885,7 +896,7 @@ class waveColumnItem(QtWidgets.QWidget):
 	def makePopup(self):
 		"""
 		Spawns properties popup window when activated.
-		Makes new window if no cahed version exists.
+		Makes new window if no cached version exists.
 		"""
 
 		if self.properties is None:

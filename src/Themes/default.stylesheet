@@ -68,14 +68,18 @@ acqControlWidget {
 }
 
 waveColumnWidget {
+  height: 100%;
   min-width: 250px;
   min-height: 200px;
   padding: 0px;
+}
+
+waveColumnWidget QWidget { 
   background-color: #1E1E1E;
 }
 
 waveColumnItem {
-  min-height: 2em;
+  min-height: 3em;
   max-height: 50px;
   min-width: 250px;
   width: 250px;
