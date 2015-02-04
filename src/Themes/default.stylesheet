@@ -77,8 +77,11 @@ waveColumnWidget {
   border: none;
 }
 
-waveColumnWidget QWidget { 
+waveColumnWidget containerWidget { 
   background-color: #1E1E1E;
+  color: white;
+  padding: 0px;
+  margin: 0px;
 }
 
 waveColumnItem {

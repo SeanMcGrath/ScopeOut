@@ -691,6 +691,28 @@ class waveColumnWidget(QtWidgets.QScrollArea):
 	waveSignal = QtCore.pyqtSignal(dict) # signal to pass wave to plot
 	saveSignal = QtCore.pyqtSignal(dict)
 
+	class containerWidget(QtWidgets.QWidget):
+		"""
+		Container class that wraps the colun layout - allows us to style the scroll area without
+		affecting context menus, scrollbars, etc.
+		"""
+
+		def __init__(self, *args):
+			QtWidgets.QWidget.__init__(self, *args)
+
+		def paintEvent(self, pe):
+			"""
+			allows stylesheet to be used for custom widget.
+			"""
+			
+			opt = QtWidgets.QStyleOption()
+			opt.initFrom(self)
+			p = QtGui.QPainter(self)
+			s = self.style()
+			s.drawPrimitive(QtWidgets.QStyle.PE_Widget, opt, p, self)
+
+
+
 	def __init__(self, *args):
 		"""
 		constructor
@@ -706,16 +728,12 @@ class waveColumnWidget(QtWidgets.QScrollArea):
 		self.layout.setSpacing(0)
 		self.layout.addStretch(0)
 
-		container = QtWidgets.QWidget(self)
+		container = self.containerWidget(self)
 		container.setLayout(self.layout)
-		# outerLayout =  QtWidgets.QVBoxLayout(self)
-		# outerLayout.setContentsMargins(0,0,0,0)
-		# outerLayout.setSpacing(0)
-		# outerLayout.addWidget(container)
+		container.setProperty('state','container')
 		
 		self.setWidget(container)
 		self.setWidgetResizable(True)
-		# self.setLayout(outerLayout)
 
 		self.show()
 
@@ -774,17 +792,6 @@ class waveColumnWidget(QtWidgets.QScrollArea):
 			w.style().polish(w)
 			w.update()
 
-	# def paintEvent(self, pe):
-	# 	"""
-	# 	allows stylesheet to be used for custom widget.
-	# 	"""
-		
-	# 	opt = QtWidgets.QStyleOption()
-	# 	opt.initFrom(self)
-	# 	p = QtGui.QPainter(self)
-	# 	s = self.style()
-	# 	s.drawPrimitive(QtWidgets.QStyle.PE_Widget, opt, p, self)
-
 class waveColumnItem(QtWidgets.QWidget):
 	"""
 	A rectangular box showing basic information about a captured waveform.
@@ -831,9 +838,13 @@ class waveColumnItem(QtWidgets.QWidget):
 		self.layout = QtWidgets.QGridLayout(self)
 		self.layout.setContentsMargins(0,0,0,0)
 		self.layout.setSpacing(2)
-		self.layout.setColumnStretch(2,1)
-		self.layout.addWidget(self.waveTime,0,1)
 		self.layout.addWidget(self.waveNumber,0,0)
+		self.layout.addWidget(self.waveTime,0,1)
+		if self.wave['peakStart'] > 0:
+			self.layout.addWidget(QtWidgets.QLabel('^',self),0,2)
+			self.layout.setColumnStretch(3,1)
+		else:
+			self.layout.setColumnStretch(2,1)
 		self.setLayout(self.layout)
 
 		self.show()
