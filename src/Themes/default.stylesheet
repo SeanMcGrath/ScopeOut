@@ -1,9 +1,28 @@
 QMainWindow { 
-	background-color: #3C3C3C;
+	background-color: #424242;
 }
 
 QWidget:disabled {
-    color: gray;
+    color: #FFFFFF;
+    opacity: 30%;
+}
+
+QPushButton {
+  border-radius: 2px;
+  background-color: #673AB7;
+  padding: 6px;
+  height: 30px;
+  color: white;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+QPushButton:hover {
+  background-color: #5E35B1;
+}
+
+QPushButton:pressed {
+  background-color: #512DA8;
 }
 
 QTabWidget::pane {
@@ -12,8 +31,8 @@ QTabWidget::pane {
 
 QLabel { 
     color: white;
-    background-color: #1E1E1E;
-    border-radius: 5px;
+    background-color: #212121;
+    border-radius: 2px;
     padding: 8px;
     qproperty-alignment: AlignCenter;
     max-height: 1em;
@@ -22,16 +41,17 @@ QLabel {
 
 QRadioButton {
 	color: white;
-	background-color: #1E1E1E;
+	background-color: #212121;
   border-radius: 5px;
   padding: 8px;
 }
 
 QCheckBox {
   color: white;
-  background-color: #1E1E1E;
-  border-radius: 5px;
+  background-color: #212121;
+  border-radius: 2px;
   padding: 8px;
+  margin-top: 10px;
 }
 
 QSpinBox, QDoubleSpinBox {
@@ -78,10 +98,15 @@ waveColumnWidget {
 }
 
 waveColumnWidget containerWidget { 
-  background-color: #1E1E1E;
+  background-color: #212121;
   color: white;
   padding: 0px;
   margin: 0px;
+}
+
+waveColumnWidget QScrollBar {
+  background-color: #212121;
+  color: white;
 }
 
 waveColumnItem {
@@ -101,7 +126,7 @@ waveColumnItem[state="inactive"] {
 }
 
 waveColumnItem:hover {
-  background-color: #3C3C3C;
+  background-color: #5E35B1;
 }
 
 waveColumnItem QLabel {
@@ -111,6 +136,7 @@ waveColumnItem QLabel {
   padding: 1px;
   qproperty-alignment: AlignLeft;
   background-color: none;
+  font-weight: bold;
 }
 
 PropertiesPopup {

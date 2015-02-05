@@ -366,7 +366,8 @@ class ThreadedClient(QtWidgets.QApplication):
 		if not self.stopFlag.isSet():
 			self.lock.acquire()
 			connected = self.finder.checkScope(0)
-			self.lock.release()
+			if self.lock.locked():
+				self.lock.release()
 			if not connected:
 				self.scopes = []
 				self.logger.info("Lost Connection to Oscilloscope(s)")

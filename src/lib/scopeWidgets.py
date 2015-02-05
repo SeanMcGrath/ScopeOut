@@ -43,12 +43,13 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 		self.central = QtWidgets.QWidget(self)
 		self.layout = QtWidgets.QGridLayout(self.central)
 
-		self.layout.setSpacing(10)
+		self.layout.setSpacing(20)
 		self.layout.setContentsMargins(0,0,4,4)
 		self.layout.addWidget(self.widgets[0],0,0,2,1) # Column
 		self.layout.addWidget(self.widgets[1],0,1) # plot
 		self.layout.addWidget(self.widgets[2],0,2,2,1) # acqControl
 		self.layout.addWidget(self.widgets[3],1,1) # waveOptions
+		self.layout.setColumnMinimumWidth(2,180)
 		self.central.setLayout(self.layout)
 		self.setCentralWidget(self.central)
 
@@ -238,6 +239,8 @@ class WavePlotWidget(FigureCanvas):
 	Class to hold matplotlib Figures for display.
 	"""
 
+	bgColor = '#424242'
+
 	def __init__(self):
 		"""
 		Constructor
@@ -246,7 +249,7 @@ class WavePlotWidget(FigureCanvas):
 		self.logger = logging.getLogger("ScopeOut.scopeWidgets.WavePlotWidget")
 		self.fig = Figure()
 		self.fig.suptitle("Waveform Capture", color='white')
-		self.fig.patch.set_color('#3C3C3C')
+		self.fig.patch.set_color(self.bgColor)
 		self.axes = self.fig.add_subplot(111)
 		self.coords = self.axes.text(0,0,'')
 		[t.set_color('white') for t in self.axes.yaxis.get_ticklabels()]
@@ -330,7 +333,7 @@ class WavePlotWidget(FigureCanvas):
 		"""
 
 		self.axes.clear()
-		self.fig.patch.set_color('#3C3C3C')
+		self.fig.patch.set_color(self.bgColor)
 		self.axes = self.fig.add_subplot(111)
 		[t.set_color('white') for t in self.axes.yaxis.get_ticklabels()]
 		[t.set_color('white') for t in self.axes.xaxis.get_ticklabels()]
@@ -394,6 +397,9 @@ class acqControlWidget(QtWidgets.QWidget):
 		"""
 		Set up the subwidgets
 		"""
+
+		
+
 		self.acqButton = QtWidgets.QPushButton('Acquire',self)
 		self.contAcqButton = QtWidgets.QPushButton('Acquire Continuously', self)
 		self.autoSetButton = QtWidgets.QPushButton('Autoset',self)
@@ -402,7 +408,23 @@ class acqControlWidget(QtWidgets.QWidget):
 		self.channelComboLabel = QtWidgets.QLabel('Data Channel',self)
 		self.channelComboBox = QtWidgets.QComboBox(self)
 		self.keepPlotCheckBox = QtWidgets.QCheckBox('Hold plot',self)
-		self.keepPlotCheckBox.setChecked(True)
+		self.keepPlotCheckBox.setChecked(False)
+
+		shadows = []
+		for i in range(0,5):
+			shadow = QtWidgets.QGraphicsDropShadowEffect(self)
+			shadow.setBlurRadius(8)
+			shadow.setXOffset(1)
+			shadow.setYOffset(2)
+			shadow.setColor(QtGui.QColor('black'))
+			shadows.append(shadow)
+
+		self.acqButton.setGraphicsEffect(shadows[0])
+		self.contAcqButton.setGraphicsEffect(shadows[1])
+		self.autoSetButton.setGraphicsEffect(shadows[2])
+		self.acqOnTrigButton.setGraphicsEffect(shadows[3])
+		self.acqStopButton.setGraphicsEffect(shadows[4])
+
 		
 		if self.scope is not None:
 			self.setEnabled(True)
@@ -693,7 +715,7 @@ class waveColumnWidget(QtWidgets.QScrollArea):
 
 	class containerWidget(QtWidgets.QWidget):
 		"""
-		Container class that wraps the colun layout - allows us to style the scroll area without
+		Container class that wraps the column layout - allows us to style the scroll area without
 		affecting context menus, scrollbars, etc.
 		"""
 
@@ -718,6 +740,8 @@ class waveColumnWidget(QtWidgets.QScrollArea):
 		constructor
 		"""
 
+		
+
 		self.logger = logging.getLogger('ScopeOut.scopeWidgets.waveColumnWidget')
 		QtWidgets.QScrollArea.__init__(self, *args)
 
@@ -734,6 +758,13 @@ class waveColumnWidget(QtWidgets.QScrollArea):
 		
 		self.setWidget(container)
 		self.setWidgetResizable(True)
+
+		shadow = QtWidgets.QGraphicsDropShadowEffect(self)
+		shadow.setBlurRadius(8)
+		shadow.setXOffset(1)
+		shadow.setYOffset(1)
+		shadow.setColor(QtGui.QColor('black'))
+		self.setGraphicsEffect(shadow)
 
 		self.show()
 
@@ -840,7 +871,7 @@ class waveColumnItem(QtWidgets.QWidget):
 		self.layout.setSpacing(2)
 		self.layout.addWidget(self.waveNumber,0,0)
 		self.layout.addWidget(self.waveTime,0,1)
-		if self.wave['peakStart'] > 0:
+		if self.peakDetected():
 			self.layout.addWidget(QtWidgets.QLabel('^',self),0,2)
 			self.layout.setColumnStretch(3,1)
 		else:
@@ -915,6 +946,13 @@ class waveColumnItem(QtWidgets.QWidget):
 			self.properties.setGeometry(QtCore.QRect(100, 100, 400, 200))
 
 		self.properties.show()
+
+	def peakDetected(self):
+		"""
+		Returns true if the wrapped peak has a detected wave, False otherwise
+		"""
+
+		return self.wave['peakStart'] > 0
 
 	class PropertiesPopup(QtWidgets.QWidget):
 		"""
