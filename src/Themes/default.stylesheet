@@ -3,7 +3,7 @@ QMainWindow {
 }
 
 QWidget:disabled {
-    color: #FFFFFF;
+    color: gray;
     opacity: 30%;
 }
 
@@ -11,7 +11,7 @@ QPushButton {
   border-radius: 2px;
   background-color: #673AB7;
   padding: 6px;
-  height: 30px;
+  height: 24px;
   color: white;
   font-weight: bold;
   margin-bottom: 4px;
@@ -30,8 +30,8 @@ QTabWidget::pane {
 }
 
 QLabel { 
-    color: white;
-    background-color: #212121;
+    color: black;
+    background-color: #EEEEEE;
     border-radius: 2px;
     padding: 8px;
     qproperty-alignment: AlignCenter;
@@ -47,8 +47,8 @@ QRadioButton {
 }
 
 QCheckBox {
-  color: white;
-  background-color: #212121;
+  color: black;
+  background-color: #EEEEEE;
   border-radius: 2px;
   padding: 8px;
   margin-top: 10px;
@@ -82,9 +82,10 @@ QMenuBar::item {
 }
 
 acqControlWidget {
-  max-height: 400px;
+  /*max-height: 400px;*/
   max-width: 200px;
   padding: 10px;
+  background-color: #212121;
 }
 
 waveColumnWidget {

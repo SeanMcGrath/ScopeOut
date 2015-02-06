@@ -44,7 +44,7 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 		self.layout = QtWidgets.QGridLayout(self.central)
 
 		self.layout.setSpacing(20)
-		self.layout.setContentsMargins(0,0,4,4)
+		self.layout.setContentsMargins(0,0,0,0)
 		self.layout.addWidget(self.widgets[0],0,0,2,1) # Column
 		self.layout.addWidget(self.widgets[1],0,1) # plot
 		self.layout.addWidget(self.widgets[2],0,2,2,1) # acqControl
@@ -391,6 +391,15 @@ class acqControlWidget(QtWidgets.QWidget):
 
 		QtWidgets.QWidget.__init__(self, *args)
 		self.initWidgets()
+
+		shadow = QtWidgets.QGraphicsDropShadowEffect(self)
+		shadow.setBlurRadius(8)
+		shadow.setXOffset(1)
+		shadow.setYOffset(2)
+		shadow.setColor(QtGui.QColor('black'))
+
+		self.setGraphicsEffect(shadow)
+
 		self.show()
 
 	def initWidgets(self):
@@ -411,7 +420,7 @@ class acqControlWidget(QtWidgets.QWidget):
 		self.keepPlotCheckBox.setChecked(False)
 
 		shadows = []
-		for i in range(0,5):
+		for i in range(0,8):
 			shadow = QtWidgets.QGraphicsDropShadowEffect(self)
 			shadow.setBlurRadius(8)
 			shadow.setXOffset(1)
@@ -424,6 +433,9 @@ class acqControlWidget(QtWidgets.QWidget):
 		self.autoSetButton.setGraphicsEffect(shadows[2])
 		self.acqOnTrigButton.setGraphicsEffect(shadows[3])
 		self.acqStopButton.setGraphicsEffect(shadows[4])
+		self.channelComboLabel.setGraphicsEffect(shadows[5])
+		self.channelComboBox.setGraphicsEffect(shadows[6])
+		self.keepPlotCheckBox.setGraphicsEffect(shadows[7])
 
 		
 		if self.scope is not None:
@@ -496,6 +508,17 @@ class acqControlWidget(QtWidgets.QWidget):
 		"""
 
 		return [self.channelComboBox.itemText(i) for i in range(self.channelComboBox.count())]
+
+	def paintEvent(self, pe):
+		"""
+		allows stylesheet to be used for custom widget.
+		"""
+		
+		opt = QtWidgets.QStyleOption()
+		opt.initFrom(self)
+		p = QtGui.QPainter(self)
+		s = self.style()
+		s.drawPrimitive(QtWidgets.QStyle.PE_Widget, opt, p, self)
 
 class SmartPeakTab(QtWidgets.QWidget):
 	"""
