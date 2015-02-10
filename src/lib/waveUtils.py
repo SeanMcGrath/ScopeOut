@@ -40,7 +40,7 @@ def smartFindPeakEnds(wave, thresholds):
 					break
 			if startIndex >= 0: break
 
-		if startIndex != 0:
+		if startIndex >= 0:
 			for i in range(startIndex,len(y) - 250): 
 				withinTolerance = 0
 				for j in range(1,6):
@@ -55,7 +55,7 @@ def smartFindPeakEnds(wave, thresholds):
 
 	except Exception as e:
 		logger.error(e)
-		return 0,0
+		return -1,-1
 
 def fixedFindPeakEnds(wave, parameters):
 	"""

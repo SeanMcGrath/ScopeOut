@@ -159,6 +159,7 @@ class ThreadedClient(QtWidgets.QApplication):
 					self.waveSignal.emit(wave)
 					self.__waveCount(len(self.waveList))
 					if self.waveOptions.peakStart() and start >= 0 and not self.__histogramMode():
+						self.logger.info('plotting vertical lines at {} and {}'.format(wave['xData'][start], wave['xData'][end]))
 						self.plot.vertLines([ wave['xData'][start], wave['xData'][end] ])
 				except Exception as e:
 					self.__status('Error occurred during wave plotting. Check log for details.')

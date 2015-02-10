@@ -27,8 +27,8 @@ def addShadow(widget):
 
 class ScopeOutMainWindow(QtWidgets.QMainWindow):
 	"""
-	Class to represent entire GUI Window. Will contain various QWidgets within a QLayout,
-	menu bars, tool bars, etc.
+	Class to represent entire GUI Window. Manages the subwidgets that make up the interface,
+	Including custom ScopeOut widgets as well as the statusbar, menubar, etc.
 	"""
 
 	def __init__(self, widgets, endCommand, saveCommand, *args):
@@ -364,7 +364,7 @@ class WavePlotWidget(FigureCanvas):
 
 		xArray, prefix = self.autosetUnits(xArray)
 		for x in xArray:
-			if x != 0:
+			if x >= 0:
 				self.axes.axvline(x)
 
 		self.fig.canvas.draw()
@@ -732,7 +732,7 @@ class waveColumnWidget(QtWidgets.QScrollArea):
 	"""
 
 	waveSignal = QtCore.pyqtSignal(dict) # signal to pass wave to plot
-	saveSignal = QtCore.pyqtSignal(dict)
+	saveSignal = QtCore.pyqtSignal(dict) # signal to pass wave to saving routine
 
 	class containerWidget(QtWidgets.QWidget):
 		"""
@@ -939,8 +939,6 @@ class waveColumnWidget(QtWidgets.QScrollArea):
 		"""
 		constructor
 		"""
-
-		
 
 		self.logger = logging.getLogger('ScopeOut.scopeWidgets.waveColumnWidget')
 		QtWidgets.QScrollArea.__init__(self, *args)
