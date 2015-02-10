@@ -15,6 +15,9 @@ from functools import partial
 import os, re, logging, numpy as np
 
 def addShadow(widget):
+	"""
+	Add a uniform drop shadow to a QWidget.
+	"""
 	shadow = QtWidgets.QGraphicsDropShadowEffect(widget)
 	shadow.setBlurRadius(8)
 	shadow.setXOffset(1)
@@ -400,13 +403,6 @@ class acqControlWidget(QtWidgets.QWidget):
 		QtWidgets.QWidget.__init__(self, *args)
 		self.initWidgets()
 
-		# shadow = QtWidgets.QGraphicsDropShadowEffect(self)
-		# shadow.setBlurRadius(8)
-		# shadow.setXOffset(1)
-		# shadow.setYOffset(2)
-		# shadow.setColor(QtGui.QColor('black'))
-
-		# self.setGraphicsEffect(shadow)
 		addShadow(self)
 
 		self.show()
@@ -427,24 +423,6 @@ class acqControlWidget(QtWidgets.QWidget):
 		self.channelComboBox = QtWidgets.QComboBox(self)
 		self.keepPlotCheckBox = QtWidgets.QCheckBox('Hold plot',self)
 		self.keepPlotCheckBox.setChecked(False)
-
-		# # shadows = []
-		# # for i in range(0,8):
-		# # 	shadow = QtWidgets.QGraphicsDropShadowEffect(self)
-		# # 	shadow.setBlurRadius(8)
-		# # 	shadow.setXOffset(1)
-		# # 	shadow.setYOffset(2)
-		# # 	shadow.setColor(QtGui.QColor('black'))
-		# # 	shadows.append(shadow)
-
-		# self.acqButton.setGraphicsEffect(shadows[0])
-		# self.contAcqButton.setGraphicsEffect(shadows[1])
-		# self.autoSetButton.setGraphicsEffect(shadows[2])
-		# self.acqOnTrigButton.setGraphicsEffect(shadows[3])
-		# self.acqStopButton.setGraphicsEffect(shadows[4])
-		# self.channelComboLabel.setGraphicsEffect(shadows[5])
-		# self.channelComboBox.setGraphicsEffect(shadows[6])
-		# self.keepPlotCheckBox.setGraphicsEffect(shadows[7])
 
 		if self.scope is not None:
 			self.setEnabled(True)
@@ -574,6 +552,9 @@ class SmartPeakTab(QtWidgets.QWidget):
 		self.layout.addWidget(self.endThresholdInput,1,1)
 		self.setLayout(self.layout)
 
+		for i in range(0,self.layout.count()):
+			addShadow(self.layout.itemAt(i).widget())
+
 	def getParameters(self):
 		"""
 		Returns the peak thresholds as decimals.
@@ -640,6 +621,9 @@ class FixedPeakTab(QtWidgets.QWidget):
 		self.layout.addWidget(self.peakWidthUnits,1,2)
 		self.setLayout(self.layout)
 
+		for i in range(0,self.layout.count()):
+			addShadow(self.layout.itemAt(i).widget())
+
 	def getParameters(self):
 		"""
 		Returns the peak thresholds as decimals.
@@ -675,6 +659,8 @@ class waveOptionsTabWidget(QtWidgets.QWidget):
 
 		self.waveCounter = QtWidgets.QLabel("Waveforms acquired: 0", self)
 		self.showWindow = QtWidgets.QCheckBox('Show Peak Window', self)
+		addShadow(self.waveCounter)
+		addShadow(self.showWindow)
 
 		self.tabManager = QtWidgets.QTabWidget(self)
 		self.smart = SmartPeakTab(None)
