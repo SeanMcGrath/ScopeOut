@@ -14,6 +14,14 @@ from lib.oscilloscopes import GenericOscilloscope
 from functools import partial
 import os, re, logging, numpy as np
 
+def addShadow(widget):
+	shadow = QtWidgets.QGraphicsDropShadowEffect(widget)
+	shadow.setBlurRadius(8)
+	shadow.setXOffset(1)
+	shadow.setYOffset(2)
+	shadow.setColor(QtGui.QColor('black'))
+	widget.setGraphicsEffect(shadow)
+
 class ScopeOutMainWindow(QtWidgets.QMainWindow):
 	"""
 	Class to represent entire GUI Window. Will contain various QWidgets within a QLayout,
@@ -392,13 +400,14 @@ class acqControlWidget(QtWidgets.QWidget):
 		QtWidgets.QWidget.__init__(self, *args)
 		self.initWidgets()
 
-		shadow = QtWidgets.QGraphicsDropShadowEffect(self)
-		shadow.setBlurRadius(8)
-		shadow.setXOffset(1)
-		shadow.setYOffset(2)
-		shadow.setColor(QtGui.QColor('black'))
+		# shadow = QtWidgets.QGraphicsDropShadowEffect(self)
+		# shadow.setBlurRadius(8)
+		# shadow.setXOffset(1)
+		# shadow.setYOffset(2)
+		# shadow.setColor(QtGui.QColor('black'))
 
-		self.setGraphicsEffect(shadow)
+		# self.setGraphicsEffect(shadow)
+		addShadow(self)
 
 		self.show()
 
@@ -419,25 +428,24 @@ class acqControlWidget(QtWidgets.QWidget):
 		self.keepPlotCheckBox = QtWidgets.QCheckBox('Hold plot',self)
 		self.keepPlotCheckBox.setChecked(False)
 
-		shadows = []
-		for i in range(0,8):
-			shadow = QtWidgets.QGraphicsDropShadowEffect(self)
-			shadow.setBlurRadius(8)
-			shadow.setXOffset(1)
-			shadow.setYOffset(2)
-			shadow.setColor(QtGui.QColor('black'))
-			shadows.append(shadow)
+		# # shadows = []
+		# # for i in range(0,8):
+		# # 	shadow = QtWidgets.QGraphicsDropShadowEffect(self)
+		# # 	shadow.setBlurRadius(8)
+		# # 	shadow.setXOffset(1)
+		# # 	shadow.setYOffset(2)
+		# # 	shadow.setColor(QtGui.QColor('black'))
+		# # 	shadows.append(shadow)
 
-		self.acqButton.setGraphicsEffect(shadows[0])
-		self.contAcqButton.setGraphicsEffect(shadows[1])
-		self.autoSetButton.setGraphicsEffect(shadows[2])
-		self.acqOnTrigButton.setGraphicsEffect(shadows[3])
-		self.acqStopButton.setGraphicsEffect(shadows[4])
-		self.channelComboLabel.setGraphicsEffect(shadows[5])
-		self.channelComboBox.setGraphicsEffect(shadows[6])
-		self.keepPlotCheckBox.setGraphicsEffect(shadows[7])
+		# self.acqButton.setGraphicsEffect(shadows[0])
+		# self.contAcqButton.setGraphicsEffect(shadows[1])
+		# self.autoSetButton.setGraphicsEffect(shadows[2])
+		# self.acqOnTrigButton.setGraphicsEffect(shadows[3])
+		# self.acqStopButton.setGraphicsEffect(shadows[4])
+		# self.channelComboLabel.setGraphicsEffect(shadows[5])
+		# self.channelComboBox.setGraphicsEffect(shadows[6])
+		# self.keepPlotCheckBox.setGraphicsEffect(shadows[7])
 
-		
 		if self.scope is not None:
 			self.setEnabled(True)
 
@@ -453,6 +461,10 @@ class acqControlWidget(QtWidgets.QWidget):
 		self.layout.addWidget(self.channelComboLabel,8,0)
 		self.layout.addWidget(self.channelComboBox,9,0)
 		self.setLayout(self.layout)
+
+		for i in range(0,self.layout.count()):
+			addShadow(self.layout.itemAt(i).widget())
+		
 
 	def setScope(self, scope):
 		"""
@@ -782,12 +794,7 @@ class waveColumnWidget(QtWidgets.QScrollArea):
 		self.setWidget(container)
 		self.setWidgetResizable(True)
 
-		shadow = QtWidgets.QGraphicsDropShadowEffect(self)
-		shadow.setBlurRadius(8)
-		shadow.setXOffset(1)
-		shadow.setYOffset(1)
-		shadow.setColor(QtGui.QColor('black'))
-		self.setGraphicsEffect(shadow)
+		addShadow(self)
 
 		self.show()
 
