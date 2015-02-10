@@ -510,144 +510,144 @@ class acqControlWidget(QtWidgets.QWidget):
 		s = self.style()
 		s.drawPrimitive(QtWidgets.QStyle.PE_Widget, opt, p, self)
 
-class SmartPeakTab(QtWidgets.QWidget):
-	"""
-	Widget controlling smart peak detection algorithm.
-	"""
-
-	def __init__(self, *args):
-		"""
-		constructor.
-		"""
-
-		self.logger = logging.getLogger('ScopeOut.scopeWidgets.SmartPeakTab')
-		QtWidgets.QWidget.__init__(self, *args)
-		self.initWidgets()
-		self.show()
-
-	def initWidgets(self):
-		"""
-		Set up sub-widgets.
-		"""
-
-		
-		self.startThresholdLabel = QtWidgets.QLabel("Peak Start Threshold", self)
-		self.endThresholdLabel = QtWidgets.QLabel("Peak End Threshold", self)
-		self.startThresholdInput = QtWidgets.QSpinBox(self)
-		self.startThresholdInput.setMaximum(500)
-		self.startThresholdInput.setMinimum(0)
-		self.startThresholdInput.setSuffix('%')
-		self.startThresholdInput.setValue(10)
-		self.endThresholdInput = QtWidgets.QDoubleSpinBox(self)
-		self.endThresholdInput.setMaximum(500.0)
-		self.endThresholdInput.setMinimum(0.0)
-		self.endThresholdInput.setSuffix('%')
-		self.endThresholdInput.setValue(100)
-
-		self.layout = QtWidgets.QGridLayout(self)
-
-		self.layout.addWidget(self.startThresholdLabel,0,0)
-		self.layout.addWidget(self.startThresholdInput,0,1)
-		self.layout.addWidget(self.endThresholdLabel,1,0)
-		self.layout.addWidget(self.endThresholdInput,1,1)
-		self.setLayout(self.layout)
-
-		for i in range(0,self.layout.count()):
-			addShadow(self.layout.itemAt(i).widget())
-
-	def getParameters(self):
-		"""
-		Returns the peak thresholds as decimals.
-
-		:Returns: An array containting the start threshold followed by the end threshold.
-		"""
-
-		return [self.startThresholdInput.value()/100.0, self.endThresholdInput.value()/100.0]
-
-	def setEnabled(self, bool):
-		"""
-		Enable/disable this widget.
-
-		Parameters:
-			:bool: True to enable, false to disable.
-		"""
-
-		self.startThresholdInput.setEnabled(bool)
-		self.endThresholdInput.setEnabled(bool)
-
-class FixedPeakTab(QtWidgets.QWidget):
-	"""
-	Widget controlling Fixed-width peak detection algorithm.
-	"""
-
-	units = {'S': 1, 'mS': 1e-3, 'uS': 1e-6, 'nS': 1e-9}
-
-	def __init__(self, *args):
-		"""
-		constructor.
-		"""
-
-		self.logger = logging.getLogger('ScopeOut.scopeWidgets.FixedPeakTab')
-		QtWidgets.QWidget.__init__(self, *args)
-		self.initWidgets()
-		self.show()
-
-	def initWidgets(self):
-		"""
-		Set up sub-widgets.
-		"""
-		
-		self.startTimeLabel = QtWidgets.QLabel("Peak Start Time", self)
-		self.peakWidthLabel = QtWidgets.QLabel("Peak Width", self)
-		self.startTimeInput = QtWidgets.QDoubleSpinBox(self)
-		self.startTimeInput.setMaximum(500)
-		self.startTimeInput.setMinimum(0)
-		self.startTimeInput.setValue(10)
-		self.startTimeUnits = QtWidgets.QComboBox(self)
-		self.startTimeUnits.addItems(self.units.keys())
-		self.peakWidthInput = QtWidgets.QDoubleSpinBox(self)
-		self.peakWidthInput.setMinimum(0)
-		self.peakWidthInput.setValue(10)
-		self.peakWidthUnits = QtWidgets.QComboBox(self)
-		self.peakWidthUnits.addItems(self.units.keys())
-
-		self.layout = QtWidgets.QGridLayout(self)
-
-		self.layout.addWidget(self.startTimeLabel,0,0)
-		self.layout.addWidget(self.startTimeInput,0,1)
-		self.layout.addWidget(self.startTimeUnits,0,2)
-		self.layout.addWidget(self.peakWidthLabel,1,0)
-		self.layout.addWidget(self.peakWidthInput,1,1)
-		self.layout.addWidget(self.peakWidthUnits,1,2)
-		self.setLayout(self.layout)
-
-		for i in range(0,self.layout.count()):
-			addShadow(self.layout.itemAt(i).widget())
-
-	def getParameters(self):
-		"""
-		Returns the peak thresholds as decimals.
-
-		:Returns: An array containing the peak start time and the peak width in seconds
-		"""
-
-		return [self.startTimeInput.value()*self.units[self.startTimeUnits.currentText()], self.peakWidthInput.value()*self.units[self.peakWidthUnits.currentText()]]
-
-	def setEnabled(self, bool):
-		"""
-		Enable/disable this widget.
-
-		Parameters:
-			:bool: True to enable, false to disable.
-		"""
-
-		self.startThresholdInput.setEnabled(bool)
-		self.endThresholdInput.setEnabled(bool)
-
 class waveOptionsTabWidget(QtWidgets.QWidget):
 	"""
 	Manages Tabbed display of wave options widgets. Also holds wave counter and peak window checkbox
 	"""
+
+	class SmartPeakTab(QtWidgets.QWidget):
+		"""
+		Widget controlling smart peak detection algorithm.
+		"""
+
+		def __init__(self, *args):
+			"""
+			constructor.
+			"""
+
+			self.logger = logging.getLogger('ScopeOut.scopeWidgets.SmartPeakTab')
+			QtWidgets.QWidget.__init__(self, *args)
+			self.initWidgets()
+			self.show()
+
+		def initWidgets(self):
+			"""
+			Set up sub-widgets.
+			"""
+
+			
+			self.startThresholdLabel = QtWidgets.QLabel("Peak Start Threshold", self)
+			self.endThresholdLabel = QtWidgets.QLabel("Peak End Threshold", self)
+			self.startThresholdInput = QtWidgets.QSpinBox(self)
+			self.startThresholdInput.setMaximum(500)
+			self.startThresholdInput.setMinimum(0)
+			self.startThresholdInput.setSuffix('%')
+			self.startThresholdInput.setValue(10)
+			self.endThresholdInput = QtWidgets.QDoubleSpinBox(self)
+			self.endThresholdInput.setMaximum(500.0)
+			self.endThresholdInput.setMinimum(0.0)
+			self.endThresholdInput.setSuffix('%')
+			self.endThresholdInput.setValue(100)
+
+			self.layout = QtWidgets.QGridLayout(self)
+
+			self.layout.addWidget(self.startThresholdLabel,0,0)
+			self.layout.addWidget(self.startThresholdInput,0,1)
+			self.layout.addWidget(self.endThresholdLabel,1,0)
+			self.layout.addWidget(self.endThresholdInput,1,1)
+			self.setLayout(self.layout)
+
+			for i in range(0,self.layout.count()):
+				addShadow(self.layout.itemAt(i).widget())
+
+		def getParameters(self):
+			"""
+			Returns the peak thresholds as decimals.
+
+			:Returns: An array containting the start threshold followed by the end threshold.
+			"""
+
+			return [self.startThresholdInput.value()/100.0, self.endThresholdInput.value()/100.0]
+
+		def setEnabled(self, bool):
+			"""
+			Enable/disable this widget.
+
+			Parameters:
+				:bool: True to enable, false to disable.
+			"""
+
+			self.startThresholdInput.setEnabled(bool)
+			self.endThresholdInput.setEnabled(bool)
+
+	class FixedPeakTab(QtWidgets.QWidget):
+		"""
+		Widget controlling Fixed-width peak detection algorithm.
+		"""
+
+		units = {'S': 1, 'mS': 1e-3, 'uS': 1e-6, 'nS': 1e-9}
+
+		def __init__(self, *args):
+			"""
+			constructor.
+			"""
+
+			self.logger = logging.getLogger('ScopeOut.scopeWidgets.FixedPeakTab')
+			QtWidgets.QWidget.__init__(self, *args)
+			self.initWidgets()
+			self.show()
+
+		def initWidgets(self):
+			"""
+			Set up sub-widgets.
+			"""
+			
+			self.startTimeLabel = QtWidgets.QLabel("Peak Start Time", self)
+			self.peakWidthLabel = QtWidgets.QLabel("Peak Width", self)
+			self.startTimeInput = QtWidgets.QDoubleSpinBox(self)
+			self.startTimeInput.setMaximum(500)
+			self.startTimeInput.setMinimum(0)
+			self.startTimeInput.setValue(10)
+			self.startTimeUnits = QtWidgets.QComboBox(self)
+			self.startTimeUnits.addItems(self.units.keys())
+			self.peakWidthInput = QtWidgets.QDoubleSpinBox(self)
+			self.peakWidthInput.setMinimum(0)
+			self.peakWidthInput.setValue(10)
+			self.peakWidthUnits = QtWidgets.QComboBox(self)
+			self.peakWidthUnits.addItems(self.units.keys())
+
+			self.layout = QtWidgets.QGridLayout(self)
+
+			self.layout.addWidget(self.startTimeLabel,0,0)
+			self.layout.addWidget(self.startTimeInput,0,1)
+			self.layout.addWidget(self.startTimeUnits,0,2)
+			self.layout.addWidget(self.peakWidthLabel,1,0)
+			self.layout.addWidget(self.peakWidthInput,1,1)
+			self.layout.addWidget(self.peakWidthUnits,1,2)
+			self.setLayout(self.layout)
+
+			for i in range(0,self.layout.count()):
+				addShadow(self.layout.itemAt(i).widget())
+
+		def getParameters(self):
+			"""
+			Returns the peak thresholds as decimals.
+
+			:Returns: An array containing the peak start time and the peak width in seconds
+			"""
+
+			return [self.startTimeInput.value()*self.units[self.startTimeUnits.currentText()], self.peakWidthInput.value()*self.units[self.peakWidthUnits.currentText()]]
+
+		def setEnabled(self, bool):
+			"""
+			Enable/disable this widget.
+
+			Parameters:
+				:bool: True to enable, false to disable.
+			"""
+
+			self.startThresholdInput.setEnabled(bool)
+			self.endThresholdInput.setEnabled(bool)
 
 	def __init__(self, *args):
 		"""
@@ -663,8 +663,8 @@ class waveOptionsTabWidget(QtWidgets.QWidget):
 		addShadow(self.showWindow)
 
 		self.tabManager = QtWidgets.QTabWidget(self)
-		self.smart = SmartPeakTab(None)
-		self.fixed = FixedPeakTab(None)
+		self.smart = self.SmartPeakTab(None)
+		self.fixed = self.FixedPeakTab(None)
 
 		self.tabTitles = ['Smart', 'Fixed']
 		self.tabManager.addTab(self.smart, self.tabTitles[0])
