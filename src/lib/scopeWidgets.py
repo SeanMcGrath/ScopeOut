@@ -904,23 +904,27 @@ class waveColumnWidget(QtWidgets.QScrollArea):
 				y = 1
 				for field in wave:
 					if not isinstance(wave[field], list) and 'data' not in field.lower():
-						label = QtWidgets.QLabel(field, self)
+						label = QtWidgets.QLabel('  '+field, self)
 						layout.addWidget(label,y,0)
-						value = QtWidgets.QLabel(str(wave[field]),self)
+						value = QtWidgets.QLabel('{}'.format(wave[field]),self)
 						layout.addWidget(value,y,1)
 						y += 1
 
 				layout.setRowMinimumHeight(y+1,10)
 				layout.addWidget(QtWidgets.QLabel('Peak Properties:',self),y+2,0)
 				if wave['peakStart'] < 0:
-					layout.addWidget(QtWidgets.QLabel('No Peak Detected',self),y+3,0)
+					layout.addWidget(QtWidgets.QLabel('  No Peak Detected',self),y+3,0)
 				else:
 					startString = str(wave['xData'][wave['peakStart']]) + ' ' + str(wave['xUnit'])
 					endString = str(wave['xData'][wave['peakEnd']]) + ' ' +  str(wave['xUnit'])
-					layout.addWidget(QtWidgets.QLabel('Peak Start',self),y+3,0)
+					widthString = "{} {}".format(wave['xData'][wave['peakEnd']] - wave['xData'][wave['peakStart']], wave['xUnit'])
+					layout.addWidget(QtWidgets.QLabel('  Peak Start',self),y+3,0)
 					layout.addWidget(QtWidgets.QLabel(startString,self),y+3,1)
-					layout.addWidget(QtWidgets.QLabel('Peak End',self),y+4,0)
+					layout.addWidget(QtWidgets.QLabel('  Peak End',self),y+4,0)
 					layout.addWidget(QtWidgets.QLabel(endString,self),y+4,1)
+					layout.addWidget(QtWidgets.QLabel('  Peak Width', self),y+5,0)
+					layout.addWidget(QtWidgets.QLabel(widthString, self),y+5,1)
+
 
 				self.setLayout(layout)
 
