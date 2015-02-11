@@ -480,6 +480,14 @@ class acqControlWidget(QtWidgets.QWidget):
 			channels.append('Math')
 			self.channelComboBox.addItems(channels)
 			self.channelComboBox.setCurrentIndex(0)
+		elif bool:
+			while self.scope is None:
+				pass
+			channels =list(map(str,range(1,self.scope.numChannels+1)))
+			channels.append('All')
+			channels.append('Math')
+			self.channelComboBox.addItems(channels)
+			self.channelComboBox.setCurrentIndex(0)
 		else:
 			self.channelComboBox.clear()
 
