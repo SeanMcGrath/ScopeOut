@@ -84,8 +84,11 @@ QMenuBar::item {
 acqControlWidget {
   /*max-height: 400px;*/
   max-width: 200px;
-  padding: 10px;
   background-color: #212121;
+}
+
+acqControlWidget QPushButton {
+  margin-bottom: 5px;
 }
 
 waveColumnWidget {
@@ -93,6 +96,7 @@ waveColumnWidget {
   margin: 0px;
   height: 100%;
   min-width: 250px;
+  max-width: 350px;
   min-height: 200px;
   padding: 0px;
   border: none;
@@ -152,4 +156,8 @@ waveColumnItem QLabel {
 PropertiesPopup {
   color: white;
   background-color: #3C3C3C;
+}
+
+waveOptionsTabWidget {
+  max-width: 600px;
 }

@@ -56,11 +56,21 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 
 		self.layout.setSpacing(20)
 		self.layout.setContentsMargins(0,0,0,0)
-		self.layout.addWidget(self.widgets[0],0,0,2,1) # Column
-		self.layout.addWidget(self.widgets[1],0,1) # plot
-		self.layout.addWidget(self.widgets[2],0,2,2,1) # acqControl
-		self.layout.addWidget(self.widgets[3],1,1) # waveOptions
-		self.layout.setColumnMinimumWidth(2,180)
+		self.layout.addWidget(self.widgets[0],0,0,4,1) # Column
+		self.layout.addWidget(self.widgets[1],1,2,1,1) # plot
+		self.layout.addWidget(self.widgets[2],0,4,4,1) # acqControl
+		self.layout.addWidget(self.widgets[3],2,2) # waveOptions
+		self.layout.setColumnMinimumWidth(4,180)
+		self.layout.setColumnMinimumWidth(2,600)
+		self.layout.setColumnStretch(0,1)
+		# self.layout.setColumnStretch(1,1)
+		self.layout.setColumnStretch(2,1)
+		# self.layout.setColumnStretch(3,1)
+		self.layout.setRowStretch(0,1)
+		self.layout.setRowStretch(1,1)
+		self.layout.setRowStretch(3,1)
+		self.layout.setRowMinimumHeight(3,20)
+		self.layout.setRowMinimumHeight(1,500)
 		self.central.setLayout(self.layout)
 		self.setCentralWidget(self.central)
 
@@ -428,16 +438,20 @@ class acqControlWidget(QtWidgets.QWidget):
 			self.setEnabled(True)
 
 		self.layout = QtWidgets.QGridLayout(self)
-		self.layout.setRowMinimumHeight(1,100)
-		self.layout.setRowMinimumHeight(7,100)
-		self.layout.addWidget(self.autoSetButton,0,0)
-		self.layout.addWidget(self.acqButton,2,0)
-		self.layout.addWidget(self.acqOnTrigButton,3,0)
-		self.layout.addWidget(self.contAcqButton,4,0)
-		self.layout.addWidget(self.acqStopButton,5,0)
-		self.layout.addWidget(self.keepPlotCheckBox,6,0)
-		self.layout.addWidget(self.channelComboLabel,8,0)
-		self.layout.addWidget(self.channelComboBox,9,0)
+		self.layout.setRowStretch(0,1)
+		self.layout.setRowMinimumHeight(2,100)
+		self.layout.setRowStretch(2,1)
+		self.layout.setRowMinimumHeight(8,100)
+		self.layout.setRowStretch(8,1)
+		self.layout.addWidget(self.autoSetButton,1,0)
+		self.layout.addWidget(self.acqButton,3,0)
+		self.layout.addWidget(self.acqOnTrigButton,4,0)
+		self.layout.addWidget(self.contAcqButton,5,0)
+		self.layout.addWidget(self.acqStopButton,6,0)
+		self.layout.addWidget(self.keepPlotCheckBox,7,0)
+		self.layout.addWidget(self.channelComboLabel,9,0)
+		self.layout.addWidget(self.channelComboBox,10,0)
+		self.layout.setRowStretch(11,1)
 		self.setLayout(self.layout)
 
 		for i in range(0,self.layout.count()):
@@ -680,9 +694,13 @@ class waveOptionsTabWidget(QtWidgets.QWidget):
 
 		self.layout = QtWidgets.QGridLayout(self)
 
-		self.layout.addWidget(self.waveCounter,0,0)
-		self.layout.addWidget(self.showWindow,1,0)
-		self.layout.addWidget(self.tabManager,0,1,2,1)
+		self.layout.addWidget(self.waveCounter,1,1)
+		self.layout.addWidget(self.showWindow,2,1)
+		self.layout.addWidget(self.tabManager,0,2,4,1)
+		self.layout.setRowMinimumHeight(0,30)
+		self.layout.setRowStretch(4,1)
+		self.layout.setVerticalSpacing(0)
+		self.layout.setHorizontalSpacing(15)
 		self.show()
 
 	def updateCount(self, waves):

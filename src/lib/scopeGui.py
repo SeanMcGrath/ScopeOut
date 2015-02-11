@@ -33,7 +33,7 @@ class ThreadedClient(QtWidgets.QApplication):
 		methods of this client.
 
 		It is essential that the Qt "signaling" mechanism be used to interact between threads
-		(The GUI is considered a thread indpendent of this client). Directly modifying the
+		(The GUI is considered a thread independent of this client). Directly modifying the
 		appearance or contents of a GUI widget can cause a program crash; instead, emit the data
 		you wish to send as a signal which the widget will receive safely.
 	"""
@@ -146,8 +146,10 @@ class ThreadedClient(QtWidgets.QApplication):
 						self.plot.showPlot(wave,plotHeld())
 					if peakFindMode() == 'Smart':
 						start, end = WU.smartFindPeakEnds(wave, self.waveOptions.getParameters())
+
 					elif peakFindMode() == 'Fixed':
 						start, end = WU.fixedFindPeakEnds(wave, self.waveOptions.getParameters())
+					wave['peak detection mode'] = peakFindMode()
 					wave['peakStart'] = start
 					wave['peakEnd'] = end
 					integral = WU.integratePeak(wave)
