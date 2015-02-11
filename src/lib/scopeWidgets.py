@@ -911,7 +911,7 @@ class waveColumnWidget(QtWidgets.QScrollArea):
 
 				y = 1
 				for field in wave:
-					if not isinstance(wave[field], list) and 'data' not in field.lower():
+					if not isinstance(wave[field], list) and field.lower() not in ['xdata','ydata']:
 						label = QtWidgets.QLabel('  '+field, self)
 						layout.addWidget(label,y,0)
 						value = QtWidgets.QLabel('{}'.format(wave[field]),self)

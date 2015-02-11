@@ -630,8 +630,6 @@ class TDS2024B(GenericOscilloscope):
 		:Returns: a list of voltage values describing a captured waveform.
 		"""
 
-		self.waveformSetup()
-
 		if self.waveformSet:
 			try:
 				curveData = self.query("CURV?").split(',')
@@ -645,7 +643,9 @@ class TDS2024B(GenericOscilloscope):
 
 	def getXArray(self):
 		"""
-		Get array of x values, scaled properly
+		Get array of x values that matches the y values in the waveform, scaled properly.
+
+		:Returns: the x array needed to plot a waveform.
 		"""
 		if not self.waveformSet: self.waveformSetup()
 		return np.arange(0,self.waveform['numberOfPoints']*self.waveform['xIncr'],self.waveform['xIncr'])
@@ -659,10 +659,10 @@ class TDS2024B(GenericOscilloscope):
 		if self.waveformSet:
 			try:
 				self.waveform['acqTime'] = str(datetime.datetime.now())
-				curveData = self.query("CURV?").split(',')
-				curveData = list(map(int,curveData))
-				for i in range(0,len(curveData)):
-					curveData[i] = self.waveform['yZero'] +self.waveform['yMult']*(curveData[i]-self.waveform['yOff'])
+				curveData = self.getCurve()
+				# curveData = list(map(int,curveData))
+				# for i in range(0,len(curveData)):
+				# 	curveData[i] = self.waveform['yZero'] +self.waveform['yMult']*(curveData[i]-self.waveform['yOff'])
 				self.waveform['yData'] = curveData
 				self.waveform['xData'] = np.arange(0,self.waveform['numberOfPoints']*self.waveform['xIncr'],self.waveform['xIncr'])
 				self.waveformQueue.put(self.waveform)
@@ -696,7 +696,7 @@ class TDS2024B(GenericOscilloscope):
 		Set data channel of TDS2024B.
 
 		Parameters:
-			:channel: a string representing the desired data channel
+			:channel: a string or int representing the desired data channel
 
 		:Returns: True if a valid channel is passed, False otherwise
 		"""
