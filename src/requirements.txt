@@ -1,6 +1,11 @@
-# ScopeOut Package Requirements
-visa
-matplotlib
-numpy
+## ScopeOut requirements
+## Also required, but not available through pip: PyQt5
 
-# Also Required: PyQt5
+PyVISA==1.5
+matplotlib==1.4.0
+numpy==1.8.2
+pyparsing==2.0.2
+pyqtgraph==0.9.8
+pyserial==2.7
+python-dateutil==2.2
+six==1.7.3
