@@ -144,10 +144,10 @@ class ThreadedClient(QtWidgets.QApplication):
 					self.__status('Waveform acquired on ' +wave['dataChannel'])
 					if not self.__histogramMode():
 						self.plot.showPlot(wave,plotHeld())
-					if peakFindMode() == 'Smart':
+					if 'Smart' in peakFindMode():
 						start, end = WU.smartFindPeakEnds(wave, self.waveOptions.getParameters())
 
-					elif peakFindMode() == 'Fixed':
+					elif 'Fixed' in peakFindMode():
 						start, end = WU.fixedFindPeakEnds(wave, self.waveOptions.getParameters())
 					wave['peak detection mode'] = peakFindMode()
 					wave['peakStart'] = start

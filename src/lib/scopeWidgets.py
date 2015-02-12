@@ -688,7 +688,7 @@ class waveOptionsTabWidget(QtWidgets.QWidget):
 		self.smart = self.SmartPeakTab(None)
 		self.fixed = self.FixedPeakTab(None)
 
-		self.tabTitles = ['Smart', 'Fixed']
+		self.tabTitles = ['Smart Peak Detection', 'Fixed Width Peak Detection']
 		self.tabManager.addTab(self.smart, self.tabTitles[0])
 		self.tabManager.addTab(self.fixed,self.tabTitles[1])
 
