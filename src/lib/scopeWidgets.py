@@ -12,7 +12,7 @@ from matplotlib.widgets import Cursor
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from lib.oscilloscopes import GenericOscilloscope
 from functools import partial
-import os, re, logging, numpy as np
+import os, re, logging, numpy as np, seaborn as sns
 
 def addShadow(widget):
 	"""

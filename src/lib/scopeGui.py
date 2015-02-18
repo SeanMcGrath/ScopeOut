@@ -146,7 +146,6 @@ class ThreadedClient(QtWidgets.QApplication):
 						self.plot.showPlot(wave,plotHeld())
 					if 'Smart' in peakFindMode():
 						start, end = WU.smartFindPeakEnds(wave, self.waveOptions.getParameters())
-
 					elif 'Fixed' in peakFindMode():
 						start, end = WU.fixedFindPeakEnds(wave, self.waveOptions.getParameters())
 					wave['peak detection mode'] = peakFindMode()
