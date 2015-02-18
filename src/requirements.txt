@@ -1,5 +1,6 @@
 ## ScopeOut requirements
 ## Also required, but not available through pip: PyQt5
+## HIGHLY RECOMMENDED: use of anaconda scientific python distribution
 
 PyVISA==1.5
 matplotlib==1.4.0
