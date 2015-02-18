@@ -114,8 +114,7 @@ class ThreadedClient(QtWidgets.QApplication):
 			"""
 			Determine the desired method of peak detection from the status of the tab options widget.
 			"""
-			mode = self.waveOptions.getMode()
-			return mode
+			return self.waveOptions.getMode()
 
 		def plotHeld():
 			"""
@@ -124,8 +123,7 @@ class ThreadedClient(QtWidgets.QApplication):
 			:Returns: True if plot is to be held, false otherwise
 			"""
 
-			held = self.acqControl.plotHeld()
-			return held
+			return self.acqControl.plotHeld()
 
 		def processWave(wave):
 			"""
@@ -140,31 +138,37 @@ class ThreadedClient(QtWidgets.QApplication):
 				self.__status(wave['error'])
 			else:
 				try:
+
 					self.logger.info("Successfully acquired waveform from %s", wave['dataChannel'])
 					self.__status('Waveform acquired on ' +wave['dataChannel'])
-					if not self.__histogramMode():
-						self.plot.showPlot(wave,plotHeld())
+					# Select desired peak detection algorithm
 					if 'Smart' in peakFindMode():
 						start, end = WU.smartFindPeakEnds(wave, self.waveOptions.getParameters())
 					elif 'Fixed' in peakFindMode():
 						start, end = WU.fixedFindPeakEnds(wave, self.waveOptions.getParameters())
+					else:
+						start, end = 0
+						print("peak mode not found")
+					# store parameters in wave dictionary
 					wave['peak detection mode'] = peakFindMode()
 					wave['peakStart'] = start
 					wave['peakEnd'] = end
 					integral = WU.integratePeak(wave)
 					wave['peakIntegral'] = integral
 					self.integralList.append(integral)
+					#  do desired plotting
 					if self.__histogramMode() and len(self.integralList)>1:
 						self.plot.showHist(self.integralList)
-					self.waveList.append(wave)
-					self.waveSignal.emit(wave)
-					self.__waveCount(len(self.waveList))
-					if self.waveOptions.peakStart() and start >= 0 and not self.__histogramMode():
-						self.logger.info('plotting vertical lines at {} and {}'.format(wave['xData'][start], wave['xData'][end]))
-						self.plot.vertLines([ wave['xData'][start], wave['xData'][end] ])
+					elif not self.__histogramMode():
+						self.plot.showPlot(wave,plotHeld(),self.waveOptions.peakStart())
+
 				except Exception as e:
 					self.__status('Error occurred during wave plotting. Check log for details.')
 					self.logger.error(e)
+				finally:
+					self.waveList.append(wave)
+					self.waveSignal.emit(wave)
+					self.__waveCount(len(self.waveList))
 
 		def __immAcqThread():
 			"""

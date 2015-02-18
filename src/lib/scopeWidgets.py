@@ -286,7 +286,7 @@ class WavePlotWidget(FigureCanvas):
 		self.show()
 		self.logger.info("Plot initialized")
 
-	def showPlot(self, wave, hold):
+	def showPlot(self, wave, hold=False, showPeak=False):
 		'''
 		Fill plot with data and draw it on the screen.
 
@@ -304,6 +304,8 @@ class WavePlotWidget(FigureCanvas):
 		self.axes.set_ylabel(yPrefix + wave['yUnit'])
 		self.axes.set_xlabel(xPrefix + wave['xUnit'])
 		self.axes.plot(xData,yData)
+		if showPeak:
+			self.vertLines([ wave['xData'][wave['peakStart']], wave['xData'][wave['peakEnd']] ])
 		cursor = Cursor(self.axes, useblit=True, color='black', linewidth=1 )
 		cursor.connect_event('motion_notify_event', self.displayCoords)
 		self.fig.canvas.draw()
@@ -358,14 +360,11 @@ class WavePlotWidget(FigureCanvas):
 		"""
 
 		self.axes.clear()
-		self.fig.patch.set_color(self.bgColor)
 		self.axes = self.fig.add_subplot(111)
 		[t.set_color('white') for t in self.axes.yaxis.get_ticklabels()]
 		[t.set_color('white') for t in self.axes.xaxis.get_ticklabels()]
-		self.axes.xaxis.label.set_color('white')
-		self.axes.yaxis.label.set_color('white')
 		self.coords = self.axes.text(0,0,'')
-		self.fig.canvas.draw()
+		# self.fig.canvas.draw()
 		self.logger.info("Plot Reset")
 
 	def vertLines(self, xArray):
@@ -381,7 +380,7 @@ class WavePlotWidget(FigureCanvas):
 			if x >= 0:
 				self.axes.axvline(x)
 
-		self.fig.canvas.draw()
+		self.logger.info("drew vertical lines")
 
 	def showHist(self, x, bins=100):
 		"""
@@ -631,12 +630,13 @@ class waveOptionsTabWidget(QtWidgets.QWidget):
 			self.startTimeLabel = QtWidgets.QLabel("Peak Start Time", self)
 			self.peakWidthLabel = QtWidgets.QLabel("Peak Width", self)
 			self.startTimeInput = QtWidgets.QDoubleSpinBox(self)
-			self.startTimeInput.setMaximum(500)
+			self.startTimeInput.setMaximum(1000)
 			self.startTimeInput.setMinimum(0)
 			self.startTimeInput.setValue(10)
 			self.startTimeUnits = QtWidgets.QComboBox(self)
 			self.startTimeUnits.addItems(self.units.keys())
 			self.peakWidthInput = QtWidgets.QDoubleSpinBox(self)
+			self.peakWidthInput.setMaximum(1000)
 			self.peakWidthInput.setMinimum(0)
 			self.peakWidthInput.setValue(10)
 			self.peakWidthUnits = QtWidgets.QComboBox(self)
