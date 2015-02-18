@@ -14,6 +14,10 @@ from lib.oscilloscopes import GenericOscilloscope
 from functools import partial
 import os, re, logging, numpy as np, seaborn as sns
 
+# Graph configuration
+sns.set(font_scale=1.25)
+sns.set_palette(["#673AB7", "#3498db", "#95a5a6", "#e74c3c", "#34495e", "#2ecc71"])
+
 def addShadow(widget):
 	"""
 	Add a uniform drop shadow to a QWidget.
