@@ -35,23 +35,23 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 	Including custom ScopeOut widgets as well as the statusbar, menubar, etc.
 	"""
 
-	def __init__(self, widgets, endCommand, saveCommand, *args):
+	def __init__(self, widgets, commands, *args):
 		"""
 		Constructor.
 		Is passed widgets from threaded client as an array.
 
 		Parameters:
 			:widgets: the array containing the child widgets to be displayed by this window.
-			:endCommand: a command to be executed when this wondow is closed.
-			:saveCommand: a command to be executed when the save action is activated.
+			:commands: a dictionary of commands to be executed when various actions of the window are invoked.
 		"""
 
 		self.logger = logging.getLogger('ScopeOut.scopeWidgets.ScopeOutMainWindow')
 		self.logger.info('Main Window created')
 
 		self.widgets = widgets
-		self.endCommand = endCommand
-		self.saveCommand = saveCommand
+		self.endCommand = commands['end']
+		self.saveWaveCommand = commands['saveWave']
+		self.savePropertiesCommand = commands['saveProperties']
 
 		QtWidgets.QMainWindow.__init__(self, *args)
 
@@ -98,8 +98,14 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
         # File->Save
 		saveAction = QtWidgets.QAction(QtGui.QIcon('save.png'), '&Save Waveforms', self)
 		saveAction.setShortcut('Ctrl+S')
-		saveAction.setStatusTip('Save Acquired Waveforms to .csv file')
-		saveAction.triggered.connect(self.saveCommand)
+		saveAction.setStatusTip('Save All Acquired Waveforms to .csv file')
+		saveAction.triggered.connect(self.saveWaveCommand)
+
+		# File-> Save Properties
+		savePropertiesAction = QtWidgets.QAction(QtGui.QIcon('save.png'), 'Save Waveform Properties', self)
+		savePropertiesAction.setShortcut('Ctrl+Alt+S')
+		savePropertiesAction.setStatusTip('Save desired properties of waveforms to .csv file')
+		savePropertiesAction.triggered.connect(self.savePropertiesCommand)
 
 		# Data->Reset
 		self.resetAction = QtWidgets.QAction('&Reset and Clear Data', self)
@@ -131,6 +137,7 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 		self.fileMenu = self.menubar.addMenu('&File')
 		self.fileMenu.addAction(exitAction)
 		self.fileMenu.addAction(saveAction)
+		self.fileMenu.addAction(savePropertiesAction)
 
 		# "Data" Menu
 		self.dataMenu = self.menubar.addMenu('&Data')
@@ -242,12 +249,13 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 		else:
 			self.logger.info("Main Window disabled")
 
-
 		for widget in self.widgets:
 			widget.setEnabled(bool)
 
 		self.menubar.actions()[1].setEnabled(bool)
 		self.menubar.actions()[0].menu().actions()[1].setEnabled(bool)
+		self.menubar.actions()[0].menu().actions()[2].setEnabled(bool)
+
 
 	def status(self, message):
 		"""

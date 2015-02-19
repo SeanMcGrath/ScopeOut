@@ -73,7 +73,8 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.logger.info("All Widgets initialized")
 
 		widgets = [self.waveColumn,self.plot,self.acqControl,self.waveOptions]
-		self.mainWindow = sw.ScopeOutMainWindow(widgets,self.__closeEvent,self.__saveWaveformEvent)
+		commands = {'saveWave': self.__saveWaveformEvent, 'saveProperties': self.__savePropertiesEvent, 'end': self.__closeEvent}
+		self.mainWindow = sw.ScopeOutMainWindow(widgets,commands)
 
 		self.__connectSignals()
 			
@@ -468,7 +469,7 @@ class ThreadedClient(QtWidgets.QApplication):
 		Called in order to save in-memory waveforms to disk.
 
 		Parameters:
-			:wave: a particular wave to save, if none is passed then all waves inmemory are saved.
+			:wave: a particular wave to save, if none is passed then all waves in memory are saved.
 		"""
 
 		def __writeWave(outFile, wave):
@@ -481,7 +482,7 @@ class ThreadedClient(QtWidgets.QApplication):
 			"""
 
 			try:
-				outFile.write('"Waveform captured ' + datetime.now().isoformat() + ' from ' + str(self.activeScope)+'"\n')
+				outFile.write('"Waveform captured ' + wave['acqTime'] +'"\n')
 				outFile.write('\n')
 				for field in wave:
 					if not isinstance(wave[field],(list,np.ndarray)):
@@ -515,8 +516,7 @@ class ThreadedClient(QtWidgets.QApplication):
 
 				fileName = QtWidgets.QFileDialog.getSaveFileName(self.mainWindow, 'Save As', defaultFile)[0]
 				with open(fileName,'w') as saveFile:
-					for wave in self.waveList:
-						__writeWave(saveFile,wave)
+					__writeWave(saveFile,waveform)
 
 				self.logger.info('Waveform saved to ' + fileName)
 				self.__status('Waveform saved to ' + fileName)
@@ -552,6 +552,90 @@ class ThreadedClient(QtWidgets.QApplication):
 
 		else:
 			self.__status('No Waveforms to Save')
+
+	def __savePropertiesEvent(self, fields, waveform=None):
+		"""
+		Save the values of any number of a waveform's properties to disk.
+
+		Parameters:
+			:fields: an array of strings naming the waveform properties to be saved.
+			:waveform: a waveform dictionary, the properties of which are to be saved.
+						If none is present, the properties of all waveforms in memory are saved.
+		"""
+
+		def __writeProperties(outFile, waves, fields=[]):
+			"""
+			Writes the selected properties of a waveform dictionary to a .csv file.
+
+			Parameters:
+				:outFile: an opened file object to be written to.
+				:waves: the list of waveform dictionaries to be processed.
+				:fields: an array containing the names of the selected properties.
+			"""
+
+			try:
+				outFile.write("Waveform properties captured {} \n\n".format(str(datetime.now())))
+				for field in fields: outFile.write(field + ',')
+				outFile.write('\n')
+				for wave in waves:
+					for field in fields: outFile.write(str(wave[field]) + ',')
+					outFile.write('\n')
+				
+
+			except Exception as e:
+				self.logger.error(e)
+
+
+
+		if waveform is not None:
+			try:
+				waveDirectory = os.path.join(os.getcwd(), 'waveforms')
+				if not os.path.exists(waveDirectory):
+					os.makedirs(waveDirectory)
+
+				dayDirectory = os.path.join(waveDirectory, date.today().isoformat())
+				if not os.path.exists(dayDirectory):
+					os.makedirs(dayDirectory)
+
+				defaultFile = 'Properties' + datetime.now().strftime('%m-%d-%H-%M-%S')+'.csv'
+				defaultFile = os.path.join(dayDirectory,defaultFile).replace('\\','/')
+
+				fileName = QtWidgets.QFileDialog.getSaveFileName(self.mainWindow, 'Save As', defaultFile)[0]
+				with open(fileName,'w') as saveFile:
+					__writeProperties(saveFile,[waveform], fields)
+
+				self.logger.info('Waveform properties saved to ' + fileName)
+				self.__status('Waveform properties saved to ' + fileName)
+
+			except Exception as e:
+				self.logger.error(e)
+
+		elif self.waveList:
+
+			try:
+				waveDirectory = os.path.join(os.getcwd(), 'waveforms')
+				if not os.path.exists(waveDirectory):
+					os.makedirs(waveDirectory)
+
+				dayDirectory = os.path.join(waveDirectory, date.today().isoformat())
+				if not os.path.exists(dayDirectory):
+					os.makedirs(dayDirectory)
+
+				defaultFile = 'Properties' + datetime.now().strftime('%m-%d-%H-%M-%S')+'.csv'
+				defaultFile = os.path.join(dayDirectory,defaultFile).replace('\\','/')
+
+				fileName = QtWidgets.QFileDialog.getSaveFileName(self.mainWindow, 'Save As', defaultFile)[0]
+				with open(fileName,'w') as saveFile:
+					for wave in self.waveList:
+						__writeProperties(saveFile,self.waveList, fields)
+
+				self.logger.info("Properties of %d waveforms saved to %s", len(self.waveList), fileName)
+				self.__status("Properties of {} waveforms saved to {}".format(len(self.waveList), fileName))
+
+			except Exception as e:
+					self.logger.error(e)
+
+		else: self.__status('No waveforms to save.')
 
 	def __status(self, message):
 		"""
