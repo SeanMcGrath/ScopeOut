@@ -126,10 +126,12 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 		self.saveAction.setStatusTip('Save All Acquired Waveforms to .csv file')
 
 		# File-> Save Properties
-		savePropertiesAction = QtWidgets.QAction(QtGui.QIcon('save.png'), 'Save Waveform Properties', self)
-		savePropertiesAction.setShortcut('Ctrl+Alt+S')
-		savePropertiesAction.setStatusTip('Save desired properties of waveforms to .csv file')
-		savePropertiesAction.triggered.connect(lambda: self.__selectPropertiesPopup(callback=self.savePropertiesCommand).exec())
+		self.savePropertiesAction = QtWidgets.QAction(QtGui.QIcon('save.png'), 'Save Waveform Properties', self)
+		self.savePropertiesAction.setShortcut('Ctrl+Alt+S')
+		self.savePropertiesAction.setStatusTip('Save desired properties of waveforms to .csv file')
+		# self.savePropertiesAction.triggered.connect(
+		# 	lambda: self.__selectPropertiesPopup(
+		# 		callback=self.savePropertiesCommand).exec())
 
 		# Data->Reset
 		self.resetAction = QtWidgets.QAction('&Reset and Clear Data', self)
@@ -161,7 +163,7 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 		self.fileMenu = self.menubar.addMenu('&File')
 		self.fileMenu.addAction(exitAction)
 		self.fileMenu.addAction(self.saveAction)
-		self.fileMenu.addAction(savePropertiesAction)
+		self.fileMenu.addAction(self.savePropertiesAction)
 
 		# "Data" Menu
 		self.dataMenu = self.menubar.addMenu('&Data')

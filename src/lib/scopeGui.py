@@ -97,6 +97,7 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.mainWindow.resetAction.triggered.connect(self.__resetEvent)
 		self.mainWindow.resetAction.triggered.connect(self.waveColumn.reset)
 		self.mainWindow.saveAction.triggered.connect(self.__saveWaveformEvent)
+		self.mainWindow.savePropertiesAction.triggered.connect(self.__savePropertiesEvent)
 		self.statusChange.connect(self.mainWindow.status)
 		self.scopeChange.connect(self.acqControl.setScope)
 		self.waveSignal.connect(self.waveColumn.addWave)
@@ -551,15 +552,40 @@ class ThreadedClient(QtWidgets.QApplication):
 		else:
 			self.__status('No Waveforms to Save')
 
-	def __savePropertiesEvent(self, fields=[], waveform=None):
+	def __savePropertiesEvent(self, waveform=None):
 		"""
 		Save the values of any number of a waveform's properties to disk.
 
 		Parameters:
-			:fields: an array of strings naming the waveform properties to be saved.
 			:waveform: a waveform dictionary, the properties of which are to be saved.
 						If none is present, the properties of all waveforms in memory are saved.
 		"""
+
+		class __selectPropertiesPopup(QtWidgets.QDialog):
+
+			def __init__(self, callback, waveform={}):
+
+				QtWidgets.QDialog.__init__(self)
+
+				self.callback = callback
+				layout = QtWidgets.QGridLayout(self)
+				y=0
+				self.checks = []
+				for field in waveform:
+					check = QtWidgets.QCheckBox(field,self)
+					self.checks.append(check)
+					layout.addWidget(check,y,0)
+					y += 1
+
+				okButton = QtWidgets.QPushButton('OK', self)
+				okButton.released.connect(self.accept)
+				layout.addWidget(okButton,y,0)
+				self.setLayout(layout)
+
+			def accept(self):
+
+				fields = [check.text() for check in self.checks if check.isChecked()]
+				self.callback(fields=fields)
 
 		def __writeProperties(outFile, waves, fields=[]):
 			"""
@@ -598,7 +624,8 @@ class ThreadedClient(QtWidgets.QApplication):
 
 				fileName = QtWidgets.QFileDialog.getSaveFileName(self.mainWindow, 'Save As', defaultFile)[0]
 				with open(fileName,'w') as saveFile:
-					__writeProperties(saveFile,[waveform], fields)
+					__selectPropertiesPopup(partial(
+						__writeProperties,outFile=saveFile,waves=[waveform]),waveform).exec()
 
 				self.logger.info('Waveform properties saved to ' + fileName)
 				self.__status('Waveform properties saved to ' + fileName)
@@ -622,8 +649,8 @@ class ThreadedClient(QtWidgets.QApplication):
 
 				fileName = QtWidgets.QFileDialog.getSaveFileName(self.mainWindow, 'Save As', defaultFile)[0]
 				with open(fileName,'w') as saveFile:
-					for wave in self.waveList:
-						__writeProperties(saveFile,self.waveList, fields)
+						__selectPropertiesPopup(partial(
+							__writeProperties,outFile=saveFile,waves=self.waveList), self.waveList[0]).exec()
 
 				self.logger.info("Properties of %d waveforms saved to %s", len(self.waveList), fileName)
 				self.__status("Properties of {} waveforms saved to {}".format(len(self.waveList), fileName))
