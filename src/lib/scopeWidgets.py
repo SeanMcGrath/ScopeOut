@@ -35,6 +35,32 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 	Including custom ScopeOut widgets as well as the statusbar, menubar, etc.
 	"""
 
+	class __selectPropertiesPopup(QtWidgets.QDialog):
+
+		def __init__(self, callback, waveform={}):
+
+			QtWidgets.QDialog.__init__(self)
+
+			self.callback = callback
+			layout = QtWidgets.QGridLayout(self)
+			y=0
+			self.checks = []
+			for field in waveform:
+				check = QtWidgets.QCheckBox(field,self)
+				self.checks.append(check)
+				layout.addWidget(self,y,0)
+				y += 1
+
+			okButton = QtWidgets.QPushButton('OK', self)
+			okButton.released.connect(self.accept)
+			layout.addWidget(okButton,y,0)
+			self.setLayout(layout)
+
+		def accept(self):
+
+			fields = [check.text() for check in self.checks if check.isChecked()]
+			self.callback(fields=fields)
+
 	def __init__(self, widgets, commands, *args):
 		"""
 		Constructor.
@@ -45,15 +71,14 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 			:commands: a dictionary of commands to be executed when various actions of the window are invoked.
 		"""
 
+		QtWidgets.QMainWindow.__init__(self, *args)
+
 		self.logger = logging.getLogger('ScopeOut.scopeWidgets.ScopeOutMainWindow')
 		self.logger.info('Main Window created')
 
 		self.widgets = widgets
 		self.endCommand = commands['end']
-		self.saveWaveCommand = commands['saveWave']
 		self.savePropertiesCommand = commands['saveProperties']
-
-		QtWidgets.QMainWindow.__init__(self, *args)
 
 		self.central = QtWidgets.QWidget(self)
 		self.layout = QtWidgets.QGridLayout(self.central)
@@ -96,16 +121,15 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 		exitAction.triggered.connect(self.closeEvent)
 
         # File->Save
-		saveAction = QtWidgets.QAction(QtGui.QIcon('save.png'), '&Save Waveforms', self)
-		saveAction.setShortcut('Ctrl+S')
-		saveAction.setStatusTip('Save All Acquired Waveforms to .csv file')
-		saveAction.triggered.connect(self.saveWaveCommand)
+		self.saveAction = QtWidgets.QAction(QtGui.QIcon('save.png'), '&Save Waveforms', self)
+		self.saveAction.setShortcut('Ctrl+S')
+		self.saveAction.setStatusTip('Save All Acquired Waveforms to .csv file')
 
 		# File-> Save Properties
 		savePropertiesAction = QtWidgets.QAction(QtGui.QIcon('save.png'), 'Save Waveform Properties', self)
 		savePropertiesAction.setShortcut('Ctrl+Alt+S')
 		savePropertiesAction.setStatusTip('Save desired properties of waveforms to .csv file')
-		savePropertiesAction.triggered.connect(self.savePropertiesCommand)
+		savePropertiesAction.triggered.connect(lambda: self.__selectPropertiesPopup(callback=self.savePropertiesCommand).exec())
 
 		# Data->Reset
 		self.resetAction = QtWidgets.QAction('&Reset and Clear Data', self)
@@ -136,7 +160,7 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 		self.menubar = self.menuBar()
 		self.fileMenu = self.menubar.addMenu('&File')
 		self.fileMenu.addAction(exitAction)
-		self.fileMenu.addAction(saveAction)
+		self.fileMenu.addAction(self.saveAction)
 		self.fileMenu.addAction(savePropertiesAction)
 
 		# "Data" Menu
@@ -255,7 +279,6 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 		self.menubar.actions()[1].setEnabled(bool)
 		self.menubar.actions()[0].menu().actions()[1].setEnabled(bool)
 		self.menubar.actions()[0].menu().actions()[2].setEnabled(bool)
-
 
 	def status(self, message):
 		"""
@@ -432,8 +455,6 @@ class acqControlWidget(QtWidgets.QWidget):
 		"""
 		Set up the subwidgets
 		"""
-
-		
 
 		self.acqButton = QtWidgets.QPushButton('Acquire',self)
 		self.contAcqButton = QtWidgets.QPushButton('Acquire Continuously', self)
@@ -821,9 +842,9 @@ class waveColumnWidget(QtWidgets.QScrollArea):
 			self.waveNumber = QtWidgets.QLabel(str(index), self)
 
 			# Actions
-			saveAction = QtWidgets.QAction('Save Waveform',self)
-			saveAction.triggered.connect(self.saveWave)
-			self.addAction(saveAction)
+			self.saveAction = QtWidgets.QAction('Save Waveform',self)
+			self.saveAction.triggered.connect(self.saveWave)
+			self.addAction(self.saveAction)
 
 			dispAction = QtWidgets.QAction('Display Wavform', self)
 			dispAction.triggered.connect(self.dispWave)

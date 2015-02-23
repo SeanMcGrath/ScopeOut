@@ -73,7 +73,7 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.logger.info("All Widgets initialized")
 
 		widgets = [self.waveColumn,self.plot,self.acqControl,self.waveOptions]
-		commands = {'saveWave': self.__saveWaveformEvent, 'saveProperties': self.__savePropertiesEvent, 'end': self.__closeEvent}
+		commands = {'saveProperties': self.__savePropertiesEvent, 'end': self.__closeEvent}
 		self.mainWindow = sw.ScopeOutMainWindow(widgets,commands)
 
 		self.__connectSignals()
@@ -96,6 +96,7 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.acqControl.acqStopButton.clicked.connect(self.acqStopFlag.set)
 		self.mainWindow.resetAction.triggered.connect(self.__resetEvent)
 		self.mainWindow.resetAction.triggered.connect(self.waveColumn.reset)
+		self.mainWindow.saveAction.triggered.connect(self.__saveWaveformEvent)
 		self.statusChange.connect(self.mainWindow.status)
 		self.scopeChange.connect(self.acqControl.setScope)
 		self.waveSignal.connect(self.waveColumn.addWave)
@@ -149,7 +150,6 @@ class ThreadedClient(QtWidgets.QApplication):
 						start, end = WU.fixedFindPeakEnds(wave, self.waveOptions.getParameters())
 					else:
 						start, end = 0
-						print("peak mode not found")
 					# store parameters in wave dictionary
 					wave['peak detection mode'] = peakFindMode()
 					wave['peakStart'] = start
@@ -444,7 +444,6 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.acqControl.acqOnTrigButton.setEnabled(True)
 		self.acqControl.acqStopButton.setEnabled(True)
 
-
 		if channel in range(0,self.acqControl.scope.numChannels):
 			self.multiAcq = False
 			setThread = threading.Thread(target=__channelThread)
@@ -501,7 +500,7 @@ class ThreadedClient(QtWidgets.QApplication):
 			except Exception as e:
 				self.logger.error(e)
 
-		if waveform is not None:
+		if waveform:
 			try:
 				waveDirectory = os.path.join(os.getcwd(), 'waveforms')
 				if not os.path.exists(waveDirectory):
@@ -523,7 +522,6 @@ class ThreadedClient(QtWidgets.QApplication):
 
 			except Exception as e:
 				self.logger.error(e)
-
 
 		elif self.waveList:
 
@@ -553,7 +551,7 @@ class ThreadedClient(QtWidgets.QApplication):
 		else:
 			self.__status('No Waveforms to Save')
 
-	def __savePropertiesEvent(self, fields, waveform=None):
+	def __savePropertiesEvent(self, fields=[], waveform=None):
 		"""
 		Save the values of any number of a waveform's properties to disk.
 
@@ -585,9 +583,7 @@ class ThreadedClient(QtWidgets.QApplication):
 			except Exception as e:
 				self.logger.error(e)
 
-
-
-		if waveform is not None:
+		if waveform:
 			try:
 				waveDirectory = os.path.join(os.getcwd(), 'waveforms')
 				if not os.path.exists(waveDirectory):
