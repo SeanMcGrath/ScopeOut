@@ -567,25 +567,31 @@ class ThreadedClient(QtWidgets.QApplication):
 
 				QtWidgets.QDialog.__init__(self)
 
+				self.setWindowTitle('Select Properties to Save')
 				self.callback = callback
 				layout = QtWidgets.QGridLayout(self)
-				y=0
+				x, y = 0, 0
 				self.checks = []
 				for field in waveform:
 					check = QtWidgets.QCheckBox(field,self)
 					self.checks.append(check)
-					layout.addWidget(check,y,0)
-					y += 1
+					layout.addWidget(check,y,x)
+					if y == len(waveform)/2:
+						maxY = y
+						y = 0
+						x += 1
+					else: y += 1
 
 				okButton = QtWidgets.QPushButton('OK', self)
 				okButton.released.connect(self.accept)
-				layout.addWidget(okButton,y,0)
+				layout.addWidget(okButton,maxY,0)
 				self.setLayout(layout)
 
 			def accept(self):
 
 				fields = [check.text() for check in self.checks if check.isChecked()]
 				self.callback(fields=fields)
+				self.done(0)
 
 		def __writeProperties(outFile, waves, fields=[]):
 			"""
@@ -689,6 +695,9 @@ class ThreadedClient(QtWidgets.QApplication):
 		threading.Thread(target = __doAutoset, name = 'AutoSetThread').start()
 
 	def __waveCount(self, waves):
+		"""
+		Updates the counter displaying the total number of acquired waveforms.
+		"""
 
 		self.waveOptions.updateCount(waves)
 
@@ -698,3 +707,7 @@ class ThreadedClient(QtWidgets.QApplication):
 		"""
 
 		return self.mainWindow.histogramModeAction.isChecked()
+
+
+
+
