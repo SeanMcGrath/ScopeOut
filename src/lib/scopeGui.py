@@ -603,7 +603,6 @@ class ThreadedClient(QtWidgets.QApplication):
 				layout.addWidget(okButton,maxY,0,1,2)
 				self.setLayout(layout)
 				
-
 			def accept(self):
 
 				fields = [check.text() for check in self.checks if check.isChecked()]
