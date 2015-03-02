@@ -1,4 +1,5 @@
-QMainWindow { 
+QMainWindow,
+__selectPropertiesPopup { 
 	background-color: #424242;
 }
 

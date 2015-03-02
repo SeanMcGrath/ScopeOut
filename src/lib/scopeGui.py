@@ -4,7 +4,7 @@ ScopeOut GUI
 Defines GUI client that instantiates and controls widgets and threads.
 """
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets, QtCore, QtGui
 from lib.scopeUtils import ScopeFinder as sf
 from lib.oscilloscopes import GenericOscilloscope
 from datetime import date, datetime
@@ -566,8 +566,24 @@ class ThreadedClient(QtWidgets.QApplication):
 			def __init__(self, callback, waveform={}):
 
 				QtWidgets.QDialog.__init__(self)
-
 				self.setWindowTitle('Select Properties to Save')
+				self.setStyleSheet(
+					"""
+					QPushButton {
+						border-radius: 2px;
+						background-color: #673AB7;
+						max-width: 100px;
+						padding: 6px;
+						height: 20px;
+						color: white;
+						font-weight: bold;
+						margin-bottom: 4px;
+					} 
+					QPushButton:hover {background-color: #5E35B1;} 
+					QPushButton:pressed {background-color: #512DA8;} 
+					QCheckBox {color: white;}
+					QDialog {background-color: #3C3C3C;}
+					""")
 				self.callback = callback
 				layout = QtWidgets.QGridLayout(self)
 				x, y = 0, 0
@@ -584,14 +600,26 @@ class ThreadedClient(QtWidgets.QApplication):
 
 				okButton = QtWidgets.QPushButton('OK', self)
 				okButton.released.connect(self.accept)
-				layout.addWidget(okButton,maxY,0)
+				layout.addWidget(okButton,maxY,0,1,2)
 				self.setLayout(layout)
+				
 
 			def accept(self):
 
 				fields = [check.text() for check in self.checks if check.isChecked()]
 				self.callback(fields=fields)
 				self.done(0)
+
+			def paintEvent(self, pe):
+				"""
+				allows stylesheet to be used for custom widget.
+				"""
+				
+				opt = QtWidgets.QStyleOption()
+				opt.initFrom(self)
+				p = QtGui.QPainter(self)
+				s = self.style()
+				s.drawPrimitive(QtWidgets.QStyle.PE_Widget, opt, p, self)
 
 		def __writeProperties(outFile, waves, fields=[]):
 			"""
