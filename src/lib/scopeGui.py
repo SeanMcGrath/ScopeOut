@@ -98,6 +98,7 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.mainWindow.resetAction.triggered.connect(self.waveColumn.reset)
 		self.mainWindow.saveAction.triggered.connect(self.__saveWaveformEvent)
 		self.mainWindow.savePropertiesAction.triggered.connect(self.__savePropertiesEvent)
+		self.mainWindow.savePlotAction.triggered.connect(self.__savePlotEvent)
 		self.statusChange.connect(self.mainWindow.status)
 		self.scopeChange.connect(self.acqControl.setScope)
 		self.waveSignal.connect(self.waveColumn.addWave)
@@ -705,6 +706,32 @@ class ThreadedClient(QtWidgets.QApplication):
 					self.logger.error(e)
 
 		else: self.__status('No waveforms to save.')
+
+	def __savePlotEvent(self):
+		"""
+		Save the currently displayed plot to disk.
+		"""
+
+		if not self.waveList:
+			self.__status('No plot to save.')
+
+		else:
+			plotDirectory = os.path.join(os.getcwd(), 'plots')
+			if not os.path.exists(plotDirectory):
+				os.makedirs(plotDirectory)
+
+			dayDirectory = os.path.join(plotDirectory, date.today().isoformat())
+			if not os.path.exists(dayDirectory):
+				os.makedirs(dayDirectory)
+
+			defaultFile = 'Plot' + datetime.now().strftime('%m-%d-%H-%M-%S')+'.png'
+			defaultFile = os.path.join(dayDirectory,defaultFile).replace('\\','/')
+
+			fileName = QtWidgets.QFileDialog.getSaveFileName(self.mainWindow, 'Save As', defaultFile)[0]
+			if self.plot.savePlot(fileName):
+				self.__status("Plot saved successfully")
+			else:
+				self.__status("Error ")
 
 	def __status(self, message):
 		"""

@@ -35,32 +35,6 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 	Including custom ScopeOut widgets as well as the statusbar, menubar, etc.
 	"""
 
-	class __selectPropertiesPopup(QtWidgets.QDialog):
-
-		def __init__(self, callback, waveform={}):
-
-			QtWidgets.QDialog.__init__(self)
-
-			self.callback = callback
-			layout = QtWidgets.QGridLayout(self)
-			y=0
-			self.checks = []
-			for field in waveform:
-				check = QtWidgets.QCheckBox(field,self)
-				self.checks.append(check)
-				layout.addWidget(self,y,0)
-				y += 1
-
-			okButton = QtWidgets.QPushButton('OK', self)
-			okButton.released.connect(self.accept)
-			layout.addWidget(okButton,y,0)
-			self.setLayout(layout)
-
-		def accept(self):
-
-			fields = [check.text() for check in self.checks if check.isChecked()]
-			self.callback(fields=fields)
-
 	def __init__(self, widgets, commands, *args):
 		"""
 		Constructor.
@@ -129,9 +103,10 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 		self.savePropertiesAction = QtWidgets.QAction(QtGui.QIcon('save.png'), 'Save Waveform Properties', self)
 		self.savePropertiesAction.setShortcut('Ctrl+Alt+S')
 		self.savePropertiesAction.setStatusTip('Save desired properties of waveforms to .csv file')
-		# self.savePropertiesAction.triggered.connect(
-		# 	lambda: self.__selectPropertiesPopup(
-		# 		callback=self.savePropertiesCommand).exec())
+
+		# File-> Save Plot
+		self.savePlotAction = QtWidgets.QAction(QtGui.QIcon('save.png'), 'Save Plot', self)
+		self.savePlotAction.setStatusTip('Save plot image to disk.')
 
 		# Data->Reset
 		self.resetAction = QtWidgets.QAction('&Reset and Clear Data', self)
@@ -164,6 +139,7 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 		self.fileMenu.addAction(exitAction)
 		self.fileMenu.addAction(self.saveAction)
 		self.fileMenu.addAction(self.savePropertiesAction)
+		self.fileMenu.addAction(self.savePlotAction)
 
 		# "Data" Menu
 		self.dataMenu = self.menubar.addMenu('&Data')
@@ -429,6 +405,24 @@ class WavePlotWidget(FigureCanvas):
 		self.axes.set_ylabel('Counts')
 		self.axes.hist(x,bins)
 		self.fig.canvas.draw()
+
+	def savePlot(self, filename):
+		"""
+		Save the figure to disk.
+
+		Parameters:
+			:filename: a string giving the desired save file name.
+
+		:Returns: True if save successful, false otherwise.
+		"""
+
+		try:
+			self.fig.savefig(filename, bbox_inches='tight', facecolor='#3C3C3C')
+			return True
+		except Exception as e:
+			self.logger.error(e)
+			return False
+
 
 class acqControlWidget(QtWidgets.QWidget):
 	"""
@@ -985,7 +979,6 @@ class waveColumnWidget(QtWidgets.QScrollArea):
 					layout.addWidget(QtWidgets.QLabel(endString,self),y+4,1)
 					layout.addWidget(QtWidgets.QLabel('  Peak Width', self),y+5,0)
 					layout.addWidget(QtWidgets.QLabel(widthString, self),y+5,1)
-
 
 				self.setLayout(layout)
 
