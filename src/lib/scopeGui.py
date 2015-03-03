@@ -562,11 +562,24 @@ class ThreadedClient(QtWidgets.QApplication):
 		"""
 
 		class __selectPropertiesPopup(QtWidgets.QDialog):
+			"""
+			A Modal dialog for acquiring the fields in the waveform which the user desires to save.
+			"""
 
 			def __init__(self, callback, waveform={}):
+				"""
+				Constructor.
 
+				Parameters:
+					:callback: a function to be executed on successful dialog close.
+								is passed the selected field names as an array.
+					:waveform: A waveform dictionary, from which the available field names are pulled.
+				"""
+
+				self.callback = callback
 				QtWidgets.QDialog.__init__(self)
 				self.setWindowTitle('Select Properties to Save')
+				# Have to do styling manually
 				self.setStyleSheet(
 					"""
 					QPushButton {
@@ -584,7 +597,7 @@ class ThreadedClient(QtWidgets.QApplication):
 					QCheckBox {color: white;}
 					QDialog {background-color: #3C3C3C;}
 					""")
-				self.callback = callback
+				
 				layout = QtWidgets.QGridLayout(self)
 				x, y = 0, 0
 				self.checks = []
