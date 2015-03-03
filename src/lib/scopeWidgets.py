@@ -788,6 +788,7 @@ class waveColumnWidget(QtWidgets.QScrollArea):
 
 	waveSignal = QtCore.pyqtSignal(dict) # signal to pass wave to plot
 	saveSignal = QtCore.pyqtSignal(dict) # signal to pass wave to saving routine
+	savePropsSignal = QtCore.pyqtSignal(dict) # signal to pass wave to property saving routine
 
 	class containerWidget(QtWidgets.QWidget):
 		"""
@@ -817,6 +818,7 @@ class waveColumnWidget(QtWidgets.QScrollArea):
 
 		waveSignal = QtCore.pyqtSignal(dict)
 		saveSignal = QtCore.pyqtSignal(dict)
+		savePropsSignal = QtCore.pyqtSignal(dict) # signal to pass wave to property saving routine
 
 		def __init__(self, wave, index, *args):
 			"""
@@ -850,6 +852,10 @@ class waveColumnWidget(QtWidgets.QScrollArea):
 			propsAction = QtWidgets.QAction('Properties', self)
 			propsAction.triggered.connect(self.makePopup)
 			self.addAction(propsAction)
+
+			savePropsAction = QtWidgets.QAction('Save Properties', self)
+			savePropsAction.triggered.connect(self.saveProps)
+			self.addAction(savePropsAction)
 
 			# Layout
 			self.layout = QtWidgets.QGridLayout(self)
@@ -909,6 +915,13 @@ class waveColumnWidget(QtWidgets.QScrollArea):
 			"""
 
 			self.saveSignal.emit(self.getWave())
+
+		def saveProps(self):
+			"""
+			Emits the signal for saving the properties of the wrapped wavform to disk.
+			"""
+
+			self.savePropsSignal.emit(self.getWave())
 
 		def dispWave(self):
 			"""
@@ -1031,6 +1044,7 @@ class waveColumnWidget(QtWidgets.QScrollArea):
 		item.waveSignal.connect(self.waveSignal)
 		item.waveSignal.connect(self.resetColors)
 		item.saveSignal.connect(self.saveSignal)
+		item.savePropsSignal.connect(self.savePropsSignal)
 
 	def addWave(self, wave):
 		"""

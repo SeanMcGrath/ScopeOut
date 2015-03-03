@@ -104,6 +104,7 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.waveSignal.connect(self.waveColumn.addWave)
 		self.waveColumn.waveSignal.connect(partial(self.plot.showPlot, hold=False))
 		self.waveColumn.saveSignal.connect(self.__saveWaveformEvent)
+		self.waveColumn.savePropsSignal.connect(self.__savePropertiesEvent)
 		self.logger.info("Signals connected")
 
 	def __acqEvent(self, mode):
