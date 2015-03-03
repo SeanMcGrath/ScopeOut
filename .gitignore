@@ -36,8 +36,9 @@ Icon
 .Spotlight-V100
 .Trashes
 
-# Waveforms file
+# Captured waveforms and plots
 **/waveforms
+**/plots
 
 # log files
 **/*.log
