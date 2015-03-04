@@ -841,7 +841,7 @@ class waveColumnWidget(QtWidgets.QScrollArea):
 
 			# Actions
 			self.saveAction = QtWidgets.QAction('Save Waveform',self)
-			self.saveAction.triggered.connect(self.saveWave)
+			self.saveAction.triggered.connect(lambda: self.saveSignal.emit(self.getWave()))
 			self.addAction(self.saveAction)
 
 			dispAction = QtWidgets.QAction('Display Wavform', self)
@@ -854,7 +854,7 @@ class waveColumnWidget(QtWidgets.QScrollArea):
 			self.addAction(propsAction)
 
 			savePropsAction = QtWidgets.QAction('Save Properties', self)
-			savePropsAction.triggered.connect(self.saveProps)
+			savePropsAction.triggered.connect(lambda: self.savePropsSignal.emit(self.getWave()))
 			self.addAction(savePropsAction)
 
 			# Layout
@@ -908,20 +908,6 @@ class waveColumnWidget(QtWidgets.QScrollArea):
 
 			if event.button() == QtCore.Qt.LeftButton:
 				self.dispWave()
-				
-		def saveWave(self):
-			"""
-			Emits the signal for saving the wrapped waveform to disk.
-			"""
-
-			self.saveSignal.emit(self.getWave())
-
-		def saveProps(self):
-			"""
-			Emits the signal for saving the properties of the wrapped wavform to disk.
-			"""
-
-			self.savePropsSignal.emit(self.getWave())
 
 		def dispWave(self):
 			"""
