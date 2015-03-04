@@ -668,6 +668,8 @@ class waveOptionsTabWidget(QtWidgets.QWidget):
 			self.peakWidthUnits.addItems(self.units.keys())
 
 			self.layout = QtWidgets.QGridLayout(self)
+			self.layout.setContentsMargins(20,5,20,5)
+			self.layout.setHorizontalSpacing(20)
 
 			self.layout.addWidget(self.startTimeLabel,0,0)
 			self.layout.addWidget(self.startTimeInput,0,1)
