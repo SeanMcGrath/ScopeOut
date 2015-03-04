@@ -19,6 +19,10 @@ sns.set(font_scale=1.25)
 sns.set_palette(["#673AB7", "#3498db", "#95a5a6", "#e74c3c", "#34495e", "#2ecc71"])
 
 class ScopeOutWidget(QtWidgets.QWidget):
+	"""
+	Base class for the QWidgets that make up the ScopeOut interface.
+	Provides methods important to the consistent styling of the application.
+	"""
 
 	def __init__(self, *args):
 
@@ -26,7 +30,11 @@ class ScopeOutWidget(QtWidgets.QWidget):
 
 	def addShadow(self, widget=None):
 		"""
-		Add a uniform drop shadow to a QWidget.
+		Add a uniform drop shadow to the calling widget or the target widget.
+
+		Parameters:
+			:widget: a QWidget which will receive the drop shadow. If no argument is passed, the
+					 shadow will be applied to the calling widget.
 		"""
 
 		if widget:
@@ -47,7 +55,7 @@ class ScopeOutWidget(QtWidgets.QWidget):
 
 	def paintEvent(self, pe):
 		"""
-		allows stylesheet to be used for custom widget.
+		Enables the use of a global stylesheet.
 		"""
 		
 		opt = QtWidgets.QStyleOption()
@@ -55,6 +63,37 @@ class ScopeOutWidget(QtWidgets.QWidget):
 		p = QtGui.QPainter(self)
 		s = self.style()
 		s.drawPrimitive(QtWidgets.QStyle.PE_Widget, opt, p, self)
+
+class ScopeOutScrollArea(QtWidgets.QScrollArea):
+
+	def __init__(self, *args):
+
+		QtWidgets.QScrollArea.__init__(self, *args)
+
+	def addShadow(self, widget=None):
+		"""
+		Add a uniform drop shadow to the calling widget or the target widget.
+
+		Parameters:
+			:widget: a QWidget which will receive the drop shadow. If no argument is passed, the
+					 shadow will be applied to the calling widget.
+		"""
+
+		if widget:
+			shadow = QtWidgets.QGraphicsDropShadowEffect(widget)
+			shadow.setBlurRadius(8)
+			shadow.setXOffset(1)
+			shadow.setYOffset(2)
+			shadow.setColor(QtGui.QColor('black'))
+			widget.setGraphicsEffect(shadow)
+
+		else:
+			shadow = QtWidgets.QGraphicsDropShadowEffect(self)
+			shadow.setBlurRadius(8)
+			shadow.setXOffset(1)
+			shadow.setYOffset(2)
+			shadow.setColor(QtGui.QColor('black'))
+			self.setGraphicsEffect(shadow)
 
 class ScopeOutMainWindow(QtWidgets.QMainWindow):
 	"""
@@ -450,7 +489,6 @@ class WavePlotWidget(FigureCanvas):
 			self.logger.error(e)
 			return False
 
-
 class acqControlWidget(ScopeOutWidget):
 	"""
 	Widget containing acquisition control objects.
@@ -463,11 +501,12 @@ class acqControlWidget(ScopeOutWidget):
 		Parameters
 			:scope: The oscilloscope to be controlled by this widget.
 		"""
+
+		ScopeOutWidget.__init__(self, *args)
 		self.logger = logging.getLogger('ScopeOut.scopeWidgets.acqControlWidget')
 
 		self.scope = scope
 
-		ScopeOutWidget.__init__(self, *args)
 		self.initWidgets()
 
 		self.addShadow()
@@ -788,7 +827,7 @@ class waveOptionsTabWidget(ScopeOutWidget):
 
 		return self.tabTitles[self.tabManager.currentIndex()]
 
-class waveColumnWidget(QtWidgets.QScrollArea, ScopeOutWidget):
+class waveColumnWidget(ScopeOutScrollArea):
 	"""
 	A column display showing acquired waveforms.
 	"""
@@ -816,8 +855,9 @@ class waveColumnWidget(QtWidgets.QScrollArea, ScopeOutWidget):
 				:index: the index of the wave in the waveColumnWidget.
 			"""
 
-			self.logger = logging.getLogger('ScopeOut.scopeWidgets.waveColumnItem')
 			ScopeOutWidget.__init__(self, *args)
+
+			self.logger = logging.getLogger('ScopeOut.scopeWidgets.waveColumnItem')
 			self.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
 
 			self.wave = wave
@@ -921,16 +961,23 @@ class waveColumnWidget(QtWidgets.QScrollArea, ScopeOutWidget):
 			"""
 
 			def __init__(self, wave, *args):
-				self.logger = logging.getLogger('ScopeOut.scopeWidgets.waveColumnItem.PropertiesPopup')
+				"""
+				Constructor.
+
+				Parameters:
+					:wave: The wave dictionary whose properties are to be displayed.
+				"""
+
 				ScopeOutWidget.__init__(self, *args)
+				self.logger = logging.getLogger('ScopeOut.scopeWidgets.waveColumnItem.PropertiesPopup')
+
 				self.setWindowTitle('Wave Properties')
-
-				layout = QtWidgets.QGridLayout(self)
-
 				self.setStyleSheet('color: white; background-color: #3C3C3C;')
 
+				layout = QtWidgets.QGridLayout(self)
 				layout.addWidget(QtWidgets.QLabel('Wave Properties:',self),0,0)
 
+				# Add base property readouts
 				y = 1
 				for field in wave:
 					if not isinstance(wave[field], list) and field.lower() not in ['xdata','ydata']:
@@ -940,6 +987,7 @@ class waveColumnWidget(QtWidgets.QScrollArea, ScopeOutWidget):
 						layout.addWidget(value,y,1)
 						y += 1
 
+				# Added peak properties section
 				layout.setRowMinimumHeight(y+1,10)
 				layout.addWidget(QtWidgets.QLabel('Peak Properties:',self),y+2,0)
 				if wave['peakStart'] < 0:
@@ -962,8 +1010,8 @@ class waveColumnWidget(QtWidgets.QScrollArea, ScopeOutWidget):
 		constructor
 		"""
 
-		self.logger = logging.getLogger('ScopeOut.scopeWidgets.waveColumnWidget')
 		QtWidgets.QScrollArea.__init__(self, *args)
+		self.logger = logging.getLogger('ScopeOut.scopeWidgets.waveColumnWidget')
 
 		self.items = 0
 
@@ -974,7 +1022,6 @@ class waveColumnWidget(QtWidgets.QScrollArea, ScopeOutWidget):
 
 		container = ScopeOutWidget(self)
 		container.setLayout(self.layout)
-		container.setProperty('state','container')
 		
 		self.setWidget(container)
 		self.setWidgetResizable(True)

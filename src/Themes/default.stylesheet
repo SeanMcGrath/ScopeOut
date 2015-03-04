@@ -98,7 +98,6 @@ waveColumnWidget {
   min-width: 250px;
   max-width: 350px;
   min-height: 200px;
-  padding: 0px;
   border: none;
 }
 
