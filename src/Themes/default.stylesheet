@@ -83,7 +83,6 @@ QMenuBar::item {
 }
 
 acqControlWidget {
-  /*max-height: 400px;*/
   max-width: 200px;
   background-color: #212121;
 }
@@ -103,7 +102,7 @@ waveColumnWidget {
   border: none;
 }
 
-waveColumnWidget containerWidget { 
+waveColumnWidget ScopeOutWidget { 
   background-color: #212121;
   color: white;
   padding: 0px;

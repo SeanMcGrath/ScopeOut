@@ -18,16 +18,43 @@ import os, re, logging, numpy as np, seaborn as sns
 sns.set(font_scale=1.25)
 sns.set_palette(["#673AB7", "#3498db", "#95a5a6", "#e74c3c", "#34495e", "#2ecc71"])
 
-def addShadow(widget):
-	"""
-	Add a uniform drop shadow to a QWidget.
-	"""
-	shadow = QtWidgets.QGraphicsDropShadowEffect(widget)
-	shadow.setBlurRadius(8)
-	shadow.setXOffset(1)
-	shadow.setYOffset(2)
-	shadow.setColor(QtGui.QColor('black'))
-	widget.setGraphicsEffect(shadow)
+class ScopeOutWidget(QtWidgets.QWidget):
+
+	def __init__(self, *args):
+
+		QtWidgets.QWidget.__init__(self, *args)
+
+	def addShadow(self, widget=None):
+		"""
+		Add a uniform drop shadow to a QWidget.
+		"""
+
+		if widget:
+			shadow = QtWidgets.QGraphicsDropShadowEffect(widget)
+			shadow.setBlurRadius(8)
+			shadow.setXOffset(1)
+			shadow.setYOffset(2)
+			shadow.setColor(QtGui.QColor('black'))
+			widget.setGraphicsEffect(shadow)
+
+		else:
+			shadow = QtWidgets.QGraphicsDropShadowEffect(self)
+			shadow.setBlurRadius(8)
+			shadow.setXOffset(1)
+			shadow.setYOffset(2)
+			shadow.setColor(QtGui.QColor('black'))
+			self.setGraphicsEffect(shadow)
+
+	def paintEvent(self, pe):
+		"""
+		allows stylesheet to be used for custom widget.
+		"""
+		
+		opt = QtWidgets.QStyleOption()
+		opt.initFrom(self)
+		p = QtGui.QPainter(self)
+		s = self.style()
+		s.drawPrimitive(QtWidgets.QStyle.PE_Widget, opt, p, self)
 
 class ScopeOutMainWindow(QtWidgets.QMainWindow):
 	"""
@@ -424,7 +451,7 @@ class WavePlotWidget(FigureCanvas):
 			return False
 
 
-class acqControlWidget(QtWidgets.QWidget):
+class acqControlWidget(ScopeOutWidget):
 	"""
 	Widget containing acquisition control objects.
 	"""
@@ -440,10 +467,10 @@ class acqControlWidget(QtWidgets.QWidget):
 
 		self.scope = scope
 
-		QtWidgets.QWidget.__init__(self, *args)
+		ScopeOutWidget.__init__(self, *args)
 		self.initWidgets()
 
-		addShadow(self)
+		self.addShadow()
 
 		self.show()
 
@@ -483,7 +510,7 @@ class acqControlWidget(QtWidgets.QWidget):
 		self.setLayout(self.layout)
 
 		for i in range(0,self.layout.count()):
-			addShadow(self.layout.itemAt(i).widget())
+			self.addShadow(self.layout.itemAt(i).widget())
 		
 
 	def setScope(self, scope):
@@ -549,23 +576,12 @@ class acqControlWidget(QtWidgets.QWidget):
 
 		return [self.channelComboBox.itemText(i) for i in range(self.channelComboBox.count())]
 
-	def paintEvent(self, pe):
-		"""
-		allows stylesheet to be used for custom widget.
-		"""
-		
-		opt = QtWidgets.QStyleOption()
-		opt.initFrom(self)
-		p = QtGui.QPainter(self)
-		s = self.style()
-		s.drawPrimitive(QtWidgets.QStyle.PE_Widget, opt, p, self)
-
-class waveOptionsTabWidget(QtWidgets.QWidget):
+class waveOptionsTabWidget(ScopeOutWidget):
 	"""
 	Manages Tabbed display of wave options widgets. Also holds wave counter and peak window checkbox
 	"""
 
-	class SmartPeakTab(QtWidgets.QWidget):
+	class SmartPeakTab(ScopeOutWidget):
 		"""
 		Widget controlling smart peak detection algorithm.
 		"""
@@ -576,7 +592,7 @@ class waveOptionsTabWidget(QtWidgets.QWidget):
 			"""
 
 			self.logger = logging.getLogger('ScopeOut.scopeWidgets.SmartPeakTab')
-			QtWidgets.QWidget.__init__(self, *args)
+			ScopeOutWidget.__init__(self, *args)
 			self.initWidgets()
 			self.show()
 
@@ -608,7 +624,7 @@ class waveOptionsTabWidget(QtWidgets.QWidget):
 			self.setLayout(self.layout)
 
 			for i in range(0,self.layout.count()):
-				addShadow(self.layout.itemAt(i).widget())
+				self.addShadow(self.layout.itemAt(i).widget())
 
 		def getParameters(self):
 			"""
@@ -630,7 +646,7 @@ class waveOptionsTabWidget(QtWidgets.QWidget):
 			self.startThresholdInput.setEnabled(bool)
 			self.endThresholdInput.setEnabled(bool)
 
-	class FixedPeakTab(QtWidgets.QWidget):
+	class FixedPeakTab(ScopeOutWidget):
 		"""
 		Widget controlling Fixed-width peak detection algorithm.
 		"""
@@ -643,7 +659,7 @@ class waveOptionsTabWidget(QtWidgets.QWidget):
 			"""
 
 			self.logger = logging.getLogger('ScopeOut.scopeWidgets.FixedPeakTab')
-			QtWidgets.QWidget.__init__(self, *args)
+			ScopeOutWidget.__init__(self, *args)
 			self.initWidgets()
 			self.show()
 
@@ -680,7 +696,7 @@ class waveOptionsTabWidget(QtWidgets.QWidget):
 			self.setLayout(self.layout)
 
 			for i in range(0,self.layout.count()):
-				addShadow(self.layout.itemAt(i).widget())
+				self.addShadow(self.layout.itemAt(i).widget())
 
 		def getParameters(self):
 			"""
@@ -708,12 +724,12 @@ class waveOptionsTabWidget(QtWidgets.QWidget):
 		"""
 
 		self.logger = logging.getLogger('ScopeOut.scopeWidgets.waveOptionsTabWidget')
-		QtWidgets.QWidget.__init__(self, *args)
+		ScopeOutWidget.__init__(self, *args)
 
 		self.waveCounter = QtWidgets.QLabel("Waveforms acquired: 0", self)
 		self.showWindow = QtWidgets.QCheckBox('Show Peak Window', self)
-		addShadow(self.waveCounter)
-		addShadow(self.showWindow)
+		self.addShadow(self.waveCounter)
+		self.addShadow(self.showWindow)
 
 		self.tabManager = QtWidgets.QTabWidget(self)
 		self.smart = self.SmartPeakTab(None)
@@ -772,18 +788,7 @@ class waveOptionsTabWidget(QtWidgets.QWidget):
 
 		return self.tabTitles[self.tabManager.currentIndex()]
 
-	def paintEvent(self, pe):
-		"""
-		allows stylesheet to be used for this custom widget.
-		"""
-		
-		opt = QtWidgets.QStyleOption()
-		opt.initFrom(self)
-		p = QtGui.QPainter(self)
-		s = self.style()
-		s.drawPrimitive(QtWidgets.QStyle.PE_Widget, opt, p, self)
-
-class waveColumnWidget(QtWidgets.QScrollArea):
+class waveColumnWidget(QtWidgets.QScrollArea, ScopeOutWidget):
 	"""
 	A column display showing acquired waveforms.
 	"""
@@ -792,27 +797,7 @@ class waveColumnWidget(QtWidgets.QScrollArea):
 	saveSignal = QtCore.pyqtSignal(dict) # signal to pass wave to saving routine
 	savePropsSignal = QtCore.pyqtSignal(dict) # signal to pass wave to property saving routine
 
-	class containerWidget(QtWidgets.QWidget):
-		"""
-		Container class that wraps the column layout - allows us to style the scroll area without
-		affecting context menus, scrollbars, etc.
-		"""
-
-		def __init__(self, *args):
-			QtWidgets.QWidget.__init__(self, *args)
-
-		def paintEvent(self, pe):
-			"""
-			allows stylesheet to be used for custom widget.
-			"""
-			
-			opt = QtWidgets.QStyleOption()
-			opt.initFrom(self)
-			p = QtGui.QPainter(self)
-			s = self.style()
-			s.drawPrimitive(QtWidgets.QStyle.PE_Widget, opt, p, self)
-
-	class waveColumnItem(QtWidgets.QWidget):
+	class waveColumnItem(ScopeOutWidget):
 		"""
 		A rectangular box showing basic information about a captured waveform.
 		Used to dynamically populate the waveColumnWidget.
@@ -832,7 +817,7 @@ class waveColumnWidget(QtWidgets.QScrollArea):
 			"""
 
 			self.logger = logging.getLogger('ScopeOut.scopeWidgets.waveColumnItem')
-			QtWidgets.QWidget.__init__(self, *args)
+			ScopeOutWidget.__init__(self, *args)
 			self.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
 
 			self.wave = wave
@@ -892,17 +877,6 @@ class waveColumnWidget(QtWidgets.QScrollArea):
 
 			return self.wave
 
-		def paintEvent(self, pe):
-			"""
-			allows stylesheet to be used for custom widget.
-			"""
-			
-			opt = QtWidgets.QStyleOption()
-			opt.initFrom(self)
-			p = QtGui.QPainter(self)
-			s = self.style()
-			s.drawPrimitive(QtWidgets.QStyle.PE_Widget, opt, p, self)
-
 		def mousePressEvent(self, event):
 			"""
 			Emits waveSignal on widget click, which should result in the wrapped wave being plotted.
@@ -941,14 +915,14 @@ class waveColumnWidget(QtWidgets.QScrollArea):
 
 			return self.wave['peakStart'] > 0
 
-		class PropertiesPopup(QtWidgets.QWidget):
+		class PropertiesPopup(ScopeOutWidget):
 			"""
 			Popup window to display wave properties.
 			"""
 
 			def __init__(self, wave, *args):
 				self.logger = logging.getLogger('ScopeOut.scopeWidgets.waveColumnItem.PropertiesPopup')
-				QtWidgets.QWidget.__init__(self, *args)
+				ScopeOutWidget.__init__(self, *args)
 				self.setWindowTitle('Wave Properties')
 
 				layout = QtWidgets.QGridLayout(self)
@@ -983,17 +957,6 @@ class waveColumnWidget(QtWidgets.QScrollArea):
 
 				self.setLayout(layout)
 
-			def paintEvent(self, pe):
-				"""
-				allows stylesheet to be used for custom widget.
-				"""
-				
-				opt = QtWidgets.QStyleOption()
-				opt.initFrom(self)
-				p = QtGui.QPainter(self)
-				s = self.style()
-				s.drawPrimitive(QtWidgets.QStyle.PE_Widget, opt, p, self)
-
 	def __init__(self, *args):
 		"""
 		constructor
@@ -1009,14 +972,14 @@ class waveColumnWidget(QtWidgets.QScrollArea):
 		self.layout.setSpacing(0)
 		self.layout.addStretch(0)
 
-		container = self.containerWidget(self)
+		container = ScopeOutWidget(self)
 		container.setLayout(self.layout)
 		container.setProperty('state','container')
 		
 		self.setWidget(container)
 		self.setWidgetResizable(True)
 
-		addShadow(self)
+		self.addShadow()
 
 		self.show()
 
