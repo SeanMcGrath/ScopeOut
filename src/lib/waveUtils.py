@@ -74,7 +74,7 @@ def fixedFindPeakEnds(wave, parameters):
 	while xData[startIndex] < start and startIndex < len(xData):
 		startIndex += 1
 
-	endIndex = startIndex + int(width/wave["xIncr"])
+	endIndex = startIndex + int(width/wave["X Increment"])
 
 	return startIndex, endIndex
 
@@ -89,12 +89,12 @@ def integratePeak(wave):
 	"""
 
 	try:
-		start = wave['peakStart']
+		start = wave['Start of Peak']
 		if start < 0:
 			return 0
 		else:
-			end = wave['peakEnd']
-			incr = wave['xIncr']
+			end = wave['End of Peak']
+			incr = wave['X Increment']
 			y = wave['yData']
 			result = 0
 			if end < 0:

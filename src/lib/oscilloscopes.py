@@ -593,32 +593,32 @@ class TDS2024B(GenericOscilloscope):
 		"""
 		Acquires and stores all necessary parameters for waveform transfer and display.
 		"""
-		self.waveform = {'error' : None}
+		self.waveform = {'Error' : None}
 
-		self.waveform['dataChannel'] = self.getDataChannel() 	# get active channel
+		self.waveform['Data Channel'] = self.getDataChannel() 	# get active channel
 		try:
 			preamble = self.query("WFMP?").split(';')	# get waveform preamble and parse it
-			self.waveform['dataWidth']= int(preamble[0])
-			self.waveform['bitsPerPoint'] = int(preamble[1])
-			self.waveform['encoding'] = preamble[2]
-			self.waveform['binaryFormat'] = preamble[3]
-			self.waveform['sigBit'] = preamble[4]
+			self.waveform['Data Width']= int(preamble[0])
+			self.waveform['Bits Per Point'] = int(preamble[1])
+			self.waveform['Encoding'] = preamble[2]
+			self.waveform['Binary Format'] = preamble[3]
+			self.waveform['Significant Bit'] = preamble[4]
 			if len(preamble) > 5: # normal operation
-				self.waveform['numberOfPoints'] = int(preamble[5])
-				self.waveform['pointFormat'] = preamble[7].strip('"')
-				self.waveform['xIncr'] = float(preamble[8])
-				self.waveform['xOff'] = float(preamble[9])
-				self.waveform['xZero'] = float(preamble[10])
-				self.waveform['xUnit'] = preamble[11].strip('"')
-				if self.waveform['xUnit'] == 's':
-					self.waveform['xUnit'] = 'Seconds'
-				self.waveform['yMult'] = float(preamble[12])
-				self.waveform['yZero'] = float(preamble[13])
-				self.waveform['yOff'] = float(preamble[14])
-				self.waveform['yUnit'] = preamble[15].strip('"')
+				self.waveform['Number of Points'] = int(preamble[5])
+				self.waveform['Point Format'] = preamble[7].strip('"')
+				self.waveform['X Increment'] = float(preamble[8])
+				self.waveform['X Offset'] = float(preamble[9])
+				self.waveform['X Zero'] = float(preamble[10])
+				self.waveform['X Unit'] = preamble[11].strip('"')
+				if self.waveform['X Unit'] == 's':
+					self.waveform['X Unit'] = 'Seconds'
+				self.waveform['Y Multiplier'] = float(preamble[12])
+				self.waveform['Y Zero'] = float(preamble[13])
+				self.waveform['Y Offset'] = float(preamble[14])
+				self.waveform['Y Unit'] = preamble[15].strip('"')
 				self.waveformSet = True
 			else: # Selected channel is not active
-				self.waveform['error'] = self.waveform['dataChannel'] + ' is not active. Please select an active channel.'
+				self.waveform['Error'] = self.waveform['Data Channel'] + ' is not active. Please select an active channel.'
 				self.waveformSet = False
 		except Exception as e:
 			self.logger.error(e)
@@ -635,7 +635,7 @@ class TDS2024B(GenericOscilloscope):
 				curveData = self.query("CURV?").split(',')
 				curveData = list(map(int,curveData))
 				for i in range(0,len(curveData)):
-					curveData[i] = self.waveform['yZero'] +self.waveform['yMult']*(curveData[i]-self.waveform['yOff'])
+					curveData[i] = self.waveform['Y Zero'] +self.waveform['Y Multiplier']*(curveData[i]-self.waveform['Y Offset'])
 				return curveData
 
 			except AttributeError as e:
@@ -648,7 +648,7 @@ class TDS2024B(GenericOscilloscope):
 		:Returns: the x array needed to plot a waveform.
 		"""
 		if not self.waveformSet: self.waveformSetup()
-		return np.arange(0,self.waveform['numberOfPoints']*self.waveform['xIncr'],self.waveform['xIncr'])
+		return np.arange(0,self.waveform['Number of Points']*self.waveform['X Increment'],self.waveform['X Increment'])
 
 	def makeWaveform(self):
 		"""
@@ -658,13 +658,13 @@ class TDS2024B(GenericOscilloscope):
 
 		if self.waveformSet:
 			try:
-				self.waveform['acqTime'] = str(datetime.datetime.now())
+				self.waveform['Acquisition Time'] = str(datetime.datetime.now())
 				curveData = self.getCurve()
 				# curveData = list(map(int,curveData))
 				# for i in range(0,len(curveData)):
-				# 	curveData[i] = self.waveform['yZero'] +self.waveform['yMult']*(curveData[i]-self.waveform['yOff'])
+				# 	curveData[i] = self.waveform['Y Zero'] +self.waveform['Y Multiplier']*(curveData[i]-self.waveform['Y Offset'])
 				self.waveform['yData'] = curveData
-				self.waveform['xData'] = np.arange(0,self.waveform['numberOfPoints']*self.waveform['xIncr'],self.waveform['xIncr'])
+				self.waveform['xData'] = np.arange(0,self.waveform['Number of Points']*self.waveform['X Increment'],self.waveform['X Increment'])
 				self.waveformQueue.put(self.waveform)
 				self.logger.info("Waveform made successfully")
 

@@ -138,14 +138,14 @@ class ThreadedClient(QtWidgets.QApplication):
 				:wave: The dictionary containing waveform information.
 			"""
 
-			if wave['error'] is not None:
-				self.logger.error("Wave error: %s", wave['error'])
-				self.__status(wave['error'])
+			if wave['Error'] is not None:
+				self.logger.error("Wave error: %s", wave['Error'])
+				self.__status(wave['Error'])
 			else:
 				try:
 
-					self.logger.info("Successfully acquired waveform from %s", wave['dataChannel'])
-					self.__status('Waveform acquired on ' +wave['dataChannel'])
+					self.logger.info("Successfully acquired waveform from %s", wave['Data Channel'])
+					self.__status('Waveform acquired on ' +wave['Data Channel'])
 					# Select desired peak detection algorithm
 					if 'Smart' in peakFindMode():
 						start, end = WU.smartFindPeakEnds(wave, self.waveOptions.getParameters())
@@ -154,11 +154,11 @@ class ThreadedClient(QtWidgets.QApplication):
 					else:
 						start, end = 0
 					# store parameters in wave dictionary
-					wave['peak detection mode'] = peakFindMode()
-					wave['peakStart'] = start
-					wave['peakEnd'] = end
+					wave['Peak Detection Mode'] = peakFindMode()
+					wave['Start of Peak'] = start
+					wave['End of Peak'] = end
 					integral = WU.integratePeak(wave)
-					wave['peakIntegral'] = integral
+					wave['Peak Integral'] = integral
 					self.integralList.append(integral)
 					#  do desired plotting
 					if self.__histogramMode() and len(self.integralList)>1:
@@ -484,7 +484,7 @@ class ThreadedClient(QtWidgets.QApplication):
 			"""
 
 			try:
-				outFile.write('"Waveform captured ' + wave['acqTime'] +'"\n')
+				outFile.write('"Waveform captured ' + wave['Acquisition Time'] +'"\n')
 				outFile.write('\n')
 				for field in wave:
 					if not isinstance(wave[field],(list,np.ndarray)):

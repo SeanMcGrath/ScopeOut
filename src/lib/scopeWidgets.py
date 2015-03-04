@@ -376,11 +376,11 @@ class WavePlotWidget(FigureCanvas):
 		self.fig.suptitle("Waveform Capture", color='white')
 		xData, xPrefix = self.autosetUnits(wave['xData'])
 		yData, yPrefix = self.autosetUnits(wave['yData'])
-		self.axes.set_ylabel(yPrefix + wave['yUnit'])
-		self.axes.set_xlabel(xPrefix + wave['xUnit'])
+		self.axes.set_ylabel(yPrefix + wave['Y Unit'])
+		self.axes.set_xlabel(xPrefix + wave['X Unit'])
 		self.axes.plot(xData,yData)
 		if showPeak:
-			self.vertLines([ wave['xData'][wave['peakStart']], wave['xData'][wave['peakEnd']] ])
+			self.vertLines([ wave['xData'][wave['Start of Peak']], wave['xData'][wave['End of Peak']] ])
 		cursor = Cursor(self.axes, useblit=True, color='black', linewidth=1 )
 		cursor.connect_event('motion_notify_event', self.displayCoords)
 		self.fig.canvas.draw()
@@ -860,7 +860,7 @@ class waveColumnWidget(ScopeOutScrollArea):
 			self.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
 
 			self.wave = wave
-			time = wave['acqTime']
+			time = wave['Acquisition Time']
 			dispTime = self.makeDispTime(time)
 			self.waveTime = QtWidgets.QLabel('Time: ' + dispTime, self)
 			self.waveNumber = QtWidgets.QLabel(str(index), self)
@@ -952,7 +952,7 @@ class waveColumnWidget(ScopeOutScrollArea):
 			Returns true if the wrapped peak has a detected wave, False otherwise
 			"""
 
-			return self.wave['peakStart'] > 0
+			return self.wave['Start of Peak'] > 0
 
 		class PropertiesPopup(ScopeOutWidget):
 			"""
@@ -978,7 +978,7 @@ class waveColumnWidget(ScopeOutScrollArea):
 
 				# Add base property readouts
 				y = 1
-				for field in wave:
+				for field in sorted(wave.keys()):
 					if not isinstance(wave[field], list) and field.lower() not in ['xdata','ydata']:
 						label = QtWidgets.QLabel('  '+field, self)
 						layout.addWidget(label,y,0)
@@ -989,12 +989,12 @@ class waveColumnWidget(ScopeOutScrollArea):
 				# Added peak properties section
 				layout.setRowMinimumHeight(y+1,10)
 				layout.addWidget(QtWidgets.QLabel('Peak Properties:',self),y+2,0)
-				if wave['peakStart'] < 0:
+				if wave['Start of Peak'] < 0:
 					layout.addWidget(QtWidgets.QLabel('  No Peak Detected',self),y+3,0)
 				else:
-					startString = str(wave['xData'][wave['peakStart']]) + ' ' + str(wave['xUnit'])
-					endString = str(wave['xData'][wave['peakEnd']]) + ' ' +  str(wave['xUnit'])
-					widthString = "{} {}".format(wave['xData'][wave['peakEnd']] - wave['xData'][wave['peakStart']], wave['xUnit'])
+					startString = str(wave['xData'][wave['Start of Peak']]) + ' ' + str(wave['X Unit'])
+					endString = str(wave['xData'][wave['End of Peak']]) + ' ' +  str(wave['X Unit'])
+					widthString = "{} {}".format(wave['xData'][wave['End of Peak']] - wave['xData'][wave['Start of Peak']], wave['X Unit'])
 					layout.addWidget(QtWidgets.QLabel('  Peak Start',self),y+3,0)
 					layout.addWidget(QtWidgets.QLabel(startString,self),y+3,1)
 					layout.addWidget(QtWidgets.QLabel('  Peak End',self),y+4,0)
