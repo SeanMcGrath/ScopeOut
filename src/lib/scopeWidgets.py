@@ -439,7 +439,6 @@ class WavePlotWidget(FigureCanvas):
 		[t.set_color('white') for t in self.axes.yaxis.get_ticklabels()]
 		[t.set_color('white') for t in self.axes.xaxis.get_ticklabels()]
 		self.coords = self.axes.text(0,0,'')
-		# self.fig.canvas.draw()
 		self.logger.info("Plot Reset")
 
 	def vertLines(self, xArray):
@@ -866,19 +865,19 @@ class waveColumnWidget(ScopeOutScrollArea):
 			self.waveTime = QtWidgets.QLabel('Time: ' + dispTime, self)
 			self.waveNumber = QtWidgets.QLabel(str(index), self)
 
-			# Actions
-			self.saveAction = QtWidgets.QAction('Save Waveform',self)
-			self.saveAction.triggered.connect(lambda: self.saveSignal.emit(self.getWave()))
-			self.addAction(self.saveAction)
-
-			dispAction = QtWidgets.QAction('Display Wavform', self)
+			# Actions	
+			dispAction = QtWidgets.QAction('Display Waveform', self)
 			dispAction.triggered.connect(self.dispWave)
 			self.addAction(dispAction)
 
 			self.properties = None
-			propsAction = QtWidgets.QAction('Properties', self)
+			propsAction = QtWidgets.QAction('Display Properties', self)
 			propsAction.triggered.connect(self.makePopup)
 			self.addAction(propsAction)
+
+			self.saveAction = QtWidgets.QAction('Save Waveform',self)
+			self.saveAction.triggered.connect(lambda: self.saveSignal.emit(self.getWave()))
+			self.addAction(self.saveAction)
 
 			savePropsAction = QtWidgets.QAction('Save Properties', self)
 			savePropsAction.triggered.connect(lambda: self.savePropsSignal.emit(self.getWave()))
