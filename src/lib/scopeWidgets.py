@@ -500,9 +500,7 @@ class acqControlWidget(ScopeOutWidget):
 		self.scope = scope
 
 		self.initWidgets()
-
 		self.addShadow()
-
 		self.show()
 
 	def initWidgets(self):
@@ -515,10 +513,10 @@ class acqControlWidget(ScopeOutWidget):
 		self.autoSetButton = QtWidgets.QPushButton('Autoset',self)
 		self.acqOnTrigButton = QtWidgets.QPushButton('Acquire on Trigger', self)
 		self.acqStopButton = QtWidgets.QPushButton('Stop Acquisition', self)
+		self.holdPlotCheckBox = QtWidgets.QCheckBox('Hold plot',self)
 		self.channelComboLabel = QtWidgets.QLabel('Data Channel',self)
 		self.channelComboBox = QtWidgets.QComboBox(self)
-		self.keepPlotCheckBox = QtWidgets.QCheckBox('Hold plot',self)
-		self.keepPlotCheckBox.setChecked(False)
+		self.holdPlotCheckBox.setChecked(False)
 
 		if self.scope is not None:
 			self.setEnabled(True)
@@ -534,7 +532,7 @@ class acqControlWidget(ScopeOutWidget):
 		self.layout.addWidget(self.acqOnTrigButton,4,0)
 		self.layout.addWidget(self.contAcqButton,5,0)
 		self.layout.addWidget(self.acqStopButton,6,0)
-		self.layout.addWidget(self.keepPlotCheckBox,7,0)
+		self.layout.addWidget(self.holdPlotCheckBox,7,0)
 		self.layout.addWidget(self.channelComboLabel,9,0)
 		self.layout.addWidget(self.channelComboBox,10,0)
 		self.layout.setRowStretch(11,1)
@@ -598,7 +596,7 @@ class acqControlWidget(ScopeOutWidget):
 		:Returns: True if plot is to be held, false otherwise
 		"""
 
-		return self.keepPlotCheckBox.isChecked()
+		return self.holdPlotCheckBox.isChecked()
 
 	def getChannels(self):
 		"""
