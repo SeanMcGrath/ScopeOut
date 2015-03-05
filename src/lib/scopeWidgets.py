@@ -217,15 +217,11 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 		viewMenu = self.menubar.addMenu('&View')
 		themeMenu = viewMenu.addMenu('Change Theme')
 		if self.themes:
-			themeActions = []
 			for theme in self.themes:
 				themeAction = QtWidgets.QAction(theme.split('\\')[-1].split('.')[0],self)
 				themeAction.setStatusTip('Change active theme to ' + theme.split('\\')[-1].split('.')[0])
 				themeAction.triggered.connect(partial(self.loadTheme,theme))
-				themeActions.append(themeAction)
-				themeAction = None
-			for theme in themeActions:
-				themeMenu.addAction(theme)
+				themeMenu.addAction(themeAction)
 		else:
 			themeMenu.setEnabled(False)
 
@@ -233,7 +229,28 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 		"""
 		Finds all themes, and loads first available one.
 		"""
-		if self.findThemes():
+
+		def findThemes():
+			"""
+			Finds themes (stylesheets) in the Themes folder, currently '\lib\Themes'
+			and stores their paths in self.themes.
+
+			:Returns: themes, the array of theme paths, for convenience.
+			"""
+
+			path = os.path.join(os.getcwd(), 'Themes')
+			themes = []
+
+			try:
+				themeFiles = os.listdir(path)
+				themes = [os.path.join(path,theme) for theme in themeFiles if re.match('.*stylesheet',theme)]
+			except Exception as e:
+				self.logger.error(e)
+
+			return themes
+
+		self.themes = findThemes()
+		if self.themes:
 			i = 0
 			while True:
 				if i > len(self.themes) - 1:
@@ -244,30 +261,7 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 				else:
 					i += 1
 
-	def findThemes(self):
-		"""
-		Finds themes (stylesheets) in the Themes folder, currently '\lib\Themes'
-		and stores their paths in self.themes.
 
-		:Returns: self.themes, the array of theme paths, for convenience.
-		"""
-
-		path = os.path.join(os.getcwd(), 'Themes')
-		self.themes = []
-
-		try:
-			themeFiles = os.listdir(path)
-			for theme in themeFiles:
-				if re.match('.*stylesheet',theme):
-					try:
-						openTheme = os.path.join(path,theme)
-						self.themes.append(openTheme)
-					except Exception as e:
-						self.logger.info('Could not process ' + theme + ', ignoring')
-		except Exception as e:
-			self.logger.error(e)
-
-		return self.themes
 
 	def loadTheme(self, themePath):
 		"""
@@ -588,7 +582,7 @@ class acqControlWidget(ScopeOutWidget):
 			channels.append('Math')
 			self.channelComboBox.addItems(channels)
 			self.channelComboBox.setCurrentIndex(0)
-		elif bool:
+		elif bool: # Wait for scope to become active
 			while self.scope is None:
 				pass
 			channels =list(map(str,range(1,self.scope.numChannels+1)))
