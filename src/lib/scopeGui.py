@@ -88,6 +88,10 @@ class ThreadedClient(QtWidgets.QApplication):
 		Connects signals from subwidgets to appropriate slots.
 		"""
 
+		def plotWave(wave):
+			hold = self.acqControl.plotHeld()
+			self.plot.showPlot(wave, hold=hold)
+
 		self.acqControl.acqButton.clicked.connect(partial(self.__acqEvent,'now'))
 		self.acqControl.acqOnTrigButton.clicked.connect(partial(self.__acqEvent,'trig'))
 		self.acqControl.contAcqButton.clicked.connect(partial(self.__acqEvent,'cont'))
@@ -102,7 +106,7 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.statusChange.connect(self.mainWindow.status)
 		self.scopeChange.connect(self.acqControl.setScope)
 		self.waveSignal.connect(self.waveColumn.addWave)
-		self.waveColumn.waveSignal.connect(partial(self.plot.showPlot, hold=False))
+		self.waveColumn.waveSignal.connect(plotWave)
 		self.waveColumn.saveSignal.connect(self.__saveWaveformEvent)
 		self.waveColumn.savePropsSignal.connect(self.__savePropertiesEvent)
 		self.logger.info("Signals connected")
