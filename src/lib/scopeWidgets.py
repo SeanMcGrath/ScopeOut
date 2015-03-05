@@ -27,6 +27,8 @@ class ScopeOutWidget(QtWidgets.QWidget):
 	def __init__(self, *args):
 
 		QtWidgets.QWidget.__init__(self, *args)
+		# Just add actions to the widget to get right click menus
+		self.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
 
 	def addShadow(self, widget=None):
 		"""
@@ -118,7 +120,6 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 
 		self.widgets = widgets
 		self.endCommand = commands['end']
-		self.savePropertiesCommand = commands['saveProperties']
 
 		self.central = QtWidgets.QWidget(self)
 		self.layout = QtWidgets.QGridLayout(self.central)
@@ -132,9 +133,7 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 		self.layout.setColumnMinimumWidth(4,180)
 		self.layout.setColumnMinimumWidth(2,600)
 		self.layout.setColumnStretch(0,1)
-		# self.layout.setColumnStretch(1,1)
 		self.layout.setColumnStretch(2,1)
-		# self.layout.setColumnStretch(3,1)
 		self.layout.setRowStretch(0,1)
 		self.layout.setRowStretch(1,1)
 		self.layout.setRowStretch(3,1)
@@ -851,7 +850,6 @@ class waveColumnWidget(ScopeOutScrollArea):
 			ScopeOutWidget.__init__(self, *args)
 
 			self.logger = logging.getLogger('ScopeOut.scopeWidgets.waveColumnItem')
-			self.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
 
 			self.wave = wave
 			time = wave['Acquisition Time']
