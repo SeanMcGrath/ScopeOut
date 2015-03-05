@@ -43,5 +43,9 @@ Icon
 # log files
 **/*.log
 
+# compiled Python
+__pycache__/
+bin/
+
 freqs.csv
 getFreqs.py
