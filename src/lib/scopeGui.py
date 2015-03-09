@@ -67,13 +67,20 @@ class ThreadedClient(QtWidgets.QApplication):
 
 		self.acqControl = sw.acqControlWidget(None)
 		self.plot = sw.WavePlotWidget()
+		self.hist = sw.HistogramPlotWidget()
 		self.waveOptions = sw.waveOptionsTabWidget()
 		self.waveColumn = sw.waveColumnWidget()
 		
 		self.logger.info("All Widgets initialized")
 
-		widgets = [self.waveColumn,self.plot,self.acqControl,self.waveOptions]
-		commands = {'saveProperties': self.__savePropertiesEvent, 'end': self.__closeEvent}
+		widgets = {
+			'column': self.waveColumn,
+			'plot': self.plot,
+			'acqControl': self.acqControl,
+			'options': self.waveOptions,
+			'hist': self.hist
+			}
+		commands = {'end': self.__closeEvent}
 		self.mainWindow = sw.ScopeOutMainWindow(widgets,commands)
 
 		self.__connectSignals()
@@ -92,24 +99,31 @@ class ThreadedClient(QtWidgets.QApplication):
 			hold = self.acqControl.plotHeld()
 			self.plot.showPlot(wave, hold=hold)
 
+		# Acq Control Signals
 		self.acqControl.acqButton.clicked.connect(partial(self.__acqEvent,'now'))
 		self.acqControl.acqOnTrigButton.clicked.connect(partial(self.__acqEvent,'trig'))
 		self.acqControl.contAcqButton.clicked.connect(partial(self.__acqEvent,'cont'))
 		self.acqControl.channelComboBox.currentIndexChanged.connect(self.__setChannel)
 		self.acqControl.autoSetButton.clicked.connect(self.__autosetEvent)
 		self.acqControl.acqStopButton.clicked.connect(self.acqStopFlag.set)
-		self.acqControl.holdPlotCheckBox.toggled.connect(self.waveColumn.setHold)
+
+		#  Main window Signals
 		self.mainWindow.resetAction.triggered.connect(self.__resetEvent)
 		self.mainWindow.resetAction.triggered.connect(self.waveColumn.reset)
 		self.mainWindow.saveAction.triggered.connect(self.__saveWaveformEvent)
 		self.mainWindow.savePropertiesAction.triggered.connect(self.__savePropertiesEvent)
 		self.mainWindow.savePlotAction.triggered.connect(self.__savePlotEvent)
-		self.statusChange.connect(self.mainWindow.status)
-		self.scopeChange.connect(self.acqControl.setScope)
-		self.waveSignal.connect(self.waveColumn.addWave)
+
+		#  Wave Column Signals
 		self.waveColumn.waveSignal.connect(plotWave)
 		self.waveColumn.saveSignal.connect(self.__saveWaveformEvent)
 		self.waveColumn.savePropsSignal.connect(self.__savePropertiesEvent)
+
+		# Misc. Signals
+		self.statusChange.connect(self.mainWindow.status)
+		self.scopeChange.connect(self.acqControl.setScope)
+		self.waveSignal.connect(self.waveColumn.addWave)
+
 		self.logger.info("Signals connected")
 
 	def __acqEvent(self, mode):
@@ -167,7 +181,7 @@ class ThreadedClient(QtWidgets.QApplication):
 					self.integralList.append(integral)
 					#  do desired plotting
 					if self.__histogramMode() and len(self.integralList)>1:
-						self.plot.showHist(self.integralList)
+						self.hist.showHist(self.integralList)
 					elif not self.__histogramMode():
 						self.plot.showPlot(wave,plotHeld(),self.waveOptions.peakStart())
 

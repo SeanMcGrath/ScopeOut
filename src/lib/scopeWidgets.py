@@ -97,6 +97,108 @@ class ScopeOutScrollArea(QtWidgets.QScrollArea):
 			shadow.setColor(QtGui.QColor('black'))
 			self.setGraphicsEffect(shadow)
 
+class ScopeOutPlotWidget(FigureCanvas):
+	"""
+	Base class for matplotlib figure widgets.
+	"""
+	bgColor = '#424242'
+
+	def __init__(self):
+		"""
+		Constructor
+
+		Parameters:
+			:figure: a matplotlib figure to be displayed.
+		"""
+
+		self.logger = logging.getLogger("ScopeOut.scopeWidgets.ScopeOutPlotWidget")
+		self.fig = Figure()
+		FigureCanvas.__init__(self,self.fig)
+
+		self.setContentsMargins(5,5,5,5)
+		
+		self.fig.patch.set_color(self.bgColor)
+		self.axes = self.fig.add_subplot(111)
+		self.axes.xaxis.label.set_color('white')
+		self.axes.yaxis.label.set_color('white')
+		self.coords = self.axes.text(0,0,'')
+		[t.set_color('white') for t in self.axes.yaxis.get_ticklabels()]
+		[t.set_color('white') for t in self.axes.xaxis.get_ticklabels()]
+
+	def displayCoords(self, event):
+		"""
+		display the coordinates of the mouse on the graph.
+
+		Parameters:
+			:event: an event object containing the mouse location data.
+		"""
+
+		if event.inaxes:
+			eventString = 'x: {} {}   y: {} {}'.format(
+				round(event.xdata,5), self.axes.get_xlabel(), round(event.ydata, 5), self.axes.get_ylabel())
+			self.coords.remove()
+			self.coords = self.axes.text(0.05, 0.95,eventString, ha='left', va='center', transform=self.axes.transAxes)
+			self.fig.canvas.draw()
+
+	def autosetUnits(self, axisArray):
+		"""
+		Set the X units of the plot to the correct size based on the values in axisArray.
+
+		Parameters:
+			:axisArray: the array of values representing one dimension of the waveform.
+		"""
+		xMax = np.amax(axisArray)
+		if xMax > 1e-9:
+			if xMax > 1e-6:
+				if xMax > 1e-3:
+					if xMax > 1:
+						prefix = ''
+						return axisArray,prefix
+
+					prefix = 'milli'
+					axisArray = np.multiply(axisArray,1000)
+					return axisArray,prefix
+
+				prefix = 'micro'
+				axisArray = np.multiply(axisArray,1e6)
+				return axisArray,prefix
+
+			prefix = 'nano'
+			axisArray = np.multiply(axisArray,1e9)
+			return axisArray,prefix
+
+		prefix = ''
+		return axisArray,prefix
+
+	def resetPlot(self):
+		"""
+		Reset plot to initial state.
+		"""
+
+		self.axes.clear()
+		self.axes = self.fig.add_subplot(111)
+		[t.set_color('white') for t in self.axes.yaxis.get_ticklabels()]
+		[t.set_color('white') for t in self.axes.xaxis.get_ticklabels()]
+		self.coords = self.axes.text(0,0,'')
+		self.logger.info("Plot Reset")
+
+	def savePlot(self, filename):
+		"""
+		Save the figure to disk.
+
+		Parameters:
+			:filename: a string giving the desired save file name.
+
+		:Returns: True if save successful, false otherwise.
+		"""
+
+		try:
+			self.fig.savefig(filename, bbox_inches='tight', facecolor='#3C3C3C')
+			return True
+		except Exception as e:
+			self.logger.error(e)
+			return False
+
 class ScopeOutMainWindow(QtWidgets.QMainWindow):
 	"""
 	Class to represent entire GUI Window. Manages the subwidgets that make up the interface,
@@ -119,6 +221,7 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 		self.logger.info('Main Window created')
 
 		self.widgets = widgets
+
 		self.endCommand = commands['end']
 
 		self.central = QtWidgets.QWidget(self)
@@ -126,10 +229,11 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 
 		self.layout.setSpacing(20)
 		self.layout.setContentsMargins(0,0,0,0)
-		self.layout.addWidget(self.widgets[0],0,0,4,1) # Column
-		self.layout.addWidget(self.widgets[1],1,2,1,1) # plot
-		self.layout.addWidget(self.widgets[2],0,4,4,1) # acqControl
-		self.layout.addWidget(self.widgets[3],2,2) # waveOptions
+		self.layout.addWidget(self.widgets['column'],0,0,4,1) # Column
+		self.layout.addWidget(self.widgets['plot'],1,2,1,1) # plot
+		self.widgets['plot'].show()
+		self.layout.addWidget(self.widgets['acqControl'],0,4,4,1) # acqControl
+		self.layout.addWidget(self.widgets['options'],2,2) # waveOptions
 		self.layout.setColumnMinimumWidth(4,180)
 		self.layout.setColumnMinimumWidth(2,600)
 		self.layout.setColumnStretch(0,1)
@@ -191,6 +295,7 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 		self.histogramModeAction = QtWidgets.QAction('Histogram Display', self.modeGroup)
 		self.histogramModeAction.setStatusTip('Display wave integration histogram')
 		self.histogramModeAction.setCheckable(True)
+		self.histogramModeAction.toggled.connect(self.plotSelect)
 
         # Put title on window
 		self.setWindowTitle('ScopeOut')
@@ -260,8 +365,6 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 				else:
 					i += 1
 
-
-
 	def loadTheme(self, themePath):
 		"""
 		Loads style sheet from themePath and sets it as the application's style.
@@ -293,7 +396,7 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 
 		self.logger.info("Close Event accepted")
 		for widget in self.widgets:
-			widget.close()
+			self.widgets[widget].close()
 		self.endCommand()
 		self.close()
 
@@ -311,7 +414,7 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 			self.logger.info("Main Window disabled")
 
 		for widget in self.widgets:
-			widget.setEnabled(bool)
+			self.widgets[widget].setEnabled(bool)
 
 		self.menubar.actions()[1].setEnabled(bool)
 		self.menubar.actions()[0].menu().actions()[1].setEnabled(bool)
@@ -327,32 +430,38 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 
 		self.statusBar().showMessage(message)
 
-class WavePlotWidget(FigureCanvas):
+	def plotSelect(self, bool):
+		"""
+		Switch between display of histogram and wave plots.
+
+		Parameters:
+			:bool: true to display histogram, false for wave plot.
+		"""
+
+		if bool:
+			self.widgets['plot'].hide()
+			self.layout.replaceWidget(self.widgets['plot'],self.widgets['hist'])
+			self.widgets['hist'].show()
+			
+		else:
+			self.widgets['hist'].hide()
+			self.layout.replaceWidget(self.widgets['hist'],self.widgets['plot'])
+			self.widgets['plot'].show()
+
+class WavePlotWidget(ScopeOutPlotWidget):
 	"""
 	Class to hold matplotlib Figures for display.
 	"""
-
-	bgColor = '#424242'
 
 	def __init__(self):
 		"""
 		Constructor
 		"""
 
+		ScopeOutPlotWidget.__init__(self)
 		self.logger = logging.getLogger("ScopeOut.scopeWidgets.WavePlotWidget")
-		self.fig = Figure()
 		self.fig.suptitle("Waveform Capture", color='white')
-		self.fig.patch.set_color(self.bgColor)
-		self.axes = self.fig.add_subplot(111)
-		self.coords = self.axes.text(0,0,'')
-		[t.set_color('white') for t in self.axes.yaxis.get_ticklabels()]
-		[t.set_color('white') for t in self.axes.xaxis.get_ticklabels()]
-		self.axes.xaxis.label.set_color('white')
-		self.axes.yaxis.label.set_color('white')
-		FigureCanvas.__init__(self,self.fig)
-		self.setContentsMargins(5,5,5,5)
-		self.show()
-		self.logger.info("Plot initialized")
+		self.logger.info("Wave Plot initialized")
 
 	def showPlot(self, wave, hold=False, showPeak=False):
 		'''
@@ -378,62 +487,6 @@ class WavePlotWidget(FigureCanvas):
 		cursor.connect_event('motion_notify_event', self.displayCoords)
 		self.fig.canvas.draw()
 
-	def displayCoords(self, event):
-		"""
-		display the coordinates of the mouse on the graph.
-
-		Parameters:
-			:event: an event object containing the mouse location data.
-		"""
-
-		if event.inaxes:
-			eventString = 'x: {} {}   y: {} {}'.format(round(event.xdata,5), self.axes.get_xlabel(), round(event.ydata, 5), self.axes.get_ylabel())
-			self.coords.remove()
-			self.coords = self.axes.text(0.05, 0.95,eventString, ha='left', va='center', transform=self.axes.transAxes)
-			self.fig.canvas.draw()
-
-	def autosetUnits(self, axisArray):
-		"""
-		Set the X units of the plot to the correct size based on the values in axisArray.
-
-		Parameters:
-			:axisArray: the array of values representing one dimension of the waveform.
-		"""
-		xMax = np.amax(axisArray)
-		if xMax > 1e-9:
-			if xMax > 1e-6:
-				if xMax > 1e-3:
-					if xMax > 1:
-						prefix = ''
-						return axisArray,prefix
-
-					prefix = 'milli'
-					axisArray = np.multiply(axisArray,1000)
-					return axisArray,prefix
-
-				prefix = 'micro'
-				axisArray = np.multiply(axisArray,1e6)
-				return axisArray,prefix
-
-			prefix = 'nano'
-			axisArray = np.multiply(axisArray,1e9)
-			return axisArray,prefix
-
-		prefix = ''
-		return axisArray,prefix
-
-	def resetPlot(self):
-		"""
-		Reset plot to initial state.
-		"""
-
-		self.axes.clear()
-		self.axes = self.fig.add_subplot(111)
-		[t.set_color('white') for t in self.axes.yaxis.get_ticklabels()]
-		[t.set_color('white') for t in self.axes.xaxis.get_ticklabels()]
-		self.coords = self.axes.text(0,0,'')
-		self.logger.info("Plot Reset")
-
 	def vertLines(self, xArray):
 		"""
 		Add vertical lines at the x values in xArray.
@@ -449,6 +502,21 @@ class WavePlotWidget(FigureCanvas):
 
 		self.logger.info("drew vertical lines")
 
+class HistogramPlotWidget(ScopeOutPlotWidget):
+	"""
+	Widget holding a matplotlib histogram.
+	"""
+
+	def __init__(self):
+		"""
+		Constructor
+		"""
+
+		ScopeOutPlotWidget.__init__(self)
+		self.logger = logging.getLogger("ScopeOut.scopeWidgets.HistogramPlotWidget")
+		self.fig.suptitle("Peak Histogram", color='white')
+		self.logger.info("Histogram Plot initialized")
+
 	def showHist(self, x, bins=100):
 		"""
 		Plot the histogram of integrated wave values.
@@ -463,23 +531,6 @@ class WavePlotWidget(FigureCanvas):
 		self.axes.set_ylabel('Counts')
 		self.axes.hist(x,bins)
 		self.fig.canvas.draw()
-
-	def savePlot(self, filename):
-		"""
-		Save the figure to disk.
-
-		Parameters:
-			:filename: a string giving the desired save file name.
-
-		:Returns: True if save successful, false otherwise.
-		"""
-
-		try:
-			self.fig.savefig(filename, bbox_inches='tight', facecolor='#3C3C3C')
-			return True
-		except Exception as e:
-			self.logger.error(e)
-			return False
 
 class acqControlWidget(ScopeOutWidget):
 	"""
