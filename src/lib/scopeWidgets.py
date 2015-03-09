@@ -849,12 +849,6 @@ class waveColumnWidget(ScopeOutScrollArea):
 
 			self.logger = logging.getLogger('ScopeOut.scopeWidgets.waveColumnItem')
 
-			self.wave = wave
-			time = wave['Acquisition Time']
-			dispTime = self.makeDispTime(time)
-			self.waveTime = QtWidgets.QLabel('Time: ' + dispTime, self)
-			self.waveNumber = QtWidgets.QLabel(str(index), self)
-
 			# Actions	
 			dispAction = QtWidgets.QAction('Display Waveform', self)
 			dispAction.triggered.connect(self.dispWave)
@@ -872,6 +866,13 @@ class waveColumnWidget(ScopeOutScrollArea):
 			savePropsAction = QtWidgets.QAction('Save Properties', self)
 			savePropsAction.triggered.connect(lambda: self.savePropsSignal.emit(self.getWave()))
 			self.addAction(savePropsAction)
+
+			# Setup Widgets
+			self.wave = wave
+			time = wave['Acquisition Time']
+			dispTime = self.makeDispTime(time)
+			self.waveTime = QtWidgets.QLabel('Time: ' + dispTime, self)
+			self.waveNumber = QtWidgets.QLabel(str(index), self)
 
 			# Layout
 			self.layout = QtWidgets.QGridLayout(self)
@@ -1003,6 +1004,7 @@ class waveColumnWidget(ScopeOutScrollArea):
 		self.logger = logging.getLogger('ScopeOut.scopeWidgets.waveColumnWidget')
 
 		self.items = 0
+		self.hold = False # Governs whether multiple waves can be active at once
 
 		self.layout = QtWidgets.QVBoxLayout(self)
 		self.layout.setContentsMargins(0,0,0,0)
@@ -1042,8 +1044,7 @@ class waveColumnWidget(ScopeOutScrollArea):
 		"""
 
 		self.items += 1
-		item = self.waveColumnItem(wave, self.items)
-		self.addItem(item)
+		self.addItem(self.waveColumnItem(wave, self.items))
 
 	def reset(self):
 		"""
@@ -1067,10 +1068,21 @@ class waveColumnWidget(ScopeOutScrollArea):
 		"""
 		Turn all of the wave items back to the default color
 		"""
+		if not self.hold:  # Only reset the column if we're not showing multiple plots
+			for i in range(0, self.layout.count()-1):
+				w = self.layout.itemAt(i).widget()
+				w.setProperty('state','inactive')
+				w.style().unpolish(w)
+				w.style().polish(w)
+				w.update()
 
-		for i in range(0, self.layout.count()-1):
-			w = self.layout.itemAt(i).widget()
-			w.setProperty('state','inactive')
-			w.style().unpolish(w)
-			w.style().polish(w)
-			w.update()
+	def setHold(self, bool):
+		"""
+		Sets the hold variable, which governs whether or not multiple waves can be active
+		at once. Called by a signal from the check box in the acqControlWidget.
+
+		Parameters:
+			:bool: Boolean value for self.hold.
+		"""
+
+		self.hold = bool
