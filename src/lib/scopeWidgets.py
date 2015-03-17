@@ -12,6 +12,7 @@ from matplotlib.widgets import Cursor
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from lib.oscilloscopes import GenericOscilloscope
 from functools import partial
+from collections import OrderedDict
 import os, re, logging, numpy as np, seaborn as sns
 
 # Graph configuration
@@ -24,9 +25,12 @@ class ScopeOutWidget(QtWidgets.QWidget):
 	Provides methods important to the consistent styling of the application.
 	"""
 
+	units = OrderedDict([('nS', 1e-9),('uS', 1e-6),('mS', 1e-3),('S', 1)])
+
 	def __init__(self, *args):
 
 		QtWidgets.QWidget.__init__(self, *args)
+
 		# Just add actions to the widget to get right click menus
 		self.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
 
@@ -731,8 +735,6 @@ class waveOptionsTabWidget(ScopeOutWidget):
 		Widget controlling Fixed-width peak detection algorithm.
 		"""
 
-		units = {'S': 1, 'mS': 1e-3, 'uS': 1e-6, 'nS': 1e-9}
-
 		def __init__(self, *args):
 			"""
 			constructor.
@@ -798,6 +800,74 @@ class waveOptionsTabWidget(ScopeOutWidget):
 			self.startThresholdInput.setEnabled(bool)
 			self.endThresholdInput.setEnabled(bool)
 
+	class HybridPeakTab(ScopeOutWidget):
+		"""
+		Widget controlling hybrid peak detection algorithm.
+		"""
+
+		def __init__(self, *args):
+			"""
+			constructor.
+			"""
+
+			self.logger = logging.getLogger('ScopeOut.scopeWidgets.HybridPeakTab')
+			ScopeOutWidget.__init__(self, *args)
+			self.initWidgets()
+			self.show()
+
+		def initWidgets(self):
+			"""
+			Set up sub-widgets.
+			"""
+			
+			self.startThresholdLabel = QtWidgets.QLabel("Peak Start Threshold", self)
+			self.peakWidthLabel = QtWidgets.QLabel("Peak Width", self)
+			self.startThresholdInput = QtWidgets.QSpinBox(self)
+			self.startThresholdInput.setMaximum(500)
+			self.startThresholdInput.setMinimum(0)
+			self.startThresholdInput.setSuffix('%')
+			self.startThresholdInput.setValue(10)
+			self.peakWidthInput = QtWidgets.QDoubleSpinBox(self)
+			self.peakWidthInput.setMaximum(1000)
+			self.peakWidthInput.setMinimum(0)
+			self.peakWidthInput.setValue(10)
+			self.peakWidthUnits = QtWidgets.QComboBox(self)
+			self.peakWidthUnits.addItems(self.units.keys())
+
+			self.layout = QtWidgets.QGridLayout(self)
+			self.layout.setContentsMargins(20,5,20,5)
+			self.layout.setHorizontalSpacing(20)
+
+			self.layout.addWidget(self.startThresholdLabel,0,0)
+			self.layout.addWidget(self.startThresholdInput,0,1)
+			self.layout.addWidget(self.peakWidthLabel,1,0)
+			self.layout.addWidget(self.peakWidthInput,1,1)
+			self.layout.addWidget(self.peakWidthUnits,1,2)
+			self.setLayout(self.layout)
+
+			for i in range(0,self.layout.count()):
+				self.addShadow(self.layout.itemAt(i).widget())
+
+		def getParameters(self):
+			"""
+			Returns the peak thresholds as decimals.
+
+			:Returns: An array containing the peak start time and the peak width in seconds
+			"""
+
+			return [self.startThresholdInput.value()/100.0, self.peakWidthInput.value()*self.units[self.peakWidthUnits.currentText()]]
+
+		def setEnabled(self, bool):
+			"""
+			Enable/disable this widget.
+
+			Parameters:
+				:bool: True to enable, false to disable.
+			"""
+
+			self.startThresholdInput.setEnabled(bool)
+			self.endThresholdInput.setEnabled(bool)
+
 	def __init__(self, *args):
 		"""
 		Constructor
@@ -814,10 +884,12 @@ class waveOptionsTabWidget(ScopeOutWidget):
 		self.tabManager = QtWidgets.QTabWidget(self)
 		self.smart = self.SmartPeakTab(None)
 		self.fixed = self.FixedPeakTab(None)
+		self.hybrid = self.HybridPeakTab(None)
 
-		self.tabTitles = ['Smart Peak Detection', 'Fixed Width Peak Detection']
+		self.tabTitles = ['Smart Peak Detection', 'Fixed Width Peak Detection', 'Hybrid Peak Detection']
 		self.tabManager.addTab(self.smart, self.tabTitles[0])
-		self.tabManager.addTab(self.fixed,self.tabTitles[1])
+		self.tabManager.addTab(self.fixed, self.tabTitles[1])
+		self.tabManager.addTab(self.hybrid, self.tabTitles[2])
 
 		self.layout = QtWidgets.QGridLayout(self)
 

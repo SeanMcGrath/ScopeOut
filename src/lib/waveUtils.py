@@ -78,6 +78,45 @@ def fixedFindPeakEnds(wave, parameters):
 
 	return startIndex, endIndex
 
+def hybridFindPeakEnds(wave, parameters):
+	"""
+	Determine the peak start analytically, then use a fixed peak width to find the end.
+
+	Parameters:
+		:parameters: an array containing the start peak threshold followed by the fixed peak width.
+
+	:Returns: a tuple of the starting index of the ending index.
+	"""
+
+	threshold = parameters[1]
+	width = parameters[2]
+
+	try:
+		startIndex = -1
+		y = wave['yData']
+		ymax = max(np.absolute(y))
+		for i in range(0,len(y)-250):
+			withinTolerance = 0
+			for j in range(1,3):
+				if y[i+50*(j-1)] != 0.0 and abs(y[i+50*(j-1)]) > 0.05*ymax and abs((y[i+50*j]-y[i+50*(j-1)])/(y[i+50*(j-1)])) > t1:
+					withinTolerance += 1
+					if withinTolerance == 2:
+						startIndex = i
+						break
+				else: 
+					break
+			if startIndex >= 0: break
+
+	except Exception as e:
+		logger.error(e)
+		return -1,-1
+
+	indexWidth = int(width/wave["X Increment"])
+
+	if startIndex > 0:
+		return startIndex, startIndex+indexWidth
+	else: return 0, indexWidth
+
 def integratePeak(wave):
 	"""
 	Integrate numerically over a wave's peak window.
