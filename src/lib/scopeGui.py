@@ -170,6 +170,8 @@ class ThreadedClient(QtWidgets.QApplication):
 						start, end = WU.smartFindPeakEnds(wave, self.waveOptions.getParameters())
 					elif 'Fixed' in peakFindMode():
 						start, end = WU.fixedFindPeakEnds(wave, self.waveOptions.getParameters())
+					elif 'Hybrid' in peakFindMode():
+						start, end = WU.hybridFindPeakEnds(wave, self.waveOptions.getParameters())
 					else:
 						start, end = 0
 					# store parameters in wave dictionary
