@@ -88,8 +88,8 @@ def hybridFindPeakEnds(wave, parameters):
 	:Returns: a tuple of the starting index of the ending index.
 	"""
 
-	threshold = parameters[1]
-	width = parameters[2]
+	t1 = parameters[0]
+	width = parameters[1]
 
 	try:
 		startIndex = -1
