@@ -118,6 +118,7 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.waveColumn.waveSignal.connect(plotWave)
 		self.waveColumn.saveSignal.connect(self.__saveWaveformEvent)
 		self.waveColumn.savePropsSignal.connect(self.__savePropertiesEvent)
+		self.waveColumn.deleteSignal.connect(self.__deleteWaveAtIndex)
 
 		# Misc. Signals
 		self.statusChange.connect(self.mainWindow.status)
@@ -796,6 +797,20 @@ class ThreadedClient(QtWidgets.QApplication):
 		"""
 
 		return self.mainWindow.histogramModeAction.isChecked()
+
+	def __deleteWaveAtIndex(self, index):
+		"""
+		Removes the waveform at the given index from memory.
+
+		Parameters:
+			:index: an integer index into the waveform list.
+		"""
+		try:
+			del self.waveList[index]
+			del self.integralList[index]
+			self.__waveCount(len(self.waveList))
+		except Exception as e:
+			self.logger.error(e)
 
 
 

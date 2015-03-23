@@ -948,6 +948,7 @@ class waveColumnWidget(ScopeOutScrollArea):
 	waveSignal = QtCore.pyqtSignal(dict) # signal to pass wave to plot
 	saveSignal = QtCore.pyqtSignal(dict) # signal to pass wave to saving routine
 	savePropsSignal = QtCore.pyqtSignal(dict) # signal to pass wave to property saving routine
+	deleteSignal = QtCore.pyqtSignal(int) # Signal to delete wave from memory
 
 	class waveColumnItem(ScopeOutWidget):
 		"""
@@ -958,6 +959,7 @@ class waveColumnWidget(ScopeOutScrollArea):
 		waveSignal = QtCore.pyqtSignal(dict)
 		saveSignal = QtCore.pyqtSignal(dict)
 		savePropsSignal = QtCore.pyqtSignal(dict) # signal to pass wave to property saving routine
+		deleteSignal = QtCore.pyqtSignal(ScopeOutWidget)
 
 		def __init__(self, wave, index, *args):
 			"""
@@ -971,6 +973,7 @@ class waveColumnWidget(ScopeOutScrollArea):
 			ScopeOutWidget.__init__(self, *args)
 
 			self.logger = logging.getLogger('ScopeOut.scopeWidgets.waveColumnItem')
+			self.index = index
 
 			# Actions	
 			dispAction = QtWidgets.QAction('Display Waveform', self)
@@ -982,13 +985,17 @@ class waveColumnWidget(ScopeOutScrollArea):
 			propsAction.triggered.connect(self.makePopup)
 			self.addAction(propsAction)
 
-			self.saveAction = QtWidgets.QAction('Save Waveform',self)
+			self.saveAction = QtWidgets.QAction('Save Waveform', self)
 			self.saveAction.triggered.connect(lambda: self.saveSignal.emit(self.getWave()))
 			self.addAction(self.saveAction)
 
 			savePropsAction = QtWidgets.QAction('Save Properties', self)
 			savePropsAction.triggered.connect(lambda: self.savePropsSignal.emit(self.getWave()))
 			self.addAction(savePropsAction)
+
+			deleteAction = QtWidgets.QAction('Delete Waveform', self)
+			deleteAction.triggered.connect(lambda: self.deleteSignal.emit(self))
+			self.addAction(deleteAction)
 
 			# Setup Widgets
 			self.wave = wave
@@ -1156,6 +1163,7 @@ class waveColumnWidget(ScopeOutScrollArea):
 		item.waveSignal.connect(self.waveSignal)
 		item.waveSignal.connect(self.resetColors)
 		item.saveSignal.connect(self.saveSignal)
+		item.deleteSignal.connect(self.deleteItem)
 		item.savePropsSignal.connect(self.savePropsSignal)
 
 	def addWave(self, wave):
@@ -1168,6 +1176,26 @@ class waveColumnWidget(ScopeOutScrollArea):
 
 		self.items += 1
 		self.addItem(self.waveColumnItem(wave, self.items))
+
+	def deleteItem(self, item):
+		"""
+		Remove the given wave column item from the list
+
+		Parameters:
+			:item: an integer index into the waveform list.
+		"""
+		if self.items:
+			self.logger.info("Deleting waveform number " + str(item.index))
+			try:
+				self.layout.removeWidget(item)
+				item.hide()
+			except Exception as e:
+				self.logger.error(e)
+			finally:
+				self.deleteSignal.emit(item.index - 1)
+
+		else:
+			self.logger.info("No waveforms to delete.")
 
 	def reset(self):
 		"""
