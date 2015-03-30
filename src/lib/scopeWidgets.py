@@ -985,6 +985,10 @@ class waveColumnWidget(ScopeOutScrollArea):
 			propsAction.triggered.connect(self.makePopup)
 			self.addAction(propsAction)
 
+			separator = QtWidgets.QAction(self)
+			separator.setSeparator(True)
+			self.addAction(separator)
+
 			self.saveAction = QtWidgets.QAction('Save Waveform', self)
 			self.saveAction.triggered.connect(lambda: self.saveSignal.emit(self.getWave()))
 			self.addAction(self.saveAction)
@@ -992,6 +996,10 @@ class waveColumnWidget(ScopeOutScrollArea):
 			savePropsAction = QtWidgets.QAction('Save Properties', self)
 			savePropsAction.triggered.connect(lambda: self.savePropsSignal.emit(self.getWave()))
 			self.addAction(savePropsAction)
+
+			separator = QtWidgets.QAction(self)
+			separator.setSeparator(True)
+			self.addAction(separator)
 
 			deleteAction = QtWidgets.QAction('Delete Waveform', self)
 			deleteAction.triggered.connect(lambda: self.deleteSignal.emit(self))
