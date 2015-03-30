@@ -13,11 +13,11 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from lib.oscilloscopes import GenericOscilloscope
 from functools import partial
 from collections import OrderedDict
-import os, re, logging, numpy as np, seaborn as sns
+import os, re, logging, numpy as np #, seaborn as sns
 
 # Graph configuration
-sns.set(font_scale=1.25)
-sns.set_palette(["#673AB7", "#3498db", "#95a5a6", "#e74c3c", "#34495e", "#2ecc71"])
+# sns.set(font_scale=1.25)
+# sns.set_palette(["#673AB7", "#3498db", "#95a5a6", "#e74c3c", "#34495e", "#2ecc71"])
 
 class ScopeOutWidget(QtWidgets.QWidget):
 	"""
