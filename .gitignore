@@ -45,7 +45,6 @@ Icon
 
 # compiled Python
 __pycache__/
-build/
 
 freqs.csv
 getFreqs.py
