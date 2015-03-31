@@ -106,6 +106,7 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.acqControl.channelComboBox.currentIndexChanged.connect(self.__setChannel)
 		self.acqControl.autoSetButton.clicked.connect(self.__autosetEvent)
 		self.acqControl.acqStopButton.clicked.connect(self.acqStopFlag.set)
+		self.acqControl.holdPlotCheckBox.toggled.connect(self.waveColumn.setHold)
 
 		#  Main window Signals
 		self.mainWindow.resetAction.triggered.connect(self.__resetEvent)
