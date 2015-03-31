@@ -568,6 +568,7 @@ class acqControlWidget(ScopeOutWidget):
 		self.autoSetButton = QtWidgets.QPushButton('Autoset',self)
 		self.acqOnTrigButton = QtWidgets.QPushButton('Acquire on Trigger', self)
 		self.acqStopButton = QtWidgets.QPushButton('Stop Acquisition', self)
+		self.acqStopButton.setProperty('type','stop')
 		self.holdPlotCheckBox = QtWidgets.QCheckBox('Hold plot',self)
 		self.channelComboLabel = QtWidgets.QLabel('Data Channel',self)
 		self.channelComboBox = QtWidgets.QComboBox(self)

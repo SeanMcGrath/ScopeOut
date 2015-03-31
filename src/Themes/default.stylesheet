@@ -107,6 +107,18 @@ acqControlWidget QPushButton {
   margin-bottom: 5px;
 }
 
+acqControlWidget QPushButton[type='stop'] {
+  background-color: #F44336;
+}
+
+acqControlWidget QPushButton[type='stop']::hover {
+  background-color: #E53935
+}
+
+acqControlWidget QPushButton[type='stop']::pressed {
+  background-color: #D32F2F
+}
+
 waveColumnWidget {
   padding: 0px;
   margin: 0px;
