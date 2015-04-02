@@ -258,6 +258,8 @@ class ThreadedClient(QtWidgets.QApplication):
 					self.multiAcq = True
 					self.mainWindow.update()
 
+				__enableButtons(True)
+
 		def __trigAcqThread():
 			"""
 			Waits for the scope to trigger, then acquires and stores waveforms in the same way as immAcq.
@@ -322,13 +324,18 @@ class ThreadedClient(QtWidgets.QApplication):
 				:bool: True to enable buttons, false to disable.
 			"""
 
-			self.acqControl.acqButton.setEnabled(bool)
-			self.acqControl.acqOnTrigButton.setEnabled(bool)
-			self.acqControl.contAcqButton.setEnabled(bool)
+			# self.acqControl.acqButton.setEnabled(bool)
+			# self.acqControl.acqOnTrigButton.setEnabled(bool)
+			# self.acqControl.contAcqButton.setEnabled(bool)
+			# self.acqControl.autoSetButton.setEnabled(bool)
+			# self.acqControl.acqStopButton.setEnabled(not bool)
+
+			self.acqControl.enableButtons(bool)
 
 		self.acqStopFlag.clear()
 
 		if mode == 'now': # Single, Immediate acquisition
+			__enableButtons(False)
 			self.logger.info("Immediate acquisition Event")
 			acqThread = threading.Thread(target = __immAcqThread)
 			acqThread.start()
@@ -468,7 +475,6 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.logger.info('Attempting to set data channel %s', channels[channel])
 		self.acqControl.contAcqButton.setEnabled(True)
 		self.acqControl.acqOnTrigButton.setEnabled(True)
-		self.acqControl.acqStopButton.setEnabled(True)
 
 		if channel in range(0,self.acqControl.scope.numChannels):
 			self.multiAcq = False

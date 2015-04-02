@@ -627,7 +627,7 @@ class acqControlWidget(ScopeOutWidget):
 		self.channelComboBox.setEnabled(bool)
 		self.acqOnTrigButton.setEnabled(bool)
 		self.contAcqButton.setEnabled(bool)
-		self.acqStopButton.setEnabled(bool)
+		self.acqStopButton.setEnabled(False)
 		if bool and self.scope is not None:
 			channels =list(map(str,range(1,self.scope.numChannels+1)))
 			channels.append('All')
@@ -660,6 +660,19 @@ class acqControlWidget(ScopeOutWidget):
 		"""
 
 		return [self.channelComboBox.itemText(i) for i in range(self.channelComboBox.count())]
+
+	def enableButtons(self, bool):
+		"""
+		Enable/disable acquisition buttons as appropriate depending on the
+		current more of operation, e.g. disable 'stop acquisition' button
+		until an acquisition has started.
+		"""
+
+		self.acqButton.setEnabled(bool)
+		self.contAcqButton.setEnabled(bool)
+		self.autoSetButton.setEnabled(bool)
+		self.acqOnTrigButton.setEnabled(bool)
+		self.acqStopButton.setEnabled(not bool)
 
 class waveOptionsTabWidget(ScopeOutWidget):
 	"""
