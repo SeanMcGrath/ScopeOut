@@ -476,6 +476,9 @@ class WavePlotWidget(ScopeOutPlotWidget):
 
 		:hold:
 			True to add to existing plot, false to make new plot
+
+		:showPeak:
+			True to add vertical lines at peak boundaries, false otherwise
 		'''
 
 		if not hold: self.resetPlot()
@@ -1027,6 +1030,8 @@ class waveColumnWidget(ScopeOutScrollArea):
 			dispTime = self.makeDispTime(time)
 			self.waveTime = QtWidgets.QLabel('Time: ' + dispTime, self)
 			self.waveNumber = QtWidgets.QLabel(str(index), self)
+			self.deleteButton = QtWidgets.QPushButton('X', self)
+			self.deleteButton.clicked.connect(lambda: self.deleteSignal.emit(self))
 
 			# Layout
 			self.layout = QtWidgets.QGridLayout(self)
@@ -1036,9 +1041,11 @@ class waveColumnWidget(ScopeOutScrollArea):
 			self.layout.addWidget(self.waveTime,0,1)
 			if self.peakDetected():
 				self.layout.addWidget(QtWidgets.QLabel('^',self),0,2)
+				self.layout.addWidget(self.deleteButton,0,4)
 				self.layout.setColumnStretch(3,1)
 			else:
 				self.layout.setColumnStretch(2,1)
+				self.layout.addWidget(self.deleteButton,0,3)
 			self.setLayout(self.layout)
 
 		def makeDispTime(self, datetime):

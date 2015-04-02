@@ -97,7 +97,8 @@ class ThreadedClient(QtWidgets.QApplication):
 
 		def plotWave(wave):
 			hold = self.acqControl.plotHeld()
-			self.plot.showPlot(wave, hold=hold)
+			showPeak = self.waveOptions.peakStart()
+			self.plot.showPlot(wave, hold=hold, showPeak = showPeak)
 
 		# Acq Control Signals
 		self.acqControl.acqButton.clicked.connect(partial(self.__acqEvent,'now'))
