@@ -149,7 +149,6 @@ waveColumnItem QPushButton {
   color: white;
   font-size: 14px;
   border-radius: 0px;
-  margin-top: -10px;
 }
 
 waveColumnItem QPushButton::hover {

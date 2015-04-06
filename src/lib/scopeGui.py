@@ -9,6 +9,7 @@ from lib.scopeUtils import ScopeFinder as sf
 from lib.oscilloscopes import GenericOscilloscope
 from datetime import date, datetime
 from functools import partial
+from math import sqrt
 import sys, threading, os, time, logging, numpy as np, lib.scopeWidgets as sw, lib.waveUtils as WU
 
 class ThreadedClient(QtWidgets.QApplication):
@@ -181,6 +182,10 @@ class ThreadedClient(QtWidgets.QApplication):
 					wave['Peak Detection Mode'] = peakFindMode()
 					wave['Start of Peak'] = start
 					wave['End of Peak'] = end
+					wave['Maximum Value'] = max(wave['yData'])
+					wave['Minimum Value'] = min(wave['yData'])
+					wave['Average Value'] = sum(wave['yData'])/len(wave['yData'])
+					wave['RMS Value'] = sqrt(sum([a*a for a in wave['yData']])/len(wave['yData']))
 					integral = WU.integratePeak(wave)
 					wave['Peak Integral'] = integral
 					self.integralList.append(integral)
