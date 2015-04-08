@@ -9,6 +9,7 @@ from lib.scopeUtils import ScopeFinder as sf
 from lib.oscilloscopes import GenericOscilloscope
 from datetime import date, datetime
 from functools import partial
+from math import sqrt
 import sys, threading, os, time, logging, numpy as np, lib.scopeWidgets as sw, lib.waveUtils as WU
 
 class ThreadedClient(QtWidgets.QApplication):
@@ -97,7 +98,8 @@ class ThreadedClient(QtWidgets.QApplication):
 
 		def plotWave(wave):
 			hold = self.acqControl.plotHeld()
-			self.plot.showPlot(wave, hold=hold)
+			showPeak = self.waveOptions.peakStart()
+			self.plot.showPlot(wave, hold=hold, showPeak = showPeak)
 
 		# Acq Control Signals
 		self.acqControl.acqButton.clicked.connect(partial(self.__acqEvent,'now'))
@@ -106,6 +108,7 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.acqControl.channelComboBox.currentIndexChanged.connect(self.__setChannel)
 		self.acqControl.autoSetButton.clicked.connect(self.__autosetEvent)
 		self.acqControl.acqStopButton.clicked.connect(self.acqStopFlag.set)
+		self.acqControl.holdPlotCheckBox.toggled.connect(self.waveColumn.setHold)
 
 		#  Main window Signals
 		self.mainWindow.resetAction.triggered.connect(self.__resetEvent)
@@ -179,6 +182,10 @@ class ThreadedClient(QtWidgets.QApplication):
 					wave['Peak Detection Mode'] = peakFindMode()
 					wave['Start of Peak'] = start
 					wave['End of Peak'] = end
+					wave['Maximum Value'] = max(wave['yData'])
+					wave['Minimum Value'] = min(wave['yData'])
+					wave['Average Value'] = sum(wave['yData'])/len(wave['yData'])
+					wave['RMS Value'] = sqrt(sum([a*a for a in wave['yData']])/len(wave['yData']))
 					integral = WU.integratePeak(wave)
 					wave['Peak Integral'] = integral
 					self.integralList.append(integral)
@@ -257,6 +264,8 @@ class ThreadedClient(QtWidgets.QApplication):
 					self.multiAcq = True
 					self.mainWindow.update()
 
+				__enableButtons(True)
+
 		def __trigAcqThread():
 			"""
 			Waits for the scope to trigger, then acquires and stores waveforms in the same way as immAcq.
@@ -321,13 +330,18 @@ class ThreadedClient(QtWidgets.QApplication):
 				:bool: True to enable buttons, false to disable.
 			"""
 
-			self.acqControl.acqButton.setEnabled(bool)
-			self.acqControl.acqOnTrigButton.setEnabled(bool)
-			self.acqControl.contAcqButton.setEnabled(bool)
+			# self.acqControl.acqButton.setEnabled(bool)
+			# self.acqControl.acqOnTrigButton.setEnabled(bool)
+			# self.acqControl.contAcqButton.setEnabled(bool)
+			# self.acqControl.autoSetButton.setEnabled(bool)
+			# self.acqControl.acqStopButton.setEnabled(not bool)
+
+			self.acqControl.enableButtons(bool)
 
 		self.acqStopFlag.clear()
 
 		if mode == 'now': # Single, Immediate acquisition
+			__enableButtons(False)
 			self.logger.info("Immediate acquisition Event")
 			acqThread = threading.Thread(target = __immAcqThread)
 			acqThread.start()
@@ -467,7 +481,6 @@ class ThreadedClient(QtWidgets.QApplication):
 		self.logger.info('Attempting to set data channel %s', channels[channel])
 		self.acqControl.contAcqButton.setEnabled(True)
 		self.acqControl.acqOnTrigButton.setEnabled(True)
-		self.acqControl.acqStopButton.setEnabled(True)
 
 		if channel in range(0,self.acqControl.scope.numChannels):
 			self.multiAcq = False
