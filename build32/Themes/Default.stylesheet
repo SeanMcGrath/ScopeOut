@@ -9,25 +9,44 @@ QWidget:disabled {
 }
 
 QPushButton {
-  border-radius: 2px;
-  background-color: #673AB7;
   padding: 6px;
   height: 24px;
-  color: white;
   font-weight: bold;
+}
+
+acqControlWidget QPushButton {
+  border-radius: 2px;
+  background-color: #673AB7;
+  color: white;
   margin-bottom: 4px;
 }
 
-QPushButton:hover {
+acqControlWidget QPushButton:hover {
   background-color: #5E35B1;
 }
 
-QPushButton:pressed {
+acqControlWidget QPushButton:pressed {
   background-color: #512DA8;
 }
 
 QTabWidget::pane {
   border: 1px solid black;
+}
+
+QTabBar::tab {
+  border-top-left-radius: 2px;
+  border-top-right-radius: 2px;
+  background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #E1E1E1, stop: 0.4 #DDDDDD, stop: 0.5 #D8D8D8, stop: 1.0 #D3D3D3);
+  padding: 4px;
+  margin-right: 4px;
+}
+
+QTabBar::tab:hover, QTabBar::tab:selected {
+  background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #fafafa, stop: 0.4 #f4f4f4, stop: 0.5 #e7e7e7, stop: 1.0 #fafafa);
+}
+
+QTabBar::tab:!selected {
+  margin-top: 2px;
 }
 
 QLabel { 
@@ -91,6 +110,23 @@ acqControlWidget QPushButton {
   margin-bottom: 5px;
 }
 
+acqControlWidget QPushButton[type='stop'] {
+  background-color: #F44336;
+}
+
+acqControlWidget QPushButton[type='stop']::hover {
+  background-color: #E53935
+}
+
+acqControlWidget QPushButton[type='stop']::pressed {
+  background-color: #D32F2F
+}
+
+acqControlWidget QPushButton::disabled {
+  background-color: gray;
+  color: black;
+}
+
 waveColumnWidget {
   padding: 0px;
   margin: 0px;
@@ -106,6 +142,21 @@ waveColumnWidget ScopeOutWidget {
   color: white;
   padding: 0px;
   margin: 0px;
+}
+
+waveColumnItem QPushButton {
+  background: transparent;
+  color: white;
+  font-size: 14px;
+  border-radius: 0px;
+}
+
+waveColumnItem QPushButton::hover {
+  color: #F44336;
+}
+
+waveColumnItem QPushButton::pressed {
+  color: #D32F2F;
 }
 
 waveColumnWidget QScrollBar {
