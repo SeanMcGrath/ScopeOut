@@ -1,0 +1,162 @@
+QMainWindow,
+__selectPropertiesPopup { 
+	background-color: #424242;
+}
+
+QWidget:disabled {
+    color: gray;
+    opacity: 30%;
+}
+
+QPushButton {
+  border-radius: 2px;
+  background-color: #673AB7;
+  padding: 6px;
+  height: 24px;
+  color: white;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+QPushButton:hover {
+  background-color: #5E35B1;
+}
+
+QPushButton:pressed {
+  background-color: #512DA8;
+}
+
+QTabWidget::pane {
+  border: 1px solid black;
+}
+
+QLabel { 
+    color: black;
+    background-color: #EEEEEE;
+    border-radius: 2px;
+    padding: 8px;
+    qproperty-alignment: AlignCenter;
+    max-height: 1em;
+    max-width: 10em;
+}
+
+QRadioButton {
+	color: white;
+	background-color: #212121;
+  border-radius: 5px;
+  padding: 8px;
+}
+
+QCheckBox {
+  color: black;
+  background-color: #EEEEEE;
+  border-radius: 2px;
+  padding: 8px;
+  margin-top: 10px;
+}
+
+QSpinBox, QDoubleSpinBox {
+	background-color: white;
+  width: 10em;
+  max-width: 10em;
+}
+
+QComboBox {
+    max-width: 10em;
+}
+
+QStatusBar {
+	color: white;
+}
+
+QMenuBar {
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                  stop: 0 #E1E1E1, stop: 0.4 #DDDDDD,
+                                  stop: 0.5 #D8D8D8, stop: 1.0 #D3D3D3);
+}
+
+QMenuBar::item {
+   spacing: 3px; /* spacing between menu bar items */
+   padding: 1px 4px;
+   background: transparent;
+   border-radius: 4px;
+}
+
+acqControlWidget {
+  max-width: 200px;
+  background-color: #212121;
+}
+
+acqControlWidget QPushButton {
+  margin-bottom: 5px;
+}
+
+waveColumnWidget {
+  padding: 0px;
+  margin: 0px;
+  height: 100%;
+  min-width: 250px;
+  max-width: 350px;
+  min-height: 200px;
+  border: none;
+}
+
+waveColumnWidget ScopeOutWidget { 
+  background-color: #212121;
+  color: white;
+  padding: 0px;
+  margin: 0px;
+}
+
+waveColumnWidget QScrollBar {
+  background-color: #212121;
+  color: white;
+}
+
+waveColumnItem {
+  min-height: 3em;
+  max-height: 50px;
+  min-width: 250px;
+  width: 250px;
+  border-top: 2px solid #3C3C3C;
+  color: white;
+}
+
+waveColumnItem QLabel {
+  color: white;
+}
+
+waveColumnItem[state="active"] {
+  background-color: #673AB7;
+}
+
+waveColumnItem[state="inactive"] {
+  background-color: none;
+}
+
+waveColumnItem[state="active"]:hover {
+  background-color: #5E35B1;
+}
+
+waveColumnItem[state="inactive"]:hover {
+  background-color: #424242;
+}
+
+waveColumnItem QLabel {
+  min-width: 1em;
+  max-width: 250px;
+  border-radius: 0px;
+  padding: 1px;
+  qproperty-alignment: AlignLeft;
+  background-color: none;
+  font-weight: bold;
+}
+
+PropertiesPopup {
+  color: white;
+  background-color: #3C3C3C;
+}
+
+waveOptionsTabWidget {
+  max-width: 600px;
+}
