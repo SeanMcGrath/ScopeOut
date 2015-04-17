@@ -8,7 +8,7 @@ as Oscilloscope objects.
 """
 
 import visa # PyVisa
-import logging
+import logging, re
 import lib.oscilloscopes as oscilloscopes
 
 class ScopeFinder:
@@ -64,7 +64,7 @@ class ScopeFinder:
 
 		rm = visa.ResourceManager()
 		try:
-			self.resources = rm.list_resources("USB?*") #  We only want USB scopes
+			self.resources = rm.list_resources()
 		except visa.VisaIOError as e:
 			pass
 
@@ -73,12 +73,13 @@ class ScopeFinder:
 			self.instruments = []
 			for resource in self.resources:
 				try:
-					self.instruments.append(rm.get_instrument(resource))
-					self.logger.info('Resource converted to instrument')
+					inst = rm.get_instrument(resource)
+					inst.timeout = 10000
+					self.instruments.append(inst)
+					self.logger.info('Resource {} converted to instrument'.format(resource))
 				except Exception as e:
 					self.logger.error(e)
 			for ins in self.instruments:
-
 				try:
 					info = self.query(ins, '*IDN?').split(',') # Parse identification string
 					if info[1] == 'TDS 2024B': # TDS 2024B oscilloscope
@@ -86,10 +87,14 @@ class ScopeFinder:
 						scope = oscilloscopes.TDS2024B(ins, info[0],info[1],info[2],info[3])
 						self.scopes.append(scope)
 						self.logger.info("Found %s", str(scope))
+					elif re.match('GDS-1.*A',info[1]):
+						scope = oscilloscopes.GDS1000A(ins, info[0],info[1],info[2],info[3])
+						self.scopes.append(scope)
+						self.logger.info("Found %s", str(scope))
 					
 					# Support for other scopes to be implemented here!
 				except visa.VisaIOError as e:
-					self.logger.error(e)
+					self.logger.error('{} could not be converted to an oscilloscope'.format(ins))
 		return self
 
 	def checkScope(self, scopeIndex):
@@ -103,7 +108,7 @@ class ScopeFinder:
 		"""
 
 		try:
-			if self.scopes[scopeIndex].query("TRIGGER?"):
+			if self.scopes[scopeIndex].getTriggerStatus():
 				return True
 			else:
 				return False
