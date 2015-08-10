@@ -521,8 +521,6 @@ class TDS2024B(GenericOscilloscope):
 	Contains the command dictionary specifying the correct VISA commands for this oscilloscope,
 	And defines how to handle waveforms that this scope generates.
 	"""
-
-	
 						
 	def __init__(self, VISA, make, model, serialNum, firmware):
 		"""
@@ -721,13 +719,72 @@ class TDS2024B(GenericOscilloscope):
 	END DATA CHANNEL COMMANDS
 	"""
 
+class GDS1000A(GenericOscilloscope):
+	"""
+	Class representing Gwinstek GDS-1000A series oscilloscope.
 
+	Contains the command dictionary specifying the correct VISA commands for this oscilloscope,
+	And defines how to handle waveforms that this scope generates.
+	"""
 
+	def __init__(self, VISA, make, model, serialNum, firmware):
+		"""
+		Constructor.
 
+		Parameters:
+			:VISA: object representing VISA instrument, on which PyVisa can be used.
+			:brand: brand of scope
+			:model: model of scope
+			:serial: serial number of scope
+			:firmware: scope firmware version
+		"""
 
+		GenericOscilloscope.__init__(self,VISA)
+		self.logger = logging.getLogger("oscilloscopes.GSA-1000A")
 
+		self.commands = {'autoSet': 'AUTOS EXEC',
+					 'getAcquisitionParams': 'ACQ?',
+					 'setAcquisitionMode': 'ACQ:MOD',
+					 'getAcquisitionMode': 'ACQ:MOD?',
+					 'getNumberOfAcquisitions': 'ACQ:NUMAC?',
+					 'setAcqsForAverage': 'ACQ:NUMAV',
+					 'getAcqsForAverage': 'ACQ:NUMAV?',
+					 'setAcqState': 'ACQ:STATE',
+					 'getAcqState': 'ACQ:STATE?',
+					 'setAcqStop': 'ACQ:STOPA',
+					 'getAcqStop': 'ACQ:STOPA?',
 
+					 'calibrate': '*CAL?',
+					 'abortCalibrate:': 'CAL:ABO',
+					 'continueCalibrate': 'CAL:CONTINUE',
+					 'factoryCalibrate': 'CAL:FAC',
+					 'internalCalibrate': 'CAL:INTERNAL',
+					 'getCalStatus': 'CAL:STATUS?',
+					 'getDiagnosticResult': 'DIA:RESUL:FLA?',
+					 'getDiagnosticLog': 'DIA:RESUL:LOG?',
 
+					 'getCursor': 'CURS?',
+
+					 'getAllEvents': 'ALLE?',
+					 'isBusy': 'BUSY?',
+					 'clearStatus': '*CLS?',
+					 'eventStatus': '*ESR?',
+					 'eventCode': 'EVENT?',
+					 'eventMessage': 'EVMSG?',
+					 'getFirstError': 'ERRLOG:FIRST?',
+					 'getNextError': 'ERRLOG:NEXT?',
+					 'getTriggerStatus': ':TRIG:STATE?',
+					 'getTrigFrequency': 'TRIG:MAIN:FREQ?',
+
+					 'getDataChannel': 'DAT:SOU?',
+					}
+
+		self.make = make
+		self.model = model
+		self.serialNumber = serialNum
+		self.firmwareVersion = firmware
+		self.waveformSet = False
+		self.numChannels = 2 # 4-channel oscilloscope
 
 
 
