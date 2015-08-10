@@ -8,7 +8,6 @@ Sean McGrath, 2014
 
 from PyQt5 import QtGui, QtWidgets, QtCore
 import matplotlib
-matplotlib.use("Qt5Agg", force=True)  #force Qt5 backend to avoid Qt4 import
 from matplotlib.figure import Figure
 from matplotlib.widgets import Cursor
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas

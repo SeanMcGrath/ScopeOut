@@ -4,13 +4,21 @@ ScopeOut GUI
 Defines GUI client that instantiates and controls widgets and threads.
 """
 
-from PyQt5 import QtWidgets, QtCore, QtGui
-from lib.scopeUtils import ScopeFinder as sf
-from lib.oscilloscopes import GenericOscilloscope
+# Set matplotlib to call PyQt5
+from matplotlib import rcParams
+rcParams['backend'] = 'Qt5Agg'
+
+import sys, threading, os, time, logging
+
 from datetime import date, datetime
 from functools import partial
 from math import sqrt
-import sys, threading, os, time, logging, numpy as np, lib.scopeWidgets as sw, lib.waveUtils as WU
+from PyQt5 import QtWidgets, QtCore, QtGui
+import  numpy as np
+
+from lib.scopeUtils import ScopeFinder as sf
+from lib.oscilloscopes import GenericOscilloscope
+import lib.scopeWidgets as sw, lib.waveUtils as WU
 
 class ThreadedClient(QtWidgets.QApplication):
 	"""

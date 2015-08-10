@@ -1,11 +1,11 @@
-from PyQt5 import QtGui, QtCore, QtWidgets
-import lib.scopeGui as sg, sys, signal, os, logging
+import sys, signal, os, logging, threading
+
+import lib.scopeGui as sg
 
 """
 ScopeOut
 """
 
-import signal, threading, sys
 
 def main():
 
@@ -26,12 +26,18 @@ def main():
 	logger.addHandler(fh)
 	logger.addHandler(ch)
 
+	
+
 	print("Initializing ScopeOut...")
 	logger.info("Initializing ScopeOut...")
+
 	GUI = sg.ThreadedClient(sys.argv)
+
 	logger.info("ScopeOut initialization completed")
+	
 	# Enable keyboard shortcuts to kill from command line
 	signal.signal(signal.SIGINT, signal.SIG_DFL)
+
 	return GUI.exec_()
 
 if __name__ == "__main__":
