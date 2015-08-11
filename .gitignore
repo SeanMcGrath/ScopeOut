@@ -46,5 +46,12 @@ Icon
 # compiled Python
 __pycache__/
 
+# virtual environment
+scopeout/env/
+
+#IDE cruft
+.idea/*
+
+
 freqs.csv
 getFreqs.py
