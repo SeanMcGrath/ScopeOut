@@ -10,7 +10,9 @@ as Oscilloscope objects.
 import visa
 import logging
 import re
+import os
 
+from scopeout.config import ScopeOutConfig as Config
 from scopeout import oscilloscopes
 
 
@@ -21,8 +23,8 @@ class ScopeFinder:
         Constructor
         """
 
-        self.logger = logging.getLogger('ScopeOut.scopeUtils.ScopeFinder')
-        self.logger.info("ScopeFinder Initialized")
+        self.logger = logging.getLogger('scopeout.utilities.ScopeFinder')
+        self.logger.info('ScopeFinder Initialized')
 
         self.resources = []
         self.instruments = []
@@ -51,7 +53,7 @@ class ScopeFinder:
 
         return inst.ask(command).strip()  # strip newline
 
-    def getScopes(self):
+    def get_scopes(self):
         """
         Getter for array of connected oscilloscopes.
 
@@ -72,9 +74,9 @@ class ScopeFinder:
 
         rm = visa.ResourceManager()
         try:
-            self.resources = rm.list_resources()
+            self.resources = rm.list_resources('USB?*')
         except visa.VisaIOError as e:
-            pass
+            self.resources = []
 
         if self.resources:
             self.logger.info("%d VISA Resource(s) found", len(self.resources))
@@ -87,6 +89,8 @@ class ScopeFinder:
                     self.logger.info('Resource {} converted to instrument'.format(resource))
                 except Exception as e:
                     self.logger.error(e)
+                    del resource
+
             for ins in self.instruments:
                 try:
                     info = self.query(ins, '*IDN?').split(',')  # Parse identification string
@@ -101,11 +105,11 @@ class ScopeFinder:
                         self.logger.info("Found %s", str(scope))
 
                     # Support for other scopes to be implemented here!
-                except visa.VisaIOError as e:
+                except visa.VisaIOError:
                     self.logger.error('{} could not be converted to an oscilloscope'.format(ins))
         return self
 
-    def checkScope(self, scopeIndex):
+    def check_scope(self, scope_index):
         """
         Check if the scope at scopeIndex is still connected.
 
@@ -116,9 +120,43 @@ class ScopeFinder:
         """
 
         try:
-            if self.scopes[scopeIndex].getTriggerStatus():
+            if self.scopes[scope_index].getTriggerStatus():
                 return True
             else:
                 return False
         except:
             return False
+
+
+def get_logger(scope_name):
+    """
+    Create a new logger that writes to the log file specified in the configuration.
+    :param scope_name: The fully qualified name of the scope of the logger, e.g
+        scopeout.utilities.get_logger
+    :return: a new logger, ready for use
+    """
+
+    logger = logging.getLogger(scope_name)
+
+    # create file handler which logs even debug messages
+    log_dir = Config.get('Logging', 'log_dir')
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+    fh = logging.handlers.RotatingFileHandler(
+        os.path.join(log_dir, Config.get('Logging', 'log_file')))
+    fh.setLevel(logging.INFO)
+
+    # create console handler with a higher log level
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.ERROR)
+
+    # create formatter and add it to the handlers
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    fh.setFormatter(formatter)
+    ch.setFormatter(formatter)
+
+    # add the handlers to the logger
+    logger.addHandler(fh)
+    logger.addHandler(ch)
+
+    return logger

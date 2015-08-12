@@ -11,6 +11,9 @@ import queue
 import logging
 import datetime
 
+from scopeout.models import Waveform
+
+
 class GenericOscilloscope:
     """
     Object representation of scope of unknown make.
@@ -30,7 +33,7 @@ class GenericOscilloscope:
             :VISA: object representing VISA instrument, on which PyVisa can be used.
         """
         self.scope = VISA
-        self.logger = logging.getLogger("oscilloscopes.GenericOscilloscope")
+        self.logger = logging.getLogger("ScopeOut.oscilloscopes.GenericOscilloscope")
         self.waveformQueue = queue.Queue()
 
         self.make = "Generic"
@@ -511,7 +514,7 @@ class GenericOscilloscope:
             :channel: the desired data channel.
         """
 
-        return execCommand('setDataChannel', [str(channel)])
+        return self.execCommand('setDataChannel', [str(channel)])
 
     """
     END DATA COMMANDS
@@ -539,7 +542,7 @@ class TDS2024B(GenericOscilloscope):
         """
 
         GenericOscilloscope.__init__(self, VISA)
-        self.logger = logging.getLogger("oscilloscopes.TDS2024B")
+        self.logger = logging.getLogger("ScopeOut.oscilloscopes.TDS2024B")
 
         self.commands = {'autoSet': 'AUTOS EXEC',
                          'getAcquisitionParams': 'ACQ?',
@@ -583,7 +586,6 @@ class TDS2024B(GenericOscilloscope):
         self.serialNumber = serialNum
         self.firmwareVersion = firmware
 
-        self.waveformSet = False
         self.numChannels = 4  # 4-channel oscilloscope
 
         if self.eventStatus:
@@ -595,91 +597,84 @@ class TDS2024B(GenericOscilloscope):
 
     def waveformSetup(self):
         """
-        Acquires and stores all necessary parameters for waveform transfer and display.
+        Fetch all the parameters needed to parse the wave data.
+        will be passed the waveform object.
+        :return: the waveform object if setup fails.
         """
-        self.waveform = {'Error': None}
 
-        self.waveform['Data Channel'] = self.getDataChannel()  # get active channel
+        waveform = Waveform()
+        waveform.data_channel = self.getDataChannel()  # get active channel
+        waveform.capture_time = datetime.datetime.utcnow()
+
         try:
             preamble = self.query("WFMP?").split(';')  # get waveform preamble and parse it
-            self.waveform['Data Width'] = int(preamble[0])
-            self.waveform['Bits Per Point'] = int(preamble[1])
-            self.waveform['Encoding'] = preamble[2]
-            self.waveform['Binary Format'] = preamble[3]
-            self.waveform['Significant Bit'] = preamble[4]
+
+            waveform.data_width = int(preamble[0])
+            waveform.bits_per_point = int(preamble[1])
+            waveform.encoding = preamble[2]
+            waveform.binary_format = preamble[3]
+            waveform.significant_bit = preamble[4]
             if len(preamble) > 5:  # normal operation
-                self.waveform['Number of Points'] = int(preamble[5])
-                self.waveform['Point Format'] = preamble[7].strip('"')
-                self.waveform['X Increment'] = float(preamble[8])
-                self.waveform['X Offset'] = float(preamble[9])
-                self.waveform['X Zero'] = float(preamble[10])
-                self.waveform['X Unit'] = preamble[11].strip('"')
-                if self.waveform['X Unit'] == 's':
-                    self.waveform['X Unit'] = 'Seconds'
-                self.waveform['Y Multiplier'] = float(preamble[12])
-                self.waveform['Y Zero'] = float(preamble[13])
-                self.waveform['Y Offset'] = float(preamble[14])
-                self.waveform['Y Unit'] = preamble[15].strip('"')
-                self.waveformSet = True
+                waveform.number_of_points = int(preamble[5])
+                waveform.point_format = preamble[7].strip('"')
+                waveform.x_increment = float(preamble[8])
+                waveform.x_offset = float(preamble[9])
+                waveform.x_zero = float(preamble[10])
+                waveform.x_unit = preamble[11].strip('"')
+                if waveform.x_unit == 's':
+                    waveform.x_unit = 'Seconds'
+                waveform.y_multiplier = float(preamble[12])
+                waveform.y_zero = float(preamble[13])
+                waveform.y_offset = float(preamble[14])
+                waveform.y_unit = preamble[15].strip('"')
+
             else:  # Selected channel is not active
-                self.waveform['Error'] = self.waveform[
-                                             'Data Channel'] + ' is not active. Please select an active channel.'
-                self.waveformSet = False
+                waveform.error = waveform.data_channel \
+                                 + ' is not active. Please select an active channel.'
+
+            return waveform
+
         except Exception as e:
             self.logger.error(e)
 
-    def getCurve(self):
+    def getCurve(self, wave):
         """
         Set up waveform acquisition and get curve data.
 
         :Returns: a list of voltage values describing a captured waveform.
         """
 
-        if self.waveformSet:
-            try:
-                curveData = self.query("CURV?").split(',')
-                curveData = list(map(int, curveData))
-                for i in range(0, len(curveData)):
-                    curveData[i] = self.waveform['Y Zero'] + self.waveform['Y Multiplier'] * (
-                    curveData[i] - self.waveform['Y Offset'])
-                return curveData
+        try:
+            curveData = self.query("CURV?").split(',')
+            curveData = list(map(int, curveData))
+            for i in range(0, len(curveData)):
+                curveData[i] = wave.y_zero + wave.y_multiplier * (
+                    curveData[i] - wave.y_offset)
+            return curveData
 
-            except AttributeError as e:
-                self.logger.error("Failed to acquire curve data")
-            except UnicodeDecodeError as e:
-                self.logger.error("Could not decode scope output to ascii")
-                raise e
+        except AttributeError as e:
+            self.logger.error("Failed to acquire curve data")
+        except UnicodeDecodeError as e:
+            self.logger.error("Could not decode scope output to ascii")
+            raise e
 
-    def getXArray(self):
+    def getXArray(self, wave):
         """
         Get array of x values that matches the y values in the waveform, scaled properly.
 
         :Returns: the x array needed to plot a waveform.
         """
-        if not self.waveformSet: self.waveformSetup()
-        return np.arange(0, self.waveform['Number of Points'] * self.waveform['X Increment'],
-                         self.waveform['X Increment'])
+        return np.arange(0, wave.number_of_points * wave.x_increment,
+                         wave.x_increment)
 
     def makeWaveform(self):
         """
         Assemble waveform dictionary and enqueue it for readout.
         """
-        self.waveformSetup()
 
-        if self.waveformSet:
-            try:
-                self.waveform['Acquisition Time'] = str(datetime.datetime.now())
-                curveData = self.getCurve()
-                self.waveform['yData'] = curveData
-                self.waveform['xData'] = np.arange(0, self.waveform['Number of Points'] * self.waveform['X Increment'],
-                                                   self.waveform['X Increment'])
-                self.waveformQueue.put(self.waveform)
-                self.logger.info("Waveform made successfully")
-
-            except Exception as e:
-                self.logger.error(e)
-        else:
-            self.waveformQueue.put(self.waveform)
+        wave = self.waveformSetup()
+        self.waveformQueue.put((wave, self.getXArray(wave), self.getCurve(wave)))
+        self.logger.info("Waveform made successfully")
 
     def getNextWaveform(self):
         """
@@ -794,5 +789,4 @@ class GDS1000A(GenericOscilloscope):
         self.model = model
         self.serialNumber = serialNum
         self.firmwareVersion = firmware
-        self.waveformSet = False
         self.numChannels = 2  # 4-channel oscilloscope

@@ -29,33 +29,33 @@ class ScopeFinderTest(ut.TestCase):
 		self.sf = lib.scopeUtils.ScopeFinder()
 
 	def test_getScopes(self):
-		self.assertEqual(self.sf.getScopes(), [])
+		self.assertEqual(self.sf.get_scopes(), [])
 
 	@ut.skipIf(usbCon == False, "No USB Devices detected")
 	def test_refresh(self):
 		self.sf.refresh()
-		scopes = self.sf.getScopes()
+		scopes = self.sf.get_scopes()
 		self.assertTrue(len(scopes) > 0)
 		self.assertTrue(isinstance(scopes[0],lib.oscilloscopes.GenericOscilloscope))
 	
 	@ut.skipIf(usbCon == False, "No USB Devices detected")
 	def test_query(self):
 		self.sf.refresh()
-		scopes = self.sf.getScopes()
+		scopes = self.sf.get_scopes()
 		self.assertTrue(isinstance(scopes[0].query('*IDN?'),str))
 
 	@ut.skipIf(usbCon == False, "No USB Devices detected")
 	def test_query(self):
 		self.sf.refresh()
-		scopes = self.sf.getScopes()
+		scopes = self.sf.get_scopes()
 		self.assertTrue(isinstance(scopes[0].query('*IDN?'),str))
 
 	@ut.skipIf(usbCon == False, "No USB Devices detected")
 	def test_checkScope(self):
 		self.sf.refresh()
-		scopes = self.sf.getScopes()
+		scopes = self.sf.get_scopes()
 		for i in range(0,len(scopes)):
-			self.assertTrue(self.sf.checkScope(i))
+			self.assertTrue(self.sf.check_scope(i))
 
 
 if __name__ == '__main__':

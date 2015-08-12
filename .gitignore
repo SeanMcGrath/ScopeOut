@@ -47,11 +47,17 @@ Icon
 __pycache__/
 
 # virtual environment
-scopeout/env/
+env/
+
+#config files
+**/*.cfg
 
 #IDE cruft
 .idea/*
 
-
+# test scripts
 freqs.csv
 getFreqs.py
+
+data
+logs

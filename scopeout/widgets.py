@@ -7,8 +7,8 @@ Sean McGrath, 2014
 """
 
 import os
-import logging
 import re
+import logging
 from numpy import multiply, amax
 
 from PyQt5 import QtGui, QtWidgets, QtCore
@@ -19,6 +19,7 @@ from collections import OrderedDict
 from functools import partial
 
 from scopeout.oscilloscopes import GenericOscilloscope
+from scopeout.config import ScopeOutConfig as Config
 
 
 class ScopeOutWidget(QtWidgets.QWidget):
@@ -118,7 +119,7 @@ class ScopeOutPlotWidget(FigureCanvas):
             :figure: a matplotlib figure to be displayed.
         """
 
-        self.logger = logging.getLogger("scopeout.widgets.ScopeOutPlotWidget")
+        self.logger = logging.getLogger("ScopeOut.widgets.ScopeOutPlotWidget")
         self.fig = Figure()
         FigureCanvas.__init__(self, self.fig)
 
@@ -225,7 +226,7 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 
         QtWidgets.QMainWindow.__init__(self, *args)
 
-        self.logger = logging.getLogger('scopeout.widgets.ScopeOutMainWindow')
+        self.logger = logging.getLogger('ScopeOut.widgets.ScopeOutMainWindow')
         self.logger.info('Main Window created')
 
         self.widgets = widgets
@@ -350,12 +351,13 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
             :Returns: themes, the array of theme paths, for convenience.
             """
 
-            path = os.path.join(os.getcwd(), 'Themes')
+            path = Config.get('Themes', 'theme_dir')
             themes = []
 
             try:
                 themeFiles = os.listdir(path)
-                themes = [os.path.join(path, theme) for theme in themeFiles if re.match('.*stylesheet', theme)]
+                themes = [os.path.join(path, theme)
+                          for theme in themeFiles if re.match('.*stylesheet', theme)]
             except Exception as e:
                 self.logger.error(e)
 
@@ -468,7 +470,7 @@ class WavePlotWidget(ScopeOutPlotWidget):
         """
 
         ScopeOutPlotWidget.__init__(self)
-        self.logger = logging.getLogger("scopeout.widgets.WavePlotWidget")
+        self.logger = logging.getLogger("ScopeOut.widgets.WavePlotWidget")
         self.fig.suptitle("Waveform Capture", color='white')
         self.logger.info("Wave Plot initialized")
 
@@ -490,13 +492,17 @@ class WavePlotWidget(ScopeOutPlotWidget):
             self.resetPlot()
 
         self.fig.suptitle("Waveform Capture", color='white')
-        xData, xPrefix = self.autosetUnits(wave['xData'])
-        yData, yPrefix = self.autosetUnits(wave['yData'])
-        self.axes.set_ylabel(yPrefix + wave['Y Unit'])
-        self.axes.set_xlabel(xPrefix + wave['X Unit'])
+
+        x_data = wave.get_x_data()
+        y_data = wave.get_y_data()
+
+        xData, xPrefix = self.autosetUnits(x_data)
+        yData, yPrefix = self.autosetUnits(y_data)
+        self.axes.set_ylabel(yPrefix + wave.y_unit)
+        self.axes.set_xlabel(xPrefix + wave.x_unit)
         self.axes.plot(xData, yData)
         if showPeak:
-            self.vertLines([wave['xData'][wave['Start of Peak']], wave['xData'][wave['End of Peak']]])
+            self.vertLines(x_data[wave.peak_start], x_data[wave.peak_end])
         cursor = Cursor(self.axes, useblit=True, color='black', linewidth=1)
         cursor.connect_event('motion_notify_event', self.displayCoords)
         self.fig.canvas.draw()
@@ -528,7 +534,7 @@ class HistogramPlotWidget(ScopeOutPlotWidget):
         """
 
         ScopeOutPlotWidget.__init__(self)
-        self.logger = logging.getLogger("scopeout.widgets.HistogramPlotWidget")
+        self.logger = logging.getLogger("ScopeOut.widgets.HistogramPlotWidget")
         self.fig.suptitle("Peak Histogram", color='white')
         self.logger.info("Histogram Plot initialized")
 
@@ -562,7 +568,7 @@ class acqControlWidget(ScopeOutWidget):
         """
 
         ScopeOutWidget.__init__(self, *args)
-        self.logger = logging.getLogger('scopeout.widgets.acqControlWidget')
+        self.logger = logging.getLogger('ScopeOut.widgets.acqControlWidget')
 
         self.scope = scope
 
@@ -701,7 +707,7 @@ class waveOptionsTabWidget(ScopeOutWidget):
             constructor.
             """
 
-            self.logger = logging.getLogger('scopeout.widgets.SmartPeakTab')
+            self.logger = logging.getLogger('ScopeOut.widgets.SmartPeakTab')
             ScopeOutWidget.__init__(self, *args)
             self.initWidgets()
             self.show()
@@ -765,7 +771,7 @@ class waveOptionsTabWidget(ScopeOutWidget):
             constructor.
             """
 
-            self.logger = logging.getLogger('scopeout.widgets.FixedPeakTab')
+            self.logger = logging.getLogger('ScopeOut.widgets.FixedPeakTab')
             ScopeOutWidget.__init__(self, *args)
             self.initWidgets()
             self.show()
@@ -836,7 +842,7 @@ class waveOptionsTabWidget(ScopeOutWidget):
             constructor.
             """
 
-            self.logger = logging.getLogger('scopeout.widgets.HybridPeakTab')
+            self.logger = logging.getLogger('ScopeOut.widgets.HybridPeakTab')
             ScopeOutWidget.__init__(self, *args)
             self.initWidgets()
             self.show()
@@ -900,7 +906,7 @@ class waveOptionsTabWidget(ScopeOutWidget):
         Constructor
         """
 
-        self.logger = logging.getLogger('scopeout.widgets.waveOptionsTabWidget')
+        self.logger = logging.getLogger('ScopeOut.widgets.waveOptionsTabWidget')
         ScopeOutWidget.__init__(self, *args)
 
         self.waveCounter = QtWidgets.QLabel("Waveforms acquired: 0", self)
@@ -1001,7 +1007,7 @@ class waveColumnWidget(ScopeOutScrollArea):
 
             ScopeOutWidget.__init__(self, *args)
 
-            self.logger = logging.getLogger('scopeout.widgets.waveColumnItem')
+            self.logger = logging.getLogger('ScopeOut.widgets.waveColumnItem')
             self.index = index
             self.parent = parent
 
@@ -1037,7 +1043,7 @@ class waveColumnWidget(ScopeOutScrollArea):
 
             # Setup Widgets
             self.wave = wave
-            time = wave['Acquisition Time']
+            time = str(wave.capture_time)
             dispTime = self.makeDispTime(time)
             self.waveTime = QtWidgets.QLabel('Time: ' + dispTime, self)
             self.waveNumber = QtWidgets.QLabel(str(index), self)
@@ -1114,7 +1120,7 @@ class waveColumnWidget(ScopeOutScrollArea):
             Returns true if the wrapped peak has a detected wave, False otherwise
             """
             try:
-                return self.wave['Start of Peak'] > 0
+                return self.wave.peak_start > 0
             except KeyError:
                 return False
 
@@ -1132,7 +1138,7 @@ class waveColumnWidget(ScopeOutScrollArea):
                 """
 
                 ScopeOutWidget.__init__(self, *args)
-                self.logger = logging.getLogger('scopeout.widgets.waveColumnItem.PropertiesPopup')
+                self.logger = logging.getLogger('ScopeOut.widgets.waveColumnItem.PropertiesPopup')
 
                 self.setWindowTitle('Wave Properties')
                 self.setStyleSheet('color: white; background-color: #3C3C3C;')
@@ -1175,7 +1181,7 @@ class waveColumnWidget(ScopeOutScrollArea):
         """
 
         QtWidgets.QScrollArea.__init__(self, *args)
-        self.logger = logging.getLogger('scopeout.widgets.waveColumnWidget')
+        self.logger = logging.getLogger('ScopeOut.widgets.waveColumnWidget')
 
         self.items = 0
         self.hold = False  # Governs whether multiple waves can be active at once
