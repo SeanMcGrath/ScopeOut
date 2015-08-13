@@ -5,7 +5,6 @@ Handle connection to database and instantiation of tables.
 import os
 import logging
 
-from queue import Queue
 from sqlalchemy import create_engine
 from sqlalchemy.orm import *
 
@@ -39,7 +38,6 @@ class ScopeOutDatabase:
         self.logger.info("Creating new database at " + self.database_path)
         self.engine = create_engine('sqlite:///' + self.database_path)
         self.session = scoped_session(sessionmaker(bind=self.engine))
-        self.queue = Queue()
 
         self.create_tables()
 
@@ -50,34 +48,6 @@ class ScopeOutDatabase:
 
         models.ModelBase.metadata.create_all(self.engine)
         self.logger.info("Database tables created")
-
-    def consume(self):
-        """
-        Handle the next sql request in the queue
-        """
-
-        if self.queue.qsize():
-            try:
-                session = self.session()
-                session.add(self.queue.get())
-                session.commit()
-            except Exception as e:
-                self.logger.error(e)
-                session.rollback()
-
-    def consume_all(self):
-        """
-        Handle all sql requests in the queue
-        """
-
-        try:
-            session = self.session()
-            while self.queue.qsize():
-                session.add(self.queue.get())
-            session.commit()
-        except Exception as e:
-            self.logger.error(e)
-            session.rollback()
 
     def bulk_insert_x(self, data, wave_id):
         """

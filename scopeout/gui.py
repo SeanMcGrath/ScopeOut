@@ -154,19 +154,22 @@ class ThreadedClient(QtWidgets.QApplication):
         :return:
         """
 
+        def save_data_to_db():
+            self.database.bulk_insert_x(wave.x_list, wave.id)
+            self.database.bulk_insert_y(wave.y_list, wave.id)
+            self.logger.info("Saved data for waveform #" + str(wave.id) + " to the database")
+
         session = self.database.session()
         session.add(wave)
         session.commit()
 
         self.logger.info("Saved waveform #" + str(wave.id) + " to the database")
 
+        data_thread = threading.Thread(target=save_data_to_db)
+        data_thread.start()
+
         # self.wave_added_to_db_signal.emit(wave)
         self.waveColumn.addWave(wave)
-
-        self.database.bulk_insert_x(wave.x_list, wave.id)
-        self.database.bulk_insert_y(wave.y_list, wave.id)
-
-        self.logger.info("Saved data for waveform #" + str(wave.id) + " to the database")
         self.update_wave_count(session.query(Waveform).count())
 
     def plot_wave(self, wave):
