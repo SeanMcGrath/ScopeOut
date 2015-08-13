@@ -79,3 +79,32 @@ class ScopeOutDatabase:
             self.logger.error(e)
             session.rollback()
 
+    def bulk_insert_x(self, data, wave_id):
+        """
+        Insert a large number of XData points, circumventing the ORM for speed.
+        :param data: a list of numeric x values.
+        :param wave_id: the wave id to which the x values belong.
+        """
+
+        try:
+            self.engine.execute(
+                models.XData.__table__.insert(),
+                [{'x': x, 'wave_id': wave_id} for x in data]
+            )
+        except Exception as e:
+            self.logger.error(e)
+
+    def bulk_insert_y(self, data, wave_id):
+        """
+        Insert a large number of YData points, circumventing the ORM for speed.
+        :param data: a list of numeric y values.
+        :param wave_id: the wave id to which the y values belong.
+        """
+
+        try:
+            self.engine.execute(
+                models.YData.__table__.insert(),
+                [{'y': y, 'wave_id': wave_id} for y in data]
+            )
+        except Exception as e:
+            self.logger.error(e)

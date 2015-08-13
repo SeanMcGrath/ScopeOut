@@ -2,16 +2,14 @@
 Model classes to be hold data and be mapped to database.
 """
 
+import logging
 import numpy as np
 
 from sqlalchemy import *
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
 
-import scopeout.utilities
-
 ModelBase = declarative_base()
-# logger = scopeout.utilities.get_logger('scopeout.models.Waveform')
 
 
 class Waveform(ModelBase):
@@ -20,7 +18,9 @@ class Waveform(ModelBase):
     """
 
     __tablename__ = 'waveforms'
+    logger = logging.getLogger('ScopeOut.models.Waveform')
 
+    # Columns
     id = Column(Integer, primary_key=True)
     capture_time = Column(DateTime, nullable=False)
     error = Column(String)
@@ -45,13 +45,11 @@ class Waveform(ModelBase):
     data_channel = Column(String)
     integral = Column(Float)
 
-    def get_x_data(self):
-        return list(map(lambda data: data.x, self.x_data))
+    # Attributes to be accessed during runtime, not saved
+    x_list = []
+    y_list = []
 
-    def get_y_data(self):
-        return list(map(lambda data: data.y, self.y_data))
-
-    def smartFindPeakEnds(self, thresholds):
+    def find_peak_smart(self, thresholds):
         """
         Finds and returns the indices at which the wave peak begins and ends, with
         sensitivity determined by the thresholds.
@@ -68,7 +66,7 @@ class Waveform(ModelBase):
 
         try:
             startIndex = -1
-            y = self['yData']
+            y = self.y_data or self.y_list
             ymax = max(np.absolute(y))
             for i in range(0, len(y) - 250):
                 withinTolerance = 0
@@ -100,11 +98,11 @@ class Waveform(ModelBase):
             self.peak_end = -1
 
         except Exception as e:
-            # logger.error(e)
+            self.logger.error(e)
             self.peak_start = -1
             self.peak_end = -1
 
-    def fixedFindPeakEnds(self, parameters):
+    def find_peak_fixed(self, parameters):
         """
         Determine the start and end index from the start time and fixed peak width
 
@@ -116,7 +114,7 @@ class Waveform(ModelBase):
 
         start = parameters[0]
         width = parameters[1]
-        xData = self.x_data
+        xData = self.x_data or self.x_list
         startIndex = 0
         while xData[startIndex] < start and startIndex < len(xData):
             startIndex += 1
@@ -126,7 +124,7 @@ class Waveform(ModelBase):
         self.peak_start = startIndex
         self.peak_end = endIndex
 
-    def hybridFindPeakEnds(self, parameters):
+    def find_peak_hybrid(self, parameters):
         """
         Determine the peak start analytically, then use a fixed peak width to find the end.
 
@@ -141,7 +139,7 @@ class Waveform(ModelBase):
 
         try:
             startIndex = -1
-            y = self['yData']
+            y = self.y_data or self.y_list
             ymax = max(np.absolute(y))
             for i in range(0, len(y) - 250):
                 withinTolerance = 0
@@ -157,7 +155,7 @@ class Waveform(ModelBase):
                 if startIndex >= 0: break
 
         except Exception as e:
-            # logger.error(e)
+            self.logger.error(e)
             self.peak_start = -1
             self.peak_end = -1
 
@@ -170,7 +168,7 @@ class Waveform(ModelBase):
             self.peak_start = 0
             self.peak_end = indexWidth
 
-    def integratePeak(self):
+    def integrate_peak(self):
         """
         Integrate numerically over a wave's peak window.
 
@@ -181,13 +179,13 @@ class Waveform(ModelBase):
         """
 
         try:
-            start = self['Start of Peak']
+            start = self.peak_start
             if start < 0:
                 return 0
             else:
-                end = self['End of Peak']
-                incr = self['X Increment']
-                y = self['yData']
+                end = self.peak_end
+                incr = self.x_increment
+                y = self.y_data or self.y_list
                 result = 0
                 if end < 0:
                     for i in range(start, len(y)):
@@ -200,8 +198,40 @@ class Waveform(ModelBase):
             self.integral = result
 
         except Exception as e:
-            # logger.error(e)
+            self.logger.error(e)
             self.integral = 0
+
+    def detect_peak_and_integrate(self, detection_mode, detection_parameters):
+        """
+        Determine whether the wave has a peak given the specified mode.
+        If it does, integrate it.
+        :param detection_mode: a string specifying which detection mode to use:
+            'Smart', 'Fixed', or 'Hybrid'
+        :param detection_parameters: the thresholds/parameters appropriate to the
+            detection method chosen.
+        """
+
+        assert self.x_list is not []
+        assert self.y_list is not []
+
+        if 'Smart' in detection_mode:
+            self.find_peak_smart(detection_parameters)
+        elif 'Fixed' in detection_mode:
+            self.find_peak_fixed(detection_parameters)
+        elif 'Hybrid' in detection_mode:
+            self.find_peak_hybrid(detection_parameters)
+
+        self.integrate_peak()
+
+    @property
+    def x_list(self):
+        """
+        Get array of x values that matches the y values in the waveform, scaled properly.
+
+        :return: the x array needed to plot a waveform.
+        """
+        return list(np.arange(0, self.number_of_points * self.x_increment,
+                         self.x_increment))
 
 
 class XData(ModelBase):

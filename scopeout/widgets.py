@@ -20,6 +20,7 @@ from functools import partial
 
 from scopeout.oscilloscopes import GenericOscilloscope
 from scopeout.config import ScopeOutConfig as Config
+from scopeout.models import *
 
 
 class ScopeOutWidget(QtWidgets.QWidget):
@@ -475,37 +476,32 @@ class WavePlotWidget(ScopeOutPlotWidget):
         self.logger.info("Wave Plot initialized")
 
     def showPlot(self, wave, hold=False, showPeak=False):
-        '''
-        Fill plot with data and draw it on the screen.
-
-        :wave:
-            a wave dictionary object
-
-        :hold:
-            True to add to existing plot, false to make new plot
-
-        :showPeak:
-            True to add vertical lines at peak boundaries, false otherwise
-        '''
+        """
+        Plot a waveform to the screen.
+        :param wave: a Waveform object to plot.
+        :param x_data: the x data of the waveform.
+        :param y_data: the y data of the waveform.
+        :param hold: true to draw on top of the old plot, false to draw a new plot.
+        :param showPeak: true to show the peak window.
+        """
 
         if not hold:
             self.resetPlot()
 
         self.fig.suptitle("Waveform Capture", color='white')
 
-        x_data = wave.get_x_data()
-        y_data = wave.get_y_data()
-
-        xData, xPrefix = self.autosetUnits(x_data)
-        yData, yPrefix = self.autosetUnits(y_data)
+        xData, xPrefix = self.autosetUnits(wave.x_list)
+        yData, yPrefix = self.autosetUnits(wave.y_list)
         self.axes.set_ylabel(yPrefix + wave.y_unit)
         self.axes.set_xlabel(xPrefix + wave.x_unit)
         self.axes.plot(xData, yData)
         if showPeak:
-            self.vertLines(x_data[wave.peak_start], x_data[wave.peak_end])
+            self.vertLines(wave.x_list[wave.peak_start], wave.x_list[wave.peak_end])
         cursor = Cursor(self.axes, useblit=True, color='black', linewidth=1)
         cursor.connect_event('motion_notify_event', self.displayCoords)
         self.fig.canvas.draw()
+
+        self.logger.info('plotting completed')
 
     def vertLines(self, xArray):
         """
@@ -974,7 +970,7 @@ class waveOptionsTabWidget(ScopeOutWidget):
         return self.tabTitles[self.tabManager.currentIndex()]
 
 
-class waveColumnWidget(ScopeOutScrollArea):
+class WaveColumnWidget(ScopeOutScrollArea):
     """
     A column display showing acquired waveforms.
     """
@@ -982,20 +978,20 @@ class waveColumnWidget(ScopeOutScrollArea):
     waveSignal = QtCore.pyqtSignal(dict)  # signal to pass wave to plot
     saveSignal = QtCore.pyqtSignal(dict)  # signal to pass wave to saving routine
     savePropsSignal = QtCore.pyqtSignal(dict)  # signal to pass wave to property saving routine
-    deleteSignal = QtCore.pyqtSignal(int)  # Signal to delete wave from memory
+    deleteSignal = QtCore.pyqtSignal(Waveform)  # Signal to delete wave from database
 
-    class waveColumnItem(ScopeOutWidget):
+    class WaveColumnItem(ScopeOutWidget):
         """
         A rectangular box showing basic information about a captured waveform.
         Used to dynamically populate the waveColumnWidget.
         """
 
-        waveSignal = QtCore.pyqtSignal(dict)
-        saveSignal = QtCore.pyqtSignal(dict)
-        savePropsSignal = QtCore.pyqtSignal(dict)  # signal to pass wave to property saving routine
+        waveSignal = QtCore.pyqtSignal(Waveform)
+        saveSignal = QtCore.pyqtSignal(Waveform)
+        savePropsSignal = QtCore.pyqtSignal(Waveform)  # signal to pass wave to property saving routine
         deleteSignal = QtCore.pyqtSignal(ScopeOutWidget)
 
-        def __init__(self, parent, wave, index, *args):
+        def __init__(self, parent, wave, *args):
             """
             constructor
 
@@ -1008,7 +1004,6 @@ class waveColumnWidget(ScopeOutScrollArea):
             ScopeOutWidget.__init__(self, *args)
 
             self.logger = logging.getLogger('ScopeOut.widgets.waveColumnItem')
-            self.index = index
             self.parent = parent
 
             # Actions
@@ -1026,11 +1021,11 @@ class waveColumnWidget(ScopeOutScrollArea):
             self.addAction(separator)
 
             self.saveAction = QtWidgets.QAction('Save Waveform', self)
-            self.saveAction.triggered.connect(lambda: self.saveSignal.emit(self.getWave()))
+            self.saveAction.triggered.connect(lambda: self.saveSignal.emit(self.wave))
             self.addAction(self.saveAction)
 
             savePropsAction = QtWidgets.QAction('Save Properties', self)
-            savePropsAction.triggered.connect(lambda: self.savePropsSignal.emit(self.getWave()))
+            savePropsAction.triggered.connect(lambda: self.savePropsSignal.emit(self.wave))
             self.addAction(savePropsAction)
 
             separator = QtWidgets.QAction(self)
@@ -1046,7 +1041,7 @@ class waveColumnWidget(ScopeOutScrollArea):
             time = str(wave.capture_time)
             dispTime = self.makeDispTime(time)
             self.waveTime = QtWidgets.QLabel('Time: ' + dispTime, self)
-            self.waveNumber = QtWidgets.QLabel(str(index), self)
+            self.waveNumber = QtWidgets.QLabel(str(wave.id), self)
             self.deleteButton = QtWidgets.QPushButton('X', self)
             self.deleteButton.clicked.connect(lambda: self.deleteSignal.emit(self))
 
@@ -1075,13 +1070,6 @@ class waveColumnWidget(ScopeOutScrollArea):
 
             time, partial = datetime.split(' ')[-1].split('.')
             return '{}.{}'.format(time, partial[:2])
-
-        def getWave(self):
-            """
-            :Returns: the wave wrapped by this item.
-            """
-
-            return self.wave
 
         def mousePressEvent(self, event):
             """
@@ -1120,8 +1108,8 @@ class waveColumnWidget(ScopeOutScrollArea):
             Returns true if the wrapped peak has a detected wave, False otherwise
             """
             try:
-                return self.wave.peak_start > 0
-            except KeyError:
+                return self.wave.peak_start is not None and self.wave.peak_start > 0
+            except:
                 return False
 
         class PropertiesPopup(ScopeOutWidget):
@@ -1134,7 +1122,7 @@ class waveColumnWidget(ScopeOutScrollArea):
                 Constructor.
 
                 Parameters:
-                    :wave: The wave dictionary whose properties are to be displayed.
+                    :wave: The Waveform whose properties are to be displayed.
                 """
 
                 ScopeOutWidget.__init__(self, *args)
@@ -1159,11 +1147,11 @@ class waveColumnWidget(ScopeOutScrollArea):
                 # Added peak properties section
                 layout.setRowMinimumHeight(y + 1, 10)
                 layout.addWidget(QtWidgets.QLabel('Peak Properties:', self), y + 2, 0)
-                if wave['Start of Peak'] < 0:
+                if wave.peak_start < 0:
                     layout.addWidget(QtWidgets.QLabel('  No Peak Detected', self), y + 3, 0)
                 else:
-                    startString = str(wave['xData'][wave['Start of Peak']]) + ' ' + str(wave['X Unit'])
-                    endString = str(wave['xData'][wave['End of Peak']]) + ' ' + str(wave['X Unit'])
+                    startString = str(wave.x_data[wave.peak_start].x) + ' ' + str(wave.x_unit)
+                    endString = str(wave.x_data[wave.peak_end].x) + ' ' + str(wave.x_unit)
                     widthString = "{} {}".format(
                         wave['xData'][wave['End of Peak']] - wave['xData'][wave['Start of Peak']], wave['X Unit'])
                     layout.addWidget(QtWidgets.QLabel('  Peak Start', self), y + 3, 0)
@@ -1183,7 +1171,6 @@ class waveColumnWidget(ScopeOutScrollArea):
         QtWidgets.QScrollArea.__init__(self, *args)
         self.logger = logging.getLogger('ScopeOut.widgets.waveColumnWidget')
 
-        self.items = 0
         self.hold = False  # Governs whether multiple waves can be active at once
 
         self.layout = QtWidgets.QVBoxLayout(self)
@@ -1204,45 +1191,54 @@ class waveColumnWidget(ScopeOutScrollArea):
     def addItem(self, item):
         """
         Add a waveColumnItem to the column and display it.
+        :param item: the WaveColumnItem to add.
         """
+
+        assert type(item) is self.WaveColumnItem
 
         self.resetColors()
         item.setProperty('state', 'active')
         self.layout.insertWidget(0, item)
         self.show()
+
         item.waveSignal.connect(self.waveSignal)
         item.waveSignal.connect(self.resetColors)
         item.saveSignal.connect(self.saveSignal)
         item.deleteSignal.connect(self.deleteItem)
         item.savePropsSignal.connect(self.savePropsSignal)
 
+        self.logger.info('Added wave #' + str(item.wave.id) + ' to column')
+
     def addWave(self, wave):
         """
-        Receive a wave dict, package it as a waveColumnItem, and add it to the column.
+        Receive a Waveform, package it as a waveColumnItem, and add it to the column.
 
         Parameters:
-            :wave: a wave dictionary object.
+            :wave: a Waveform.
         """
 
-        self.items += 1
-        self.addItem(self.waveColumnItem(self, wave, self.items))
+        assert type(wave) is Waveform
+        self.addItem(self.WaveColumnItem(self, wave))
 
     def deleteItem(self, item):
         """
         Remove the given wave column item from the list
 
         Parameters:
-            :item: an integer index into the waveform list.
+            :item: the WaveColumnItem to delete.
         """
+
+        assert type(item) is self.WaveColumnItem
+
         if self.items:
-            self.logger.info("Deleting waveform number " + str(item.index))
+            self.logger.info("Deleting waveform number " + str(item.wave.id))
             try:
                 self.layout.removeWidget(item)
                 item.hide()
             except Exception as e:
                 self.logger.error(e)
             finally:
-                self.deleteSignal.emit(item.index - 1)
+                self.deleteSignal.emit(item.wave)
 
         else:
             self.logger.info("No waveforms to delete.")

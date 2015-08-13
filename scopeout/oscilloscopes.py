@@ -658,22 +658,14 @@ class TDS2024B(GenericOscilloscope):
             self.logger.error("Could not decode scope output to ascii")
             raise e
 
-    def getXArray(self, wave):
-        """
-        Get array of x values that matches the y values in the waveform, scaled properly.
-
-        :Returns: the x array needed to plot a waveform.
-        """
-        return np.arange(0, wave.number_of_points * wave.x_increment,
-                         wave.x_increment)
-
     def makeWaveform(self):
         """
         Assemble waveform dictionary and enqueue it for readout.
         """
 
         wave = self.waveformSetup()
-        self.waveformQueue.put((wave, self.getXArray(wave), self.getCurve(wave)))
+        wave.y_list = self.getCurve(wave)
+        self.waveformQueue.put(wave)
         self.logger.info("Waveform made successfully")
 
     def getNextWaveform(self):
