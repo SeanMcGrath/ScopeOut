@@ -46,8 +46,17 @@ class Waveform(ModelBase):
     integral = Column(Float)
 
     # Attributes to be accessed during runtime, not saved
-    x_list = []
     y_list = []
+
+    @property
+    def x_list(self):
+        """
+        Get array of x values that matches the y values in the waveform, scaled properly.
+
+        :return: the x array needed to plot a waveform.
+        """
+        return list(np.arange(0, self.number_of_points * self.x_increment,
+                         self.x_increment))
 
     def find_peak_smart(self, thresholds):
         """
@@ -61,41 +70,42 @@ class Waveform(ModelBase):
 
         :Returns: The index of the start of the peak (-1 if not found) and the index of the end of the peak (-1 if not found).
         """
+
         t1 = thresholds[0]
         t2 = thresholds[1]
 
         try:
-            startIndex = -1
-            y = self.y_data or self.y_list
-            ymax = max(np.absolute(y))
+            start_index = -1
+            y = [point.y for point in self.wave_data] or self.y_list
+            y_max = max(np.absolute(y))
             for i in range(0, len(y) - 250):
-                withinTolerance = 0
+                within_tolerance = 0
                 for j in range(1, 3):
-                    if y[i + 50 * (j - 1)] != 0.0 and abs(y[i + 50 * (j - 1)]) > 0.05 * ymax and abs(
+                    if y[i + 50 * (j - 1)] != 0.0 and abs(y[i + 50 * (j - 1)]) > 0.05 * y_max and abs(
                                     (y[i + 50 * j] - y[i + 50 * (j - 1)]) / (y[i + 50 * (j - 1)])) > t1:
-                        withinTolerance += 1
-                        if withinTolerance == 2:
-                            startIndex = i
+                        within_tolerance += 1
+                        if within_tolerance == 2:
+                            start_index = i
                             break
                     else:
                         break
-                if startIndex >= 0: break
+                if start_index >= 0: break
 
-            if startIndex >= 0:
-                for i in range(startIndex, len(y) - 250):
-                    withinTolerance = 0
+            if start_index >= 0:
+                for i in range(start_index, len(y) - 250):
+                    within_tolerance = 0
                     for j in range(1, 6):
-                        if y[i + 50 * (j - 1)] != 0.0 and abs(y[i + 50 * (j - 1)]) < 0.2 * ymax and abs(
+                        if y[i + 50 * (j - 1)] != 0.0 and abs(y[i + 50 * (j - 1)]) < 0.2 * y_max and abs(
                                         (y[i + 50 * j] - y[i + 50 * (j - 1)]) / (y[i + 50 * (j - 1)])) < t2:
-                            withinTolerance += 1
-                            if withinTolerance == 4:
-                                self.peak_start = startIndex
+                            within_tolerance += 1
+                            if within_tolerance == 4:
+                                self.peak_start = start_index
                                 self.peak_end = i
                         else:
                             break
 
-            self.peak_start = startIndex
-            self.peak_end = -1
+            self.peak_start = start_index
+            self.peak_end = len(self.x_list) - 1
 
         except Exception as e:
             self.logger.error(e)
@@ -114,15 +124,15 @@ class Waveform(ModelBase):
 
         start = parameters[0]
         width = parameters[1]
-        xData = self.x_data or self.x_list
-        startIndex = 0
-        while xData[startIndex] < start and startIndex < len(xData):
-            startIndex += 1
+        x_data = [point.x for point in self.wave_data] or self.x_list
+        start_index = 0
+        while x_data[start_index] < start and start_index < len(x_data):
+            start_index += 1
 
-        endIndex = startIndex + int(width / self.x_increment)
+        end_index = start_index + int(width / self.x_increment)
 
-        self.peak_start = startIndex
-        self.peak_end = endIndex
+        self.peak_start = start_index
+        self.peak_end = end_index
 
     def find_peak_hybrid(self, parameters):
         """
@@ -138,35 +148,36 @@ class Waveform(ModelBase):
         width = parameters[1]
 
         try:
-            startIndex = -1
-            y = self.y_data or self.y_list
-            ymax = max(np.absolute(y))
+            start_index = -1
+            y = [point.y for point in self.wave_data] or self.y_list
+            y_max = max(np.absolute(y))
             for i in range(0, len(y) - 250):
-                withinTolerance = 0
+                within_tolerance = 0
                 for j in range(1, 3):
-                    if y[i + 50 * (j - 1)] != 0.0 and abs(y[i + 50 * (j - 1)]) > 0.05 * ymax and abs(
+                    if y[i + 50 * (j - 1)] != 0.0 and abs(y[i + 50 * (j - 1)]) > 0.05 * y_max and abs(
                                     (y[i + 50 * j] - y[i + 50 * (j - 1)]) / (y[i + 50 * (j - 1)])) > t1:
-                        withinTolerance += 1
-                        if withinTolerance == 2:
-                            startIndex = i
+                        within_tolerance += 1
+                        if within_tolerance == 2:
+                            start_index = i
                             break
                     else:
                         break
-                if startIndex >= 0: break
+                if start_index >= 0:
+                    break
 
         except Exception as e:
             self.logger.error(e)
             self.peak_start = -1
             self.peak_end = -1
 
-        indexWidth = int(width / self["X Increment"])
+        index_width = int(width / self.x_increment)
 
-        if startIndex > 0:
-            self.peak_start = startIndex
-            self.peak_end = startIndex + indexWidth
+        if start_index > 0:
+            self.peak_start = start_index
+            self.peak_end = start_index + index_width
         else:
             self.peak_start = 0
-            self.peak_end = indexWidth
+            self.peak_end = index_width
 
     def integrate_peak(self):
         """
@@ -185,7 +196,7 @@ class Waveform(ModelBase):
             else:
                 end = self.peak_end
                 incr = self.x_increment
-                y = self.y_data or self.y_list
+                y = [point.y for point in self.wave_data] or self.y_list
                 result = 0
                 if end < 0:
                     for i in range(start, len(y)):
@@ -223,52 +234,20 @@ class Waveform(ModelBase):
 
         self.integrate_peak()
 
-    @property
-    def x_list(self):
-        """
-        Get array of x values that matches the y values in the waveform, scaled properly.
 
-        :return: the x array needed to plot a waveform.
-        """
-        return list(np.arange(0, self.number_of_points * self.x_increment,
-                         self.x_increment))
+class DataPoint(ModelBase):
 
-
-class XData(ModelBase):
-    """
-    Class representing x-axis data associated with a waveform.
-    """
-
-    __tablename__ = 'x_data'
+    __tablename__ = 'wave_data'
 
     id = Column(Integer, primary_key=True)
     x = Column(Float)
-    wave_id = Column(Integer, ForeignKey('waveforms.id'))
-
-    waveform = relationship("Waveform", backref=backref('x_data', order_by=id))
-
-    def __eq__(self, other):
-        return self.x == other.x
-
-    def __lt__(self, other):
-        return self.x < other.x
-
-
-class YData(ModelBase):
-    """
-    Class representing x-axis data associated with a waveform.
-    """
-
-    __tablename__ = 'y_data'
-
-    id = Column(Integer, primary_key=True)
     y = Column(Float)
     wave_id = Column(Integer, ForeignKey('waveforms.id'))
 
-    waveform = relationship("Waveform", backref=backref('y_data', order_by=id))
+    waveform = relationship("Waveform", backref=backref('wave_data', order_by=id))
 
     def __eq__(self, other):
-        return self.y == other.y
+        return self.x == other.x and self.y == other.y
 
     def __lt__(self, other):
-        return self.y < other.y
+        return self.x < other.x

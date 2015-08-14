@@ -18,6 +18,8 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 
 from scopeout.utilities import ScopeFinder as sf
 from scopeout.models import *
+from scopeout.config import ScopeOutConfig as Config
+from scopeout.database import ScopeOutDatabase as Database
 import scopeout.widgets as sw
 
 
@@ -50,19 +52,19 @@ class ThreadedClient(QtWidgets.QApplication):
 
     lock = threading.Lock()  # Lock for scope resource
 
-    stopFlag = threading.Event()  # Event representing termination of program
-    acqStopFlag = threading.Event()  # Event representing termination of continuous acquisition
-    channelSetFlag = threading.Event()  # Set when data channel has been successfully changed.
-    acquireFlag = threading.Event()  # Set during continuous acquisition when a waveform has been acquired.
-    continuousFlag = threading.Event()  # Set while program is finding scopes continuously
-    continuousFlag.set()
+    stop_flag = threading.Event()  # Event representing termination of program
+    acquisition_stop_flag = threading.Event()  # Event representing termination of continuous acquisition
+    channel_set_flag = threading.Event()  # Set when data channel has been successfully changed.
+    wave_acquired_flag = threading.Event()  # Set during continuous acquisition when a waveform has been acquired.
+    continuous_flag = threading.Event()  # Set while program is finding scopes continuously
+    continuous_flag.set()
 
-    statusChange = QtCore.pyqtSignal(str)  # Signal sent to GUI waveform counter.
-    scopeChange = QtCore.pyqtSignal(object)  # Signal sent to change the active oscilloscope.
+    status_change_signal = QtCore.pyqtSignal(str)  # Signal sent to GUI waveform counter.
+    scope_change_signal = QtCore.pyqtSignal(object)  # Signal sent to change the active oscilloscope.
     new_wave_signal = QtCore.pyqtSignal(Waveform)
     wave_added_to_db_signal = QtCore.pyqtSignal(Waveform)
 
-    def __init__(self, database, *args):
+    def __init__(self, *args):
         """
         Constructor
         """
@@ -74,31 +76,35 @@ class ThreadedClient(QtWidgets.QApplication):
 
         # save a reference to the app database.
         # all access to the database must occur in this thread.
-        self.database = database
+        self.database = None
+        self.db_session = None
 
         # start in waveform display mode by default.
-        self.histMode = False
+        self.hist_mode = False
+
+        # start in single-channel acquisiton mode by default.
+        self.multi_channel_acquisition = False
 
         # Create widgets.
-        self.acqControl = sw.acqControlWidget(None)
+        self.acquisition_control = sw.AcquisitionControlWidget(None)
         self.plot = sw.WavePlotWidget()
-        self.hist = sw.HistogramPlotWidget()
-        self.waveOptions = sw.waveOptionsTabWidget()
-        self.waveColumn = sw.WaveColumnWidget()
+        self.histogram = sw.HistogramPlotWidget()
+        self.wave_options = sw.WaveOptionsTabWidget()
+        self.wave_column = sw.WaveColumnWidget()
 
         self.logger.info("All Widgets initialized")
 
         widgets = {
-            'column': self.waveColumn,
+            'column': self.wave_column,
             'plot': self.plot,
-            'acqControl': self.acqControl,
-            'options': self.waveOptions,
-            'hist': self.hist
+            'acqControl': self.acquisition_control,
+            'options': self.wave_options,
+            'hist': self.histogram
         }
         commands = {'end': self.close_event}
 
         # Create main window that holds widgets.
-        self.mainWindow = sw.ScopeOutMainWindow(widgets, commands)
+        self.main_window = sw.ScopeOutMainWindow(widgets, commands)
 
         # Connect the various signals that shuttle data between widgets/threads.
         self.connect_signals()
@@ -108,42 +114,45 @@ class ThreadedClient(QtWidgets.QApplication):
         scope_finder_thread.start()
 
         # Show the GUI
-        self.mainWindow.show()
+        self.main_window.show()
 
+    # noinspection PyUnresolvedReferences
     def connect_signals(self):
         """
         Connects signals from subwidgets to appropriate slots.
         """
 
         # Client Signals
-        self.statusChange.connect(self.mainWindow.status)
-        self.scopeChange.connect(self.acqControl.setScope)
-        self.wave_added_to_db_signal.connect(self.waveColumn.addWave)
+        self.status_change_signal.connect(self.main_window.status)
+        self.scope_change_signal.connect(self.acquisition_control.set_active_oscilloscope)
+        self.wave_added_to_db_signal.connect(self.wave_column.add_wave)
         self.new_wave_signal.connect(self.plot_wave)
         self.new_wave_signal.connect(self.save_wave_to_db)
         self.new_wave_signal.connect(self.update_histogram)
 
         # Acq Control Signals
-        self.acqControl.acqButton.clicked.connect(partial(self.acq_event, 'now'))
-        self.acqControl.acqOnTrigButton.clicked.connect(partial(self.acq_event, 'trig'))
-        self.acqControl.contAcqButton.clicked.connect(partial(self.acq_event, 'cont'))
-        self.acqControl.channelComboBox.currentIndexChanged.connect(self.set_channel)
-        self.acqControl.autoSetButton.clicked.connect(self.autoset_event)
-        self.acqControl.acqStopButton.clicked.connect(self.acqStopFlag.set)
-        self.acqControl.holdPlotCheckBox.toggled.connect(self.waveColumn.setHold)
+        self.acquisition_control.acquire_button.clicked.connect(partial(self.acq_event, 'now'))
+        self.acquisition_control.acquire_on_trigger_button.clicked.connect(partial(self.acq_event, 'trig'))
+        self.acquisition_control.continuous_acquire_button.clicked.connect(partial(self.acq_event, 'cont'))
+        self.acquisition_control.channel_combobox.currentIndexChanged.connect(self.set_channel)
+        self.acquisition_control.autoset_button.clicked.connect(self.autoset_event)
+        self.acquisition_control.stop_acquisition_button.clicked.connect(self.acquisition_stop_flag.set)
+        self.acquisition_control.hold_plot_checkbox.toggled.connect(self.wave_column.set_plot_hold)
 
         #  Main window Signals
-        self.mainWindow.resetAction.triggered.connect(self.reset_event)
-        self.mainWindow.resetAction.triggered.connect(self.waveColumn.reset)
-        self.mainWindow.saveAction.triggered.connect(self.save_wave_to_disk)
-        self.mainWindow.savePropertiesAction.triggered.connect(self.save_properties_to_disk)
-        self.mainWindow.savePlotAction.triggered.connect(self.save_plot_to_disk)
+        self.main_window.reset_action.triggered.connect(self.reset)
+        self.main_window.reset_action.triggered.connect(self.wave_column.reset)
+        self.main_window.save_action.triggered.connect(self.save_wave_to_disk)
+        self.main_window.save_properties_action.triggered.connect(self.save_properties_to_disk)
+        self.main_window.save_plot_action.triggered.connect(self.save_plot_to_disk)
+        self.main_window.load_session_action.triggered.connect(self.load_database)
 
         #  Wave Column Signals
-        self.waveColumn.waveSignal.connect(self.plot_wave)
-        self.waveColumn.saveSignal.connect(self.save_wave_to_disk)
-        self.waveColumn.savePropsSignal.connect(self.save_properties_to_disk)
-        self.waveColumn.deleteSignal.connect(self.delete_wave)
+        self.wave_column.wave_signal.connect(self.plot_wave)
+        self.wave_column.save_signal.connect(self.save_wave_to_disk)
+        self.wave_column.save_properties_signal.connect(self.save_properties_to_disk)
+        self.wave_column.delete_signal.connect(self.delete_wave)
+        self.wave_column.delete_signal.connect(self.wave_column.reset)
 
         self.logger.info("Signals connected")
 
@@ -154,23 +163,25 @@ class ThreadedClient(QtWidgets.QApplication):
         :return:
         """
 
-        def save_data_to_db():
-            self.database.bulk_insert_x(wave.x_list, wave.id)
-            self.database.bulk_insert_y(wave.y_list, wave.id)
-            self.logger.info("Saved data for waveform #" + str(wave.id) + " to the database")
+        def save_data_to_db(x_list, y_list, id):
+            data = zip(x_list, y_list)
+            self.database.bulk_insert_data_points(data, id)
 
-        session = self.database.session()
-        session.add(wave)
-        session.commit()
+        self.db_session.add(wave)
+        try:
+            self.db_session.commit()
+            self.logger.info("Saved waveform #" + str(wave.id) + " to the database")
 
-        self.logger.info("Saved waveform #" + str(wave.id) + " to the database")
+            data_thread = threading.Thread(
+                target=partial(save_data_to_db, wave.x_list, wave.y_list, wave.id))
+            data_thread.start()
 
-        data_thread = threading.Thread(target=save_data_to_db)
-        data_thread.start()
+            self.wave_column.add_wave(wave)
+            self.update_wave_count(self.db_session.query(Waveform).count())
 
-        # self.wave_added_to_db_signal.emit(wave)
-        self.waveColumn.addWave(wave)
-        self.update_wave_count(session.query(Waveform).count())
+        except Exception as e:
+            self.logger.error(e)
+            self.db_session.rollback()
 
     def plot_wave(self, wave):
         """
@@ -180,7 +191,7 @@ class ThreadedClient(QtWidgets.QApplication):
         """
 
         if not self.histogram_mode:
-            self.plot.showPlot(wave, self.acqControl.plotHeld(), self.waveOptions.peakStart())
+            self.plot.show_plot(wave, self.acquisition_control.plot_held(), self.wave_options.show_peak_window)
 
     def update_histogram(self):
         """
@@ -189,9 +200,8 @@ class ThreadedClient(QtWidgets.QApplication):
 
         if self.histogram_mode:
 
-            session = self.database.session()
-            histogram_list = [hist for (hist,) in session.query(Waveform.integral).all()]
-            self.hist.showHist(histogram_list)
+            histogram_list = [hist for (hist,) in self.db_session.query(Waveform.integral).all()]
+            self.histogram.show_histogram(histogram_list)
 
     def acq_event(self, mode):
         """
@@ -200,12 +210,6 @@ class ThreadedClient(QtWidgets.QApplication):
         Parameters:
             :mode: A string defining the mode of acquisition: {'now' | 'trig' | 'cont'}
         """
-
-        def get_peak_detection_mode():
-            """
-            Determine the desired method of peak detection from the status of the tab options widget.
-            """
-            return self.waveOptions.getMode()
 
         def process_wave(wave):
             """
@@ -224,7 +228,8 @@ class ThreadedClient(QtWidgets.QApplication):
                     self.update_status(wave.error)
                     return
 
-                wave.detect_peak_and_integrate(get_peak_detection_mode(), self.waveOptions.getParameters())
+                wave.detect_peak_and_integrate(
+                    self.wave_options.peak_detection_mode, self.wave_options.peak_detection_parameters)
 
                 self.logger.info("Successfully acquired waveform from %s", wave.data_channel)
                 self.update_status('Waveform acquired on ' + wave.data_channel)
@@ -241,19 +246,19 @@ class ThreadedClient(QtWidgets.QApplication):
             self.multiAcq serves as the flag to initiate multi-channel acquisition.
             """
 
-            self.channelSetFlag.clear()
+            self.channel_set_flag.clear()
 
-            if self.activeScope is not None:
+            if self.active_scope is not None:
                 self.update_status('Acquiring data...')
 
-                if not self.multiAcq:
+                if not self.multi_channel_acquisition:
 
                     self.logger.info("Single channel acquisition")
 
                     try:
                         self.lock.acquire()
-                        self.activeScope.makeWaveform()
-                        wave = self.activeScope.getNextWaveform()
+                        self.active_scope.makeWaveform()
+                        wave = self.active_scope.getNextWaveform()
                     except Exception as e:
                         self.logger.error(e)
                         wave = None
@@ -261,7 +266,7 @@ class ThreadedClient(QtWidgets.QApplication):
                         if self.lock.locked():
                             self.lock.release()
 
-                    if wave is not None and (not self.stopFlag.isSet()):
+                    if wave is not None and (not self.stop_flag.isSet()):
                         process_wave(wave)
                     else:
                         self.update_status('Error on Waveform Acquisition')
@@ -269,18 +274,18 @@ class ThreadedClient(QtWidgets.QApplication):
                 else:
                     self.logger.info("Multichannel acquisition")
 
-                    self.plot.resetPlot()
+                    self.plot.reset_plot()
 
-                    for i in range(0, self.activeScope.numChannels):
+                    for i in range(0, self.active_scope.numChannels):
 
                         try:
                             self.logger.info("Acquiring data from channel %d", i + 1)
                             self.set_channel(i)
-                            self.channelSetFlag.wait()
+                            self.channel_set_flag.wait()
                             self.lock.acquire()
-                            self.activeScope.makeWaveform()
+                            self.active_scope.makeWaveform()
                             self.lock.release()
-                            wave = self.activeScope.getNextWaveform()
+                            wave = self.active_scope.getNextWaveform()
                         except Exception as e:
                             self.logger.error(e)
                             wave = None
@@ -288,14 +293,14 @@ class ThreadedClient(QtWidgets.QApplication):
                             if self.lock.locked():
                                 self.lock.release()
 
-                        if wave is not None and (not self.stopFlag.isSet()):
+                        if wave is not None and (not self.stop_flag.isSet()):
                             process_wave(wave)
                         else:
                             self.update_status('Error on Waveform Acquisition')
 
                     self.update_status('Acquired all active channels.')
-                    self.multiAcq = True
-                    self.mainWindow.update()
+                    self.multi_channel_acquisition = True
+                    self.main_window.update()
 
                 enable_buttons(True)
 
@@ -305,31 +310,31 @@ class ThreadedClient(QtWidgets.QApplication):
             """
 
             self.lock.acquire()
-            trigger_state = self.activeScope.getTriggerStatus()
+            trigger_state = self.active_scope.getTriggerStatus()
 
-            while trigger_state != 'TRIGGER' and not self.stopFlag.isSet() and not self.acqStopFlag.isSet():
-                trigger_state = self.activeScope.getTriggerStatus()
+            while trigger_state != 'TRIGGER' and not self.stop_flag.isSet() and not self.acquisition_stop_flag.isSet():
+                trigger_state = self.active_scope.getTriggerStatus()
 
-            if not self.stopFlag.isSet() and not self.acqStopFlag.isSet():
+            if not self.stop_flag.isSet() and not self.acquisition_stop_flag.isSet():
                 try:
-                    self.activeScope.makeWaveform()
-                    wave = self.activeScope.getNextWaveform()
+                    self.active_scope.makeWaveform()
+                    wave = self.active_scope.getNextWaveform()
                 except AttributeError:
                     wave = None
                 finally:
-                    self.acquireFlag.set()
+                    self.wave_acquired_flag.set()
                     if self.lock.locked():
                         self.lock.release()
 
-            if not self.stopFlag.isSet() and not self.acqStopFlag.isSet():
+            if not self.stop_flag.isSet() and not self.acquisition_stop_flag.isSet():
                 if wave is not None:
                     process_wave(wave)
-            elif self.acqStopFlag.isSet():
+            elif self.acquisition_stop_flag.isSet():
                 self.update_status('Acquisition terminated')
                 self.logger.info('Acquistion on trigger terminated.')
                 if mode == 'trig':
-                    self.acqStopFlag.clear()
-                self.acquireFlag.set()  # have to set this for continuous acq to halt properly
+                    self.acquisition_stop_flag.clear()
+                self.wave_acquired_flag.set()  # have to set this for continuous acq to halt properly
                 if self.lock.locked():
                     self.lock.release()
             else:
@@ -344,14 +349,14 @@ class ThreadedClient(QtWidgets.QApplication):
             Continually runs trigAcqThread until the stop signal is received.
             """
 
-            while not self.stopFlag.isSet() and not self.acqStopFlag.isSet():
-                self.acquireFlag.wait()
-                if not self.acqStopFlag.isSet():
+            while not self.stop_flag.isSet() and not self.acquisition_stop_flag.isSet():
+                self.wave_acquired_flag.wait()
+                if not self.acquisition_stop_flag.isSet():
                     acqThread = threading.Thread(target=acquire_on_trig_thread)
                     acqThread.start()
-                self.acquireFlag.clear()
+                self.wave_acquired_flag.clear()
 
-            self.acqStopFlag.clear()
+            self.acquisition_stop_flag.clear()
             self.update_status("Continuous Acquisiton Halted.")
             enable_buttons(True)
 
@@ -363,30 +368,34 @@ class ThreadedClient(QtWidgets.QApplication):
                 :bool: True to enable buttons, false to disable.
             """
 
-            self.acqControl.enableButtons(bool)
+            self.acquisition_control.enable_buttons(bool)
 
-        self.acqStopFlag.clear()
+        self.acquisition_stop_flag.clear()
+
+        if not self.database:
+            self.database = Database()
+            self.db_session = self.database.session()
 
         if mode == 'now':  # Single, Immediate acquisition
             enable_buttons(False)
             self.logger.info("Immediate acquisition Event")
-            acqThread = threading.Thread(target=immediate_acquisition_thread)
-            acqThread.start()
+            acquisition_thread = threading.Thread(target=immediate_acquisition_thread)
+            acquisition_thread.start()
 
         elif mode == 'trig':  # Acquire on trigger
             enable_buttons(False)
             self.update_status("Waiting for trigger...")
             self.logger.info("Acquisition on trigger event")
-            acqThread = threading.Thread(target=acquire_on_trig_thread)
-            acqThread.start()
+            acquisition_thread = threading.Thread(target=acquire_on_trig_thread)
+            acquisition_thread.start()
 
         elif mode == 'cont':  # Continuous Acquisiton
             enable_buttons(False)
             self.logger.info('Continuous Acquisition Event')
             self.update_status("Acquiring Continuously...")
-            self.acquireFlag.set()
-            acqThread = threading.Thread(target=continuous_acquisition_thread)
-            acqThread.start()
+            self.wave_acquired_flag.set()
+            acquisition_thread = threading.Thread(target=continuous_acquisition_thread)
+            acquisition_thread.start()
 
     def find_scope(self):
         """
@@ -395,40 +404,40 @@ class ThreadedClient(QtWidgets.QApplication):
 
         self.logger.info("Scope acquisition thread started")
 
-        while not self.stopFlag.isSet():
+        while not self.stop_flag.isSet():
 
-            if self.continuousFlag.isSet():
+            if self.continuous_flag.isSet():
 
                 with sf() as self.finder:
 
                     self.logger.info("Entered continuous checking mode")
 
-                    while self.continuousFlag.isSet() and not self.stopFlag.isSet():
+                    while self.continuous_flag.isSet() and not self.stop_flag.isSet():
 
-                        showedMessage = False
+                        showed_message = False
 
                         self.scopes = self.finder.refresh().get_scopes()
 
                         while not self.scopes:  # Check for scopes and connect if possible
-                            if self.stopFlag.isSet():
+                            if self.stop_flag.isSet():
                                 self.scopes = []
                                 break
-                            if not showedMessage:
+                            if not showed_message:
                                 self.update_status('No Oscilloscopes detected.')
-                                showedMessage = True
+                                showed_message = True
                             self.lock.acquire()
                             self.scopes = self.finder.refresh().get_scopes()
                             self.lock.release()
 
-                        if not self.stopFlag.isSet():  # Scope Found!
-                            self.activeScope = self.scopes[0]
-                            self.logger.info("Set active scope to %s", str(self.activeScope))
-                            self.scopeChange.emit(self.activeScope)
-                            self.update_status('Found ' + str(self.activeScope))
-                            self.mainWindow.setEnabled(True)
-                            self.continuousFlag.clear()
-                            self.checkTimer = threading.Timer(5.0, self.check_scope)
-                            self.checkTimer.start()
+                        if not self.stop_flag.isSet():  # Scope Found!
+                            self.active_scope = self.scopes[0]
+                            self.logger.info("Set active scope to %s", str(self.active_scope))
+                            self.scope_change_signal.emit(self.active_scope)
+                            self.update_status('Found ' + str(self.active_scope))
+                            self.main_window.setEnabled(True)
+                            self.continuous_flag.clear()
+                            self.check_timer = threading.Timer(5.0, self.check_scope)
+                            self.check_timer.start()
 
         self.logger.info("Scope acquisition thread ended")
 
@@ -436,7 +445,7 @@ class ThreadedClient(QtWidgets.QApplication):
         """
         Periodically confirms that scopes are still connected.
         """
-        if not self.stopFlag.isSet():
+        if not self.stop_flag.isSet():
             self.lock.acquire()
             connected = self.finder.check_scope(0)
             if self.lock.locked():
@@ -445,12 +454,12 @@ class ThreadedClient(QtWidgets.QApplication):
                 self.scopes = []
                 self.logger.info("Lost Connection to Oscilloscope(s)")
                 self.update_status("Lost Connection to Oscilloscope(s)")
-                self.mainWindow.setEnabled(False)
-                self.continuousFlag.set()
-                self.checkTimer.cancel()
-            elif not self.stopFlag.isSet():
-                self.checkTimer = threading.Timer(5.0, self.check_scope)
-                self.checkTimer.start()
+                self.main_window.setEnabled(False)
+                self.continuous_flag.set()
+                self.check_timer.cancel()
+            elif not self.stop_flag.isSet():
+                self.check_timer = threading.Timer(5.0, self.check_scope)
+                self.check_timer.start()
 
     def close_event(self):
         """
@@ -458,20 +467,22 @@ class ThreadedClient(QtWidgets.QApplication):
         """
 
         self.logger.info('Closing ScopeOut. \n')
-        self.stopFlag.set()
-        self.continuousFlag.clear()
-        self.checkTimer.cancel()
+        self.stop_flag.set()
+        self.continuous_flag.clear()
+        self.check_timer.cancel()
         self.quit()
 
-    def reset_event(self):
+    def reset(self):
         """
         Called to reset waveform and plot.
         """
 
-        Waveform.query.delete()
         self.update_wave_count(0)
-        self.plot.resetPlot()
+        self.plot.reset_plot()
         self.update_status('Data Reset.')
+
+        if self.db_session:
+            self.db_session.query(Waveform).delete()
 
     def set_channel(self, channel):
         """
@@ -481,13 +492,13 @@ class ThreadedClient(QtWidgets.QApplication):
             :channel: desired data channel
         """
 
-        channels = self.acqControl.getChannels()
+        channels = self.acquisition_control.data_channels
 
         def channel_thread():
 
             try:
                 self.lock.acquire()
-                if self.acqControl.scope.setDataChannel(channels[channel]):
+                if self.acquisition_control.scope.setDataChannel(channels[channel]):
                     self.logger.info('Successfully set data channel %s', channels[channel])
                     self.update_status('Data channel set to ' + channels[channel])
                 else:
@@ -497,35 +508,35 @@ class ThreadedClient(QtWidgets.QApplication):
                 self.logger.error(e)
             finally:
                 try:
-                    self.channelSetFlag.set()
+                    self.channel_set_flag.set()
                     if self.lock.locked():
                         self.lock.release()
                 except Exception as e:
                     self.logger.error(e)
 
-        self.channelSetFlag.clear()
+        self.channel_set_flag.clear()
         self.logger.info('Attempting to set data channel %s', channels[channel])
-        self.acqControl.contAcqButton.setEnabled(True)
-        self.acqControl.acqOnTrigButton.setEnabled(True)
+        self.acquisition_control.continuous_acquire_button.setEnabled(True)
+        self.acquisition_control.acquire_on_trigger_button.setEnabled(True)
 
-        if channel in range(0, self.acqControl.scope.numChannels):
-            self.multiAcq = False
-            setThread = threading.Thread(target=channel_thread)
-            setThread.start()
+        if channel in range(0, self.acquisition_control.scope.numChannels):
+            self.multi_channel_acquisition = False
+            set_channel_thread = threading.Thread(target=channel_thread)
+            set_channel_thread.start()
         elif channels[channel] == 'All':
             self.logger.info("Selected all data channels")
             self.update_status("Selected all data channels")
-            self.multiAcq = True
+            self.multi_channel_acquisition = True
         elif channels[channel] == 'Math':
             self.logger.info("selected Math data channel")
             self.update_status("selected Math data channel")
-            self.multiAcq = False
-            setThread = threading.Thread(target=channel_thread)
-            setThread.start()
+            self.multi_channel_acquisition = False
+            set_channel_thread = threading.Thread(target=channel_thread)
+            set_channel_thread.start()
             # No triggering in math mode
-            self.acqControl.contAcqButton.setEnabled(False)
-            self.acqControl.acqOnTrigButton.setEnabled(False)
-            self.acqControl.acqStopButton.setEnabled(False)
+            self.acquisition_control.continuous_acquire_button.setEnabled(False)
+            self.acquisition_control.acquire_on_trigger_button.setEnabled(False)
+            self.acquisition_control.stop_acquisition_button.setEnabled(False)
 
     def save_wave_to_disk(self, waveform=None):
         """
@@ -535,7 +546,7 @@ class ThreadedClient(QtWidgets.QApplication):
             :wave: a particular wave to save, if none is passed then all waves in memory are saved.
         """
 
-        def write_wave(outFile, wave):
+        def write_wave(out_file, wave):
             """
             Write contents of waveform dictionary to .csv file.
 
@@ -545,71 +556,70 @@ class ThreadedClient(QtWidgets.QApplication):
             """
 
             try:
-                outFile.write('"Waveform captured ' + str(wave.capture_time) + '"\n')
-                outFile.write('\n')
+                out_file.write('"Waveform captured ' + str(wave.capture_time) + '"\n')
+                out_file.write('\n')
                 # for field in wave:
                 #     if not isinstance(wave[field], (list, np.ndarray)):
                 #         outFile.write('"' + field + '",' + str(wave[field]))
                 #         outFile.write('\n')
                 # outFile.write('\n')
-                outFile.write('X,Y\n')
+                out_file.write('X,Y\n')
                 for i in range(0, len(wave.x_data)):
                     try:
-                        outFile.write(str(wave.x_data[i].x) + ',' + str(wave.y_data[i].y) + '\n')
+                        out_file.write(str(wave.x_data[i].x) + ',' + str(wave.y_data[i].y) + '\n')
                     except IndexError:
                         self.logger.error('X and Y data incompatible.')
 
-                outFile.write('\n')
+                out_file.write('\n')
 
             except Exception as e:
                 self.logger.error(e)
 
         if waveform:
             try:
-                waveDirectory = os.path.join(os.getcwd(), 'waveforms')
-                if not os.path.exists(waveDirectory):
-                    os.makedirs(waveDirectory)
+                wave_directory = os.path.join(os.getcwd(), 'waveforms')
+                if not os.path.exists(wave_directory):
+                    os.makedirs(wave_directory)
 
-                dayDirectory = os.path.join(waveDirectory, date.today().isoformat())
-                if not os.path.exists(dayDirectory):
-                    os.makedirs(dayDirectory)
+                day_directory = os.path.join(wave_directory, date.today().isoformat())
+                if not os.path.exists(day_directory):
+                    os.makedirs(day_directory)
 
-                defaultFile = 'Capture' + datetime.now().strftime('%m-%d-%H-%M-%S') + '.csv'
-                defaultFile = os.path.join(dayDirectory, defaultFile).replace('\\', '/')
+                default_file = 'Capture' + datetime.now().strftime('%m-%d-%H-%M-%S') + '.csv'
+                default_file = os.path.join(day_directory, default_file).replace('\\', '/')
 
-                fileName = QtWidgets.QFileDialog.getSaveFileName(self.mainWindow, 'Save As', defaultFile)[0]
-                with open(fileName, 'w') as saveFile:
+                file_name = QtWidgets.QFileDialog.getSaveFileName(self.main_window, 'Save As', default_file)[0]
+                with open(file_name, 'w') as saveFile:
                     write_wave(saveFile, waveform)
 
-                self.logger.info('Waveform saved to ' + fileName)
-                self.update_status('Waveform saved to ' + fileName)
+                self.logger.info('Waveform saved to ' + file_name)
+                self.update_status('Waveform saved to ' + file_name)
 
             except Exception as e:
                 self.logger.error(e)
 
         else:
-            session = self.database.session()
-            wave_count = session.query(Waveform).count()
+            wave_count = self.db_session.query(Waveform).count()
             if wave_count:
                 try:
-                    waveDirectory = os.path.join(os.getcwd(), 'waveforms')
-                    if not os.path.exists(waveDirectory):
-                        os.makedirs(waveDirectory)
+                    wave_directory = os.path.join(os.getcwd(), 'waveforms')
+                    if not os.path.exists(wave_directory):
+                        os.makedirs(wave_directory)
 
-                    dayDirectory = os.path.join(waveDirectory, date.today().isoformat())
-                    if not os.path.exists(dayDirectory):
-                        os.makedirs(dayDirectory)
+                    day_directory = os.path.join(wave_directory, date.today().isoformat())
+                    if not os.path.exists(day_directory):
+                        os.makedirs(day_directory)
 
-                    defaultFile = 'Capture' + datetime.now().strftime('%m-%d-%H-%M-%S') + '.csv'
-                    defaultFile = os.path.join(dayDirectory, defaultFile).replace('\\', '/')
+                    default_file = 'Capture' + datetime.now().strftime('%m-%d-%H-%M-%S') + '.csv'
+                    default_file = os.path.join(day_directory, default_file).replace('\\', '/')
 
-                    fileName = QtWidgets.QFileDialog.getSaveFileName(self.mainWindow, 'Save As', defaultFile)[0]
-                    with open(fileName, 'w') as saveFile:
-                        for wave in session.query(Waveform):
+                    file_name = QtWidgets.QFileDialog.getSaveFileName(self.main_window, 'Save As', default_file)[0]
+                    with open(file_name, 'w') as saveFile:
+                        for wave in self.db_session.query(Waveform):
                             write_wave(saveFile, wave)
 
-                    self.logger.info("%d waveforms saved to %s", wave_count, fileName)
-                    self.update_status('Waveforms saved to ' + fileName)
+                    self.logger.info("%d waveforms saved to %s", wave_count, file_name)
+                    self.update_status('Waveforms saved to ' + file_name)
 
                 except Exception as e:
                     self.logger.error(e)
@@ -631,7 +641,7 @@ class ThreadedClient(QtWidgets.QApplication):
             A Modal dialog for acquiring the fields in the waveform which the user desires to save.
             """
 
-            def __init__(self, callback, waveform={}):
+            def __init__(self, callback, wave={}):
                 """
                 Constructor.
 
@@ -666,20 +676,21 @@ class ThreadedClient(QtWidgets.QApplication):
                 layout = QtWidgets.QGridLayout(self)
                 x, y = 0, 0
                 self.checks = []
-                for field in waveform:
-                    check = QtWidgets.QCheckBox(field, self)
-                    self.checks.append(check)
-                    layout.addWidget(check, y, x)
-                    if y == len(waveform) / 2:
-                        maxY = y
-                        y = 0
-                        x += 1
-                    else:
-                        y += 1
+                for key, value in wave.__dict__.items():
+                    if not key.startswith('__') and value is not None:
+                        check = QtWidgets.QCheckBox(key, self)
+                        self.checks.append(check)
+                        layout.addWidget(check, y, x)
+                        if y == len(wave) / 2:
+                            y_max = y
+                            y = 0
+                            x += 1
+                        else:
+                            y += 1
 
-                okButton = QtWidgets.QPushButton('OK', self)
-                okButton.released.connect(self.accept)
-                layout.addWidget(okButton, maxY, 0, 1, 2)
+                ok_button = QtWidgets.QPushButton('OK', self)
+                ok_button.released.connect(self.accept)
+                layout.addWidget(ok_button, y_max, 0, 1, 2)
                 self.setLayout(layout)
 
             def accept(self):
@@ -699,74 +710,75 @@ class ThreadedClient(QtWidgets.QApplication):
                 s = self.style()
                 s.drawPrimitive(QtWidgets.QStyle.PE_Widget, opt, p, self)
 
-        def write_properties(outFile, waves, fields=[]):
+        def write_properties(out_file, waves, fields=[]):
             """
-            Writes the selected properties of a waveform dictionary to a .csv file.
+            Writes the selected properties of a Waveform to a .csv file.
 
             Parameters:
                 :outFile: an opened file object to be written to.
-                :waves: the list of waveform dictionaries to be processed.
+                :waves: the list of Waveforms to be processed.
                 :fields: an array containing the names of the selected properties.
             """
 
             try:
-                outFile.write("Waveform properties captured {} \n\n".format(str(datetime.now())))
-                for field in fields: outFile.write(field + ',')
-                outFile.write('\n')
+                out_file.write("Waveform properties captured {} \n\n".format(str(datetime.now())))
+                for field in fields:
+                    out_file.write(field + ',')
+                out_file.write('\n')
                 for wave in waves:
-                    for field in fields: outFile.write(str(wave[field]) + ',')
-                    outFile.write('\n')
+                    for field in fields:
+                        out_file.write(str(getattr(wave, field)) + ',')
+                    out_file.write('\n')
 
             except Exception as e:
                 self.logger.error(e)
 
         if waveform:
             try:
-                waveDirectory = os.path.join(os.getcwd(), 'waveforms')
-                if not os.path.exists(waveDirectory):
-                    os.makedirs(waveDirectory)
+                wave_directory = os.path.join(os.getcwd(), 'waveforms')
+                if not os.path.exists(wave_directory):
+                    os.makedirs(wave_directory)
 
-                dayDirectory = os.path.join(waveDirectory, date.today().isoformat())
-                if not os.path.exists(dayDirectory):
-                    os.makedirs(dayDirectory)
+                day_directory = os.path.join(wave_directory, date.today().isoformat())
+                if not os.path.exists(day_directory):
+                    os.makedirs(day_directory)
 
-                defaultFile = 'Properties' + datetime.now().strftime('%m-%d-%H-%M-%S') + '.csv'
-                defaultFile = os.path.join(dayDirectory, defaultFile).replace('\\', '/')
+                default_file = 'Properties' + datetime.now().strftime('%m-%d-%H-%M-%S') + '.csv'
+                default_file = os.path.join(day_directory, default_file).replace('\\', '/')
 
-                fileName = QtWidgets.QFileDialog.getSaveFileName(self.mainWindow, 'Save As', defaultFile)[0]
-                with open(fileName, 'w') as saveFile:
+                file_name = QtWidgets.QFileDialog.getSaveFileName(self.main_window, 'Save As', default_file)[0]
+                with open(file_name, 'w') as saveFile:
                     SelectPropertiesPopup(partial(
                         write_properties, outFile=saveFile, waves=[waveform]), waveform).exec()
 
-                self.logger.info('Waveform properties saved to ' + fileName)
-                self.update_status('Waveform properties saved to ' + fileName)
+                self.logger.info('Waveform properties saved to ' + file_name)
+                self.update_status('Waveform properties saved to ' + file_name)
 
             except Exception as e:
                 self.logger.error(e)
 
         else:
-            session = self.database.session()
-            wave_count = session.query(Waveform).count()
+            wave_count = self.db_session.query(Waveform).count()
             if wave_count:
                 try:
-                    waveDirectory = os.path.join(os.getcwd(), 'waveforms')
-                    if not os.path.exists(waveDirectory):
-                        os.makedirs(waveDirectory)
+                    wave_directory = os.path.join(os.getcwd(), 'waveforms')
+                    if not os.path.exists(wave_directory):
+                        os.makedirs(wave_directory)
 
-                    dayDirectory = os.path.join(waveDirectory, date.today().isoformat())
-                    if not os.path.exists(dayDirectory):
-                        os.makedirs(dayDirectory)
+                    day_directory = os.path.join(wave_directory, date.today().isoformat())
+                    if not os.path.exists(day_directory):
+                        os.makedirs(day_directory)
 
-                    defaultFile = 'Properties' + datetime.now().strftime('%m-%d-%H-%M-%S') + '.csv'
-                    defaultFile = os.path.join(dayDirectory, defaultFile).replace('\\', '/')
+                    default_file = 'Properties' + datetime.now().strftime('%m-%d-%H-%M-%S') + '.csv'
+                    default_file = os.path.join(day_directory, default_file).replace('\\', '/')
 
-                    fileName = QtWidgets.QFileDialog.getSaveFileName(self.mainWindow, 'Save As', defaultFile)[0]
-                    with open(fileName, 'w') as saveFile:
+                    file_name = QtWidgets.QFileDialog.getSaveFileName(self.main_window, 'Save As', default_file)[0]
+                    with open(file_name, 'w') as saveFile:
                         SelectPropertiesPopup(partial(
                             write_properties, outFile=saveFile, waves=self.waveList), self.waveList[0]).exec()
 
-                    self.logger.info("Properties of %d waveforms saved to %s", len(self.waveList), fileName)
-                    self.update_status("Properties of {} waveforms saved to {}".format(len(self.waveList), fileName))
+                    self.logger.info("Properties of %d waveforms saved to %s", len(self.waveList), file_name)
+                    self.update_status("Properties of {} waveforms saved to {}".format(len(self.waveList), file_name))
 
                 except Exception as e:
                     self.logger.error(e)
@@ -783,19 +795,19 @@ class ThreadedClient(QtWidgets.QApplication):
             self.update_status('No plot to save.')
 
         else:
-            plotDirectory = os.path.join(os.getcwd(), 'plots')
-            if not os.path.exists(plotDirectory):
-                os.makedirs(plotDirectory)
+            plot_directory = os.path.join(os.getcwd(), 'plots')
+            if not os.path.exists(plot_directory):
+                os.makedirs(plot_directory)
 
-            dayDirectory = os.path.join(plotDirectory, date.today().isoformat())
-            if not os.path.exists(dayDirectory):
-                os.makedirs(dayDirectory)
+            day_directory = os.path.join(plot_directory, date.today().isoformat())
+            if not os.path.exists(day_directory):
+                os.makedirs(day_directory)
 
-            defaultFile = 'Plot' + datetime.now().strftime('%m-%d-%H-%M-%S') + '.png'
-            defaultFile = os.path.join(dayDirectory, defaultFile).replace('\\', '/')
+            default_file = 'Plot' + datetime.now().strftime('%m-%d-%H-%M-%S') + '.png'
+            default_file = os.path.join(day_directory, default_file).replace('\\', '/')
 
-            fileName = QtWidgets.QFileDialog.getSaveFileName(self.mainWindow, 'Save As', defaultFile)[0]
-            if self.plot.savePlot(fileName):
+            file_name = QtWidgets.QFileDialog.getSaveFileName(self.main_window, 'Save As', default_file)[0]
+            if self.plot.save_plot(file_name):
                 self.update_status("Plot saved successfully")
             else:
                 self.update_status("Error ")
@@ -808,7 +820,7 @@ class ThreadedClient(QtWidgets.QApplication):
             :message: The string to be printed.
         """
 
-        self.statusChange.emit(message)
+        self.status_change_signal.emit(message)
 
     def autoset_event(self):
         """
@@ -821,7 +833,7 @@ class ThreadedClient(QtWidgets.QApplication):
             """
 
             self.lock.acquire()
-            self.acqControl.scope.autoSet()
+            self.acquisition_control.scope.autoSet()
             self.lock.release()
 
         self.logger.info("Starting autoSet")
@@ -833,7 +845,7 @@ class ThreadedClient(QtWidgets.QApplication):
         Updates the counter displaying the total number of acquired waveforms.
         """
 
-        self.waveOptions.updateCount(waves)
+        self.wave_options.update_wave_counter(waves)
 
     @property
     def histogram_mode(self):
@@ -841,18 +853,64 @@ class ThreadedClient(QtWidgets.QApplication):
         Check whether to display histogram or wave plot.
         """
 
-        return self.mainWindow.histogramModeAction.isChecked()
+        return self.main_window.histogram_mode_action.isChecked()
 
     def delete_wave(self, wave):
         """
         Removes the given waveform from the database.
         :param wave: the waveform to delete.
         """
+
+        def delete_thread():
+
+            self.db_session.delete(wave)
+            self.db_session.commit()
+            self.update_wave_count(self.db_session.query(Waveform).count())
+
         try:
-            session = self.database.session()
-            session.delete(wave)
-            session.commit()
-            self.update_wave_count(session.query(Waveform).count())
+            del_thread = threading.Thread(target=delete_thread)
+            del_thread.start()
+        except Exception as e:
+            self.logger.error(e)
+
+    def load_database(self):
+        """
+        Connect to an old database file, and load its waves into memory if it is valid.
+        """
+
+        try:
+            default_file = Config.get('Database', 'database_dir')
+            database_path = QtWidgets.QFileDialog.getOpenFileName(self.main_window, 'Open', default_file)[0]
+
+            self.update_status('Loading waves from ' + database_path)
+            self.logger.info('Disconnecting from database')
+
+            # clear old session
+            if self.db_session:
+                self.db_session.close()
+
+            # reset GUI
+            self.reset()
+
+            self.logger.info('Loading waves from' + database_path)
+
+            # make new connection
+            self.database = Database(database_path)
+            if self.database.is_setup:
+                self.db_session = self.database.session()
+
+            # get waves
+            loaded_waves = self.db_session.query(Waveform).all()
+            if not len(loaded_waves):
+                raise RuntimeError('Database contained no waves.')
+
+            # display waves to user.
+            [self.wave_column.add_wave(wave) for wave in loaded_waves]
+            if not self.histogram_mode:
+                self.plot.show_plot(loaded_waves[-1])
+            else:
+                self.update_histogram()
 
         except Exception as e:
             self.logger.error(e)
+            self.update_status('Failed to load waves from ' + database_path)

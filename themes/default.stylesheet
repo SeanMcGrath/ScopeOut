@@ -14,18 +14,18 @@ QPushButton {
   font-weight: bold;
 }
 
-acqControlWidget QPushButton {
+AcquisitionControlWidget QPushButton {
   border-radius: 2px;
   background-color: #673AB7;
   color: white;
   margin-bottom: 4px;
 }
 
-acqControlWidget QPushButton:hover {
+AcquisitionControlWidget QPushButton:hover {
   background-color: #5E35B1;
 }
 
-acqControlWidget QPushButton:pressed {
+AcquisitionControlWidget QPushButton:pressed {
   background-color: #512DA8;
 }
 
@@ -101,28 +101,28 @@ QMenuBar::item {
    border-radius: 4px;
 }
 
-acqControlWidget {
+AcquisitionControlWidget {
   max-width: 200px;
   background-color: #212121;
 }
 
-acqControlWidget QPushButton {
+AcquisitionControlWidget QPushButton {
   margin-bottom: 5px;
 }
 
-acqControlWidget QPushButton[type='stop'] {
+AcquisitionControlWidget QPushButton[type='stop'] {
   background-color: #F44336;
 }
 
-acqControlWidget QPushButton[type='stop']::hover {
+AcquisitionControlWidget QPushButton[type='stop']::hover {
   background-color: #E53935
 }
 
-acqControlWidget QPushButton[type='stop']::pressed {
+AcquisitionControlWidget QPushButton[type='stop']::pressed {
   background-color: #D32F2F
 }
 
-acqControlWidget QPushButton::disabled {
+AcquisitionControlWidget QPushButton::disabled {
   background-color: gray;
   color: black;
 }

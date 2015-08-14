@@ -44,9 +44,7 @@ def main():
 
     logger.info("Initializing ScopeOut...")
 
-    database = Database()
-
-    gui = ThreadedClient(database, sys.argv)
+    gui = ThreadedClient(sys.argv)
 
     logger.info("ScopeOut initialization completed")
 

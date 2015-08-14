@@ -20,7 +20,7 @@ class ScopeOutConfig:
     def get_configuration(cls):
         parser = ConfigParser()
         
-        parser.read(['../config.cfg', os.path.expanduser('~/.ScopeOut/config.cfg')])
+        parser.read(['../config.cfg', './config.cfg', os.path.expanduser('~/.ScopeOut/config.cfg')])
 
         # Check to make sure config file has all require sections
         if not set(REQUIRED_SECTIONS).issubset(parser.sections()):
