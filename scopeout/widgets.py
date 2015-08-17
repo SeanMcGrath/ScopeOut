@@ -135,7 +135,7 @@ class ScopeOutPlotWidget(FigureCanvas):
         [t.set_color('white') for t in self.axes.yaxis.get_ticklabels()]
         [t.set_color('white') for t in self.axes.xaxis.get_ticklabels()]
 
-    def displayCoords(self, event):
+    def display_coords(self, event):
         """
         display the coordinates of the mouse on the graph.
 
@@ -190,6 +190,7 @@ class ScopeOutPlotWidget(FigureCanvas):
         [t.set_color('white') for t in self.axes.yaxis.get_ticklabels()]
         [t.set_color('white') for t in self.axes.xaxis.get_ticklabels()]
         self.coords = self.axes.text(0, 0, '')
+        self.repaint()
         self.logger.info("Plot Reset")
 
     def save_plot(self, filename):
@@ -233,7 +234,7 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 
         self.widgets = widgets
 
-        self.endCommand = commands['end']
+        self.end_command = commands['end']
 
         self.central_widget = QtWidgets.QWidget(self)
         self.layout = QtWidgets.QGridLayout(self.central_widget)
@@ -415,28 +416,23 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
         self.logger.info("Close Event accepted")
         for widget in self.widgets:
             self.widgets[widget].close()
-        self.endCommand()
+        self.end_command()
         self.close()
 
-    def setEnabled(self, bool):
+    def setEnabled(self, enabled):
         """
         Enable/disable this widget.
 
         Parameters:
-            :bool: True to enable, false to disable.
+            :enabled: True to enable, false to disable.
         """
 
-        if bool:
+        if enabled:
             self.logger.info("Main Window enabled")
         else:
             self.logger.info("Main Window disabled")
 
-        for widget in self.widgets:
-            self.widgets[widget].setEnabled(bool)
-
-        self.menubar.actions()[1].setEnabled(bool)
-        self.menubar.actions()[0].menu().actions()[1].setEnabled(bool)
-        self.menubar.actions()[0].menu().actions()[2].setEnabled(bool)
+        self.widgets['acqControl'].setEnabled(enabled)
 
     def status(self, message):
         """
@@ -503,7 +499,7 @@ class WavePlotWidget(ScopeOutPlotWidget):
         if show_peak and wave.peak_start >= 0:
             self.plot_vertical_lines([wave.x_list[wave.peak_start], wave.x_list[wave.peak_end]])
         cursor = Cursor(self.axes, useblit=True, color='black', linewidth=1)
-        cursor.connect_event('motion_notify_event', self.displayCoords)
+        cursor.connect_event('motion_notify_event', self.display_coords)
         self.fig.canvas.draw()
 
         self.logger.info('plotting completed')
@@ -833,8 +829,8 @@ class WaveOptionsTabWidget(ScopeOutWidget):
                 :bool: True to enable, false to disable.
             """
 
-            self.startThresholdInput.setEnabled(bool)
-            self.endThresholdInput.setEnabled(bool)
+            self.start_threshold_input.setEnabled(bool)
+            self.end_threshold_input.setEnabled(bool)
 
     class HybridPeakTab(ScopeOutWidget):
         """
@@ -867,8 +863,8 @@ class WaveOptionsTabWidget(ScopeOutWidget):
             self.peak_width_input.setMaximum(1000)
             self.peak_width_input.setMinimum(0)
             self.peak_width_input.setValue(10)
-            self.peakWidthUnits = QtWidgets.QComboBox(self)
-            self.peakWidthUnits.addItems(self.units.keys())
+            self.peak_width_units = QtWidgets.QComboBox(self)
+            self.peak_width_units.addItems(self.units.keys())
 
             self.layout = QtWidgets.QGridLayout(self)
             self.layout.setContentsMargins(20, 5, 20, 5)
@@ -878,7 +874,7 @@ class WaveOptionsTabWidget(ScopeOutWidget):
             self.layout.addWidget(self.start_threshold_input, 0, 1)
             self.layout.addWidget(self.peak_width_label, 1, 0)
             self.layout.addWidget(self.peak_width_input, 1, 1)
-            self.layout.addWidget(self.peakWidthUnits, 1, 2)
+            self.layout.addWidget(self.peak_width_units, 1, 2)
             self.setLayout(self.layout)
 
             for i in range(0, self.layout.count()):
@@ -893,7 +889,7 @@ class WaveOptionsTabWidget(ScopeOutWidget):
             """
 
             return [self.start_threshold_input.value() / 100.0,
-                    self.peak_width_input.value() * self.units[self.peakWidthUnits.currentText()]]
+                    self.peak_width_input.value() * self.units[self.peak_width_units.currentText()]]
 
         def setEnabled(self, bool):
             """
@@ -1034,11 +1030,11 @@ class WaveColumnWidget(ScopeOutScrollArea):
             self.addAction(separator)
 
             self.save_action = QtWidgets.QAction('Save Waveform', self)
-            self.save_action.triggered.connect(lambda: self.saveSignal.emit(self.wave))
+            self.save_action.triggered.connect(lambda: self.save_signal.emit(self.wave))
             self.addAction(self.save_action)
 
             save_properties_action = QtWidgets.QAction('Save Properties', self)
-            save_properties_action.triggered.connect(lambda: self.savePropsSignal.emit(self.wave))
+            save_properties_action.triggered.connect(lambda: self.save_properties_signal.emit(self.wave))
             self.addAction(save_properties_action)
 
             separator = QtWidgets.QAction(self)
@@ -1046,7 +1042,7 @@ class WaveColumnWidget(ScopeOutScrollArea):
             self.addAction(separator)
 
             delete_action = QtWidgets.QAction('Delete Waveform', self)
-            delete_action.triggered.connect(lambda: self.deleteSignal.emit(self))
+            delete_action.triggered.connect(lambda: self.delete_signal.emit(self))
             self.addAction(delete_action)
 
             # Setup Widgets
@@ -1056,7 +1052,7 @@ class WaveColumnWidget(ScopeOutScrollArea):
             self.wave_time = QtWidgets.QLabel('Time: ' + display_time, self)
             self.wave_id = QtWidgets.QLabel(str(wave.id), self)
             self.delete_button = QtWidgets.QPushButton('X', self)
-            self.delete_button.clicked.connect(lambda: self.deleteSignal.emit(self))
+            self.delete_button.clicked.connect(lambda: self.delete_signal.emit(self))
 
             # Layout
             self.layout = QtWidgets.QGridLayout(self)
@@ -1099,8 +1095,6 @@ class WaveColumnWidget(ScopeOutScrollArea):
             Fetches the wave's y data if it is not loaded.
             """
 
-            if not self.wave.y_list:
-                self.wave.y_list = [point.y for point in self.wave.wave_data]
             self.wave_signal.emit(self.wave)
             self.setProperty('state', 'active')
             self.style().unpolish(self)
@@ -1153,9 +1147,10 @@ class WaveColumnWidget(ScopeOutScrollArea):
 
                 # Add base property readouts
                 y = 1
-                for key, value in wave.__dict__.items():
-                    if not isinstance(getattr(wave, key), list) and key.lower() not in ['x_data', 'y_data']:
-                        label = QtWidgets.QLabel('  ' + key, self)
+                for key, value in sorted(wave.__dict__.items()):
+                    if not isinstance(getattr(wave, key), list) and not key.startswith('_'):
+                        label_text = key.title().replace('_', ' ')
+                        label = QtWidgets.QLabel('  ' + label_text, self)
                         layout.addWidget(label, y, 0)
                         value = QtWidgets.QLabel('{}'.format(getattr(wave, key)), self)
                         layout.addWidget(value, y, 1)
@@ -1167,8 +1162,8 @@ class WaveColumnWidget(ScopeOutScrollArea):
                 if wave.peak_start < 0:
                     layout.addWidget(QtWidgets.QLabel('  No Peak Detected', self), y + 3, 0)
                 else:
-                    peak_start_string = str(wave.x_data[wave.peak_start].x) + ' ' + str(wave.x_unit)
-                    peak_end_string = str(wave.x_data[wave.peak_end].x) + ' ' + str(wave.x_unit)
+                    peak_start_string = str(wave.x_list[wave.peak_start]) + ' ' + str(wave.x_unit)
+                    peak_end_string = str(wave.x_list[wave.peak_end]) + ' ' + str(wave.x_unit)
                     peak_width_string = "{} {}".format(
                         wave.peak_end - wave.peak_start, wave.x_unit)
                     layout.addWidget(QtWidgets.QLabel('  Peak Start', self), y + 3, 0)
@@ -1272,7 +1267,7 @@ class WaveColumnWidget(ScopeOutScrollArea):
                 self.logger.error(e)
                 break
 
-        self.show()
+        self.repaint()
 
     def reset_colors(self):
         """
@@ -1296,3 +1291,75 @@ class WaveColumnWidget(ScopeOutScrollArea):
         """
 
         self.hold = bool
+
+
+class SelectPropertiesDialog(QtWidgets.QDialog):
+    """
+    A Modal dialog for acquiring the fields in the waveform which the user desires to save.
+    """
+
+    property_signal = QtCore.pyqtSignal(list)
+
+    def __init__(self, wave):
+        """
+        Constructor.
+        :param wave: A Waveform, from which the available properties will be collected.
+        """
+
+        QtWidgets.QDialog.__init__(self)
+        self.setWindowTitle('Select Properties to Save')
+        # Have to do styling manually
+        self.setStyleSheet(
+            """
+            QPushButton {
+                border-radius: 2px;
+                background-color: #673AB7;
+                max-width: 100px;
+                padding: 6px;
+                height: 20px;
+                color: white;
+                font-weight: bold;
+                margin-bottom: 4px;
+            }
+            QPushButton:hover {background-color: #5E35B1;}
+            QPushButton:pressed {background-color: #512DA8;}
+            QCheckBox {color: white;}
+            QDialog {background-color: #3C3C3C;}
+            """)
+
+        layout = QtWidgets.QGridLayout(self)
+        x, y = 0, 0
+        self.checks = []
+        wave_dict = sorted(wave.__dict__.items())
+        for key, value in wave_dict:
+            if not isinstance(getattr(wave, key), list) and not key.startswith('_'):
+                check = QtWidgets.QCheckBox(key, self)
+                self.checks.append(check)
+                layout.addWidget(check, y, x)
+                # if y == len(wave_dict) / 2:
+                #     y_max = y
+                #     y = 0
+                #     x += 1
+                # else:
+                y += 1
+
+        ok_button = QtWidgets.QPushButton('OK', self)
+        ok_button.released.connect(self.accept)
+        layout.addWidget(ok_button, y, 0, 1, 2)
+        self.setLayout(layout)
+
+    def accept(self):
+
+        self.property_signal.emit([check.text() for check in self.checks if check.isChecked()])
+        self.done(0)
+
+    def paintEvent(self, pe):
+        """
+        allows stylesheet to be used for custom widget.
+        """
+
+        opt = QtWidgets.QStyleOption()
+        opt.initFrom(self)
+        p = QtGui.QPainter(self)
+        s = self.style()
+        s.drawPrimitive(QtWidgets.QStyle.PE_Widget, opt, p, self)

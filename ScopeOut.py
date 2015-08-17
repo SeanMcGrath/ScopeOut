@@ -7,8 +7,7 @@ import signal
 import logging
 import os
 
-from scopeout.gui import ThreadedClient
-from scopeout.database import ScopeOutDatabase as Database
+from scopeout.client import ThreadedClient
 from scopeout.config import ScopeOutConfig as Config
 
 

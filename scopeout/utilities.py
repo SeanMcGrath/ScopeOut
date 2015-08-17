@@ -7,12 +7,11 @@ as Oscilloscope objects.
 
 """
 
-import visa
 import logging
 import re
-import os
 
-from scopeout.config import ScopeOutConfig as Config
+from visa import ResourceManager, VisaIOError
+
 from scopeout import oscilloscopes
 
 
@@ -26,6 +25,7 @@ class ScopeFinder:
         self.logger = logging.getLogger('scopeout.utilities.ScopeFinder')
         self.logger.info('ScopeFinder Initialized')
 
+        self.resource_manager = ResourceManager()
         self.resources = []
         self.instruments = []
         self.scopes = []
@@ -72,10 +72,9 @@ class ScopeFinder:
         self.scopes = []
         self.resources = []
 
-        rm = visa.ResourceManager()
         try:
-            self.resources = rm.list_resources('USB?*')
-        except visa.VisaIOError as e:
+            self.resources = self.resource_manager.list_resources('USB?*')
+        except VisaIOError as e:
             self.resources = []
 
         if self.resources:
@@ -83,7 +82,7 @@ class ScopeFinder:
             self.instruments = []
             for resource in self.resources:
                 try:
-                    inst = rm.get_instrument(resource)
+                    inst = self.resource_manager.get_instrument(resource)
                     inst.timeout = 10000
                     self.instruments.append(inst)
                     self.logger.info('Resource {} converted to instrument'.format(resource))
@@ -105,7 +104,7 @@ class ScopeFinder:
                         self.logger.info("Found %s", str(scope))
 
                     # Support for other scopes to be implemented here!
-                except visa.VisaIOError:
+                except VisaIOError:
                     self.logger.error('{} could not be converted to an oscilloscope'.format(ins))
         return self
 
@@ -126,37 +125,3 @@ class ScopeFinder:
                 return False
         except:
             return False
-
-
-def get_logger(scope_name):
-    """
-    Create a new logger that writes to the log file specified in the configuration.
-    :param scope_name: The fully qualified name of the scope of the logger, e.g
-        scopeout.utilities.get_logger
-    :return: a new logger, ready for use
-    """
-
-    logger = logging.getLogger(scope_name)
-
-    # create file handler which logs even debug messages
-    log_dir = Config.get('Logging', 'log_dir')
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
-    fh = logging.handlers.RotatingFileHandler(
-        os.path.join(log_dir, Config.get('Logging', 'log_file')))
-    fh.setLevel(logging.INFO)
-
-    # create console handler with a higher log level
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.ERROR)
-
-    # create formatter and add it to the handlers
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    fh.setFormatter(formatter)
-    ch.setFormatter(formatter)
-
-    # add the handlers to the logger
-    logger.addHandler(fh)
-    logger.addHandler(ch)
-
-    return logger

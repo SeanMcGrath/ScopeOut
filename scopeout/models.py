@@ -46,7 +46,8 @@ class Waveform(ModelBase):
     integral = Column(Float)
 
     # Attributes to be accessed during runtime, not saved
-    y_list = []
+    _y_list = []
+    _x_list = []
 
     @property
     def x_list(self):
@@ -55,8 +56,16 @@ class Waveform(ModelBase):
 
         :return: the x array needed to plot a waveform.
         """
-        return list(np.arange(0, self.number_of_points * self.x_increment,
+        if not self._x_list:
+            self._x_list = list(np.arange(0, self.number_of_points * self.x_increment,
                          self.x_increment))
+        return self._x_list
+
+    @property
+    def y_list(self):
+        if not self._y_list:
+            self._y_list = [point.y for point in self.wave_data]
+        return self._y_list
 
     def find_peak_smart(self, thresholds):
         """

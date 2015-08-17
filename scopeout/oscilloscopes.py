@@ -595,7 +595,7 @@ class TDS2024B(GenericOscilloscope):
     WAVEFORM COMMANDS
     """
 
-    def waveformSetup(self):
+    def setup_waveform(self):
         """
         Fetch all the parameters needed to parse the wave data.
         will be passed the waveform object.
@@ -637,7 +637,7 @@ class TDS2024B(GenericOscilloscope):
         except Exception as e:
             self.logger.error(e)
 
-    def getCurve(self, wave):
+    def get_curve(self, wave):
         """
         Set up waveform acquisition and get curve data.
 
@@ -658,17 +658,18 @@ class TDS2024B(GenericOscilloscope):
             self.logger.error("Could not decode scope output to ascii")
             raise e
 
-    def makeWaveform(self):
+    def make_waveform(self):
         """
         Assemble waveform dictionary and enqueue it for readout.
         """
 
-        wave = self.waveformSetup()
-        wave.y_list = self.getCurve(wave)
+        wave = self.setup_waveform()
+        wave._y_list = self.get_curve(wave)
         self.waveformQueue.put(wave)
         self.logger.info("Waveform made successfully")
 
-    def getNextWaveform(self):
+    @property
+    def next_waveform(self):
         """
         :Returns: The next waveform object in the queue, or None if it is empty
         """

@@ -20,6 +20,7 @@ from scopeout.utilities import ScopeFinder as sf
 from scopeout.models import *
 from scopeout.config import ScopeOutConfig as Config
 from scopeout.database import ScopeOutDatabase as Database
+from scopeout.filesystem import WaveformCsvFile
 import scopeout.widgets as sw
 
 
@@ -39,7 +40,7 @@ class ThreadedClient(QtWidgets.QApplication):
 
         Creation of the widgets that make up the actual interface is done in the constructor of this
         class. All Qt Signals that facilitate the interaction of the client with these widgets are
-        connected in the __connectSignals method.
+        connected in the connect_signals method.
 
         The actions of GUI components that interact with scopes and their data occur in the "event"
         methods of this client.
@@ -146,6 +147,7 @@ class ThreadedClient(QtWidgets.QApplication):
         self.main_window.save_properties_action.triggered.connect(self.save_properties_to_disk)
         self.main_window.save_plot_action.triggered.connect(self.save_plot_to_disk)
         self.main_window.load_session_action.triggered.connect(self.load_database)
+        self.main_window.histogram_mode_action.toggled.connect(self.update_histogram)
 
         #  Wave Column Signals
         self.wave_column.wave_signal.connect(self.plot_wave)
@@ -163,21 +165,17 @@ class ThreadedClient(QtWidgets.QApplication):
         :return:
         """
 
-        def save_data_to_db(x_list, y_list, id):
-            data = zip(x_list, y_list)
-            self.database.bulk_insert_data_points(data, id)
-
         self.db_session.add(wave)
         try:
             self.db_session.commit()
             self.logger.info("Saved waveform #" + str(wave.id) + " to the database")
 
-            data_thread = threading.Thread(
-                target=partial(save_data_to_db, wave.x_list, wave.y_list, wave.id))
-            data_thread.start()
+            self.wave_added_to_db_signal.emit(wave)
 
-            self.wave_column.add_wave(wave)
             self.update_wave_count(self.db_session.query(Waveform).count())
+
+            data = zip(wave.x_list, wave.y_list)
+            self.database.bulk_insert_data_points(data, wave.id)
 
         except Exception as e:
             self.logger.error(e)
@@ -257,8 +255,8 @@ class ThreadedClient(QtWidgets.QApplication):
 
                     try:
                         self.lock.acquire()
-                        self.active_scope.makeWaveform()
-                        wave = self.active_scope.getNextWaveform()
+                        self.active_scope.make_waveform()
+                        wave = self.active_scope.next_waveform
                     except Exception as e:
                         self.logger.error(e)
                         wave = None
@@ -283,9 +281,9 @@ class ThreadedClient(QtWidgets.QApplication):
                             self.set_channel(i)
                             self.channel_set_flag.wait()
                             self.lock.acquire()
-                            self.active_scope.makeWaveform()
+                            self.active_scope.make_waveform()
                             self.lock.release()
-                            wave = self.active_scope.getNextWaveform()
+                            wave = self.active_scope.next_waveform
                         except Exception as e:
                             self.logger.error(e)
                             wave = None
@@ -317,8 +315,8 @@ class ThreadedClient(QtWidgets.QApplication):
 
             if not self.stop_flag.isSet() and not self.acquisition_stop_flag.isSet():
                 try:
-                    self.active_scope.makeWaveform()
-                    wave = self.active_scope.getNextWaveform()
+                    self.active_scope.make_waveform()
+                    wave = self.active_scope.next_waveform
                 except AttributeError:
                     wave = None
                 finally:
@@ -479,6 +477,7 @@ class ThreadedClient(QtWidgets.QApplication):
 
         self.update_wave_count(0)
         self.plot.reset_plot()
+        self.wave_column.reset()
         self.update_status('Data Reset.')
 
         if self.db_session:
@@ -558,15 +557,16 @@ class ThreadedClient(QtWidgets.QApplication):
             try:
                 out_file.write('"Waveform captured ' + str(wave.capture_time) + '"\n')
                 out_file.write('\n')
-                # for field in wave:
-                #     if not isinstance(wave[field], (list, np.ndarray)):
-                #         outFile.write('"' + field + '",' + str(wave[field]))
-                #         outFile.write('\n')
-                # outFile.write('\n')
+                wave_dict = sorted(wave.__dict__.items())
+                for key, value in wave_dict:
+                    if not isinstance(value, list) and not key.startswith('_'):
+                        out_file.write('{},{}\n'.format(key, value))
+
+                out_file.write('\n')
                 out_file.write('X,Y\n')
-                for i in range(0, len(wave.x_data)):
+                for i in range(0, len(wave.x_list)):
                     try:
-                        out_file.write(str(wave.x_data[i].x) + ',' + str(wave.y_data[i].y) + '\n')
+                        out_file.write(str(wave.x_list[i]) + ',' + str(wave.y_list[i]) + '\n')
                     except IndexError:
                         self.logger.error('X and Y data incompatible.')
 
@@ -577,7 +577,7 @@ class ThreadedClient(QtWidgets.QApplication):
 
         if waveform:
             try:
-                wave_directory = os.path.join(os.getcwd(), 'waveforms')
+                wave_directory = Config.get('Export', 'waveform_dir')
                 if not os.path.exists(wave_directory):
                     os.makedirs(wave_directory)
 
@@ -589,8 +589,9 @@ class ThreadedClient(QtWidgets.QApplication):
                 default_file = os.path.join(day_directory, default_file).replace('\\', '/')
 
                 file_name = QtWidgets.QFileDialog.getSaveFileName(self.main_window, 'Save As', default_file)[0]
-                with open(file_name, 'w') as saveFile:
-                    write_wave(saveFile, waveform)
+
+                with WaveformCsvFile(waveform, file_name) as file:
+                    file.write()
 
                 self.logger.info('Waveform saved to ' + file_name)
                 self.update_status('Waveform saved to ' + file_name)
@@ -602,7 +603,7 @@ class ThreadedClient(QtWidgets.QApplication):
             wave_count = self.db_session.query(Waveform).count()
             if wave_count:
                 try:
-                    wave_directory = os.path.join(os.getcwd(), 'waveforms')
+                    wave_directory = Config.get('Export', 'waveform_dir')
                     if not os.path.exists(wave_directory):
                         os.makedirs(wave_directory)
 
@@ -614,9 +615,9 @@ class ThreadedClient(QtWidgets.QApplication):
                     default_file = os.path.join(day_directory, default_file).replace('\\', '/')
 
                     file_name = QtWidgets.QFileDialog.getSaveFileName(self.main_window, 'Save As', default_file)[0]
-                    with open(file_name, 'w') as saveFile:
-                        for wave in self.db_session.query(Waveform):
-                            write_wave(saveFile, wave)
+
+                    with WaveformCsvFile(self.db_session.query(Waveform), file_name) as file:
+                        file.write()
 
                     self.logger.info("%d waveforms saved to %s", wave_count, file_name)
                     self.update_status('Waveforms saved to ' + file_name)
@@ -632,124 +633,39 @@ class ThreadedClient(QtWidgets.QApplication):
         Save the values of any number of a waveform's properties to disk.
 
         Parameters:
-            :waveform: a waveform dictionary, the properties of which are to be saved.
+            :waveform: a Waveform, the properties of which are to be saved.
                         If none is present, the properties of all waveforms in memory are saved.
         """
 
-        class SelectPropertiesPopup(QtWidgets.QDialog):
+        def make_properties_file():
+            wave_directory = Config.get('Export', 'waveform_dir')
+            if not os.path.exists(wave_directory):
+                os.makedirs(wave_directory)
+
+            day_directory = os.path.join(wave_directory, date.today().isoformat())
+            if not os.path.exists(day_directory):
+                os.makedirs(day_directory)
+
+            default_file = 'Properties' + datetime.now().strftime('%m-%d-%H-%M-%S') + '.csv'
+            default_file = os.path.join(day_directory, default_file).replace('\\', '/')
+
+            file_name = QtWidgets.QFileDialog.getSaveFileName(self.main_window, 'Save As', default_file)[0]
+
+            return file_name
+
+        def write_properties(file_name, waves, fields):
             """
-            A Modal dialog for acquiring the fields in the waveform which the user desires to save.
-            """
-
-            def __init__(self, callback, wave={}):
-                """
-                Constructor.
-
-                Parameters:
-                    :callback: a function to be executed on successful dialog close.
-                                is passed the selected field names as an array.
-                    :waveform: A waveform dictionary, from which the available field names are pulled.
-                """
-
-                self.callback = callback
-                QtWidgets.QDialog.__init__(self)
-                self.setWindowTitle('Select Properties to Save')
-                # Have to do styling manually
-                self.setStyleSheet(
-                    """
-                    QPushButton {
-                        border-radius: 2px;
-                        background-color: #673AB7;
-                        max-width: 100px;
-                        padding: 6px;
-                        height: 20px;
-                        color: white;
-                        font-weight: bold;
-                        margin-bottom: 4px;
-                    }
-                    QPushButton:hover {background-color: #5E35B1;}
-                    QPushButton:pressed {background-color: #512DA8;}
-                    QCheckBox {color: white;}
-                    QDialog {background-color: #3C3C3C;}
-                    """)
-
-                layout = QtWidgets.QGridLayout(self)
-                x, y = 0, 0
-                self.checks = []
-                for key, value in wave.__dict__.items():
-                    if not key.startswith('__') and value is not None:
-                        check = QtWidgets.QCheckBox(key, self)
-                        self.checks.append(check)
-                        layout.addWidget(check, y, x)
-                        if y == len(wave) / 2:
-                            y_max = y
-                            y = 0
-                            x += 1
-                        else:
-                            y += 1
-
-                ok_button = QtWidgets.QPushButton('OK', self)
-                ok_button.released.connect(self.accept)
-                layout.addWidget(ok_button, y_max, 0, 1, 2)
-                self.setLayout(layout)
-
-            def accept(self):
-
-                fields = [check.text() for check in self.checks if check.isChecked()]
-                self.callback(fields=fields)
-                self.done(0)
-
-            def paintEvent(self, pe):
-                """
-                allows stylesheet to be used for custom widget.
-                """
-
-                opt = QtWidgets.QStyleOption()
-                opt.initFrom(self)
-                p = QtGui.QPainter(self)
-                s = self.style()
-                s.drawPrimitive(QtWidgets.QStyle.PE_Widget, opt, p, self)
-
-        def write_properties(out_file, waves, fields=[]):
-            """
-            Writes the selected properties of a Waveform to a .csv file.
+            Writes the selected properties of a list of Waveforms to a .csv file.
 
             Parameters:
-                :outFile: an opened file object to be written to.
+                :file_name: the path to the output file.
                 :waves: the list of Waveforms to be processed.
                 :fields: an array containing the names of the selected properties.
             """
 
             try:
-                out_file.write("Waveform properties captured {} \n\n".format(str(datetime.now())))
-                for field in fields:
-                    out_file.write(field + ',')
-                out_file.write('\n')
-                for wave in waves:
-                    for field in fields:
-                        out_file.write(str(getattr(wave, field)) + ',')
-                    out_file.write('\n')
-
-            except Exception as e:
-                self.logger.error(e)
-
-        if waveform:
-            try:
-                wave_directory = os.path.join(os.getcwd(), 'waveforms')
-                if not os.path.exists(wave_directory):
-                    os.makedirs(wave_directory)
-
-                day_directory = os.path.join(wave_directory, date.today().isoformat())
-                if not os.path.exists(day_directory):
-                    os.makedirs(day_directory)
-
-                default_file = 'Properties' + datetime.now().strftime('%m-%d-%H-%M-%S') + '.csv'
-                default_file = os.path.join(day_directory, default_file).replace('\\', '/')
-
-                file_name = QtWidgets.QFileDialog.getSaveFileName(self.main_window, 'Save As', default_file)[0]
-                with open(file_name, 'w') as saveFile:
-                    SelectPropertiesPopup(partial(
-                        write_properties, outFile=saveFile, waves=[waveform]), waveform).exec()
+                with WaveformCsvFile(waves, file_name) as file:
+                    file.write_properties(fields)
 
                 self.logger.info('Waveform properties saved to ' + file_name)
                 self.update_status('Waveform properties saved to ' + file_name)
@@ -757,31 +673,18 @@ class ThreadedClient(QtWidgets.QApplication):
             except Exception as e:
                 self.logger.error(e)
 
+        if waveform:
+                properties_dialog = sw.SelectPropertiesDialog(waveform)
+                properties_dialog.property_signal.connect(partial(write_properties, make_properties_file(), [waveform]))
+                properties_dialog.exec()
+
         else:
             wave_count = self.db_session.query(Waveform).count()
             if wave_count:
-                try:
-                    wave_directory = os.path.join(os.getcwd(), 'waveforms')
-                    if not os.path.exists(wave_directory):
-                        os.makedirs(wave_directory)
-
-                    day_directory = os.path.join(wave_directory, date.today().isoformat())
-                    if not os.path.exists(day_directory):
-                        os.makedirs(day_directory)
-
-                    default_file = 'Properties' + datetime.now().strftime('%m-%d-%H-%M-%S') + '.csv'
-                    default_file = os.path.join(day_directory, default_file).replace('\\', '/')
-
-                    file_name = QtWidgets.QFileDialog.getSaveFileName(self.main_window, 'Save As', default_file)[0]
-                    with open(file_name, 'w') as saveFile:
-                        SelectPropertiesPopup(partial(
-                            write_properties, outFile=saveFile, waves=self.waveList), self.waveList[0]).exec()
-
-                    self.logger.info("Properties of %d waveforms saved to %s", len(self.waveList), file_name)
-                    self.update_status("Properties of {} waveforms saved to {}".format(len(self.waveList), file_name))
-
-                except Exception as e:
-                    self.logger.error(e)
+                wave_list = self.db_session.query(Waveform).all()
+                properties_dialog = sw.SelectPropertiesDialog(wave_list[0])
+                properties_dialog.property_signal.connect(partial(write_properties, make_properties_file(), wave_list))
+                properties_dialog.exec()
 
             else:
                 self.update_status('No waveforms to save.')
@@ -791,26 +694,22 @@ class ThreadedClient(QtWidgets.QApplication):
         Save the currently displayed plot to disk.
         """
 
-        if not self.waveList:
-            self.update_status('No plot to save.')
+        plot_directory = Config.get('Export', 'plot_dir')
+        if not os.path.exists(plot_directory):
+            os.makedirs(plot_directory)
 
+        day_directory = os.path.join(plot_directory, date.today().isoformat())
+        if not os.path.exists(day_directory):
+            os.makedirs(day_directory)
+
+        default_file = 'Plot' + datetime.now().strftime('%m-%d-%H-%M-%S') + '.png'
+        default_file = os.path.join(day_directory, default_file).replace('\\', '/')
+
+        file_name = QtWidgets.QFileDialog.getSaveFileName(self.main_window, 'Save As', default_file)[0]
+        if self.plot.save_plot(file_name):
+            self.update_status("Plot saved successfully")
         else:
-            plot_directory = os.path.join(os.getcwd(), 'plots')
-            if not os.path.exists(plot_directory):
-                os.makedirs(plot_directory)
-
-            day_directory = os.path.join(plot_directory, date.today().isoformat())
-            if not os.path.exists(day_directory):
-                os.makedirs(day_directory)
-
-            default_file = 'Plot' + datetime.now().strftime('%m-%d-%H-%M-%S') + '.png'
-            default_file = os.path.join(day_directory, default_file).replace('\\', '/')
-
-            file_name = QtWidgets.QFileDialog.getSaveFileName(self.main_window, 'Save As', default_file)[0]
-            if self.plot.save_plot(file_name):
-                self.update_status("Plot saved successfully")
-            else:
-                self.update_status("Error ")
+            self.update_status("Error ")
 
     def update_status(self, message):
         """
@@ -888,6 +787,7 @@ class ThreadedClient(QtWidgets.QApplication):
             # clear old session
             if self.db_session:
                 self.db_session.close()
+                self.db_session = None
 
             # reset GUI
             self.reset()
@@ -914,3 +814,4 @@ class ThreadedClient(QtWidgets.QApplication):
         except Exception as e:
             self.logger.error(e)
             self.update_status('Failed to load waves from ' + database_path)
+
