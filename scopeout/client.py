@@ -14,9 +14,9 @@ import logging
 
 from datetime import date, datetime
 from functools import partial
-from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt5 import QtWidgets, QtCore
 
-from scopeout.utilities import ScopeFinder as sf
+from scopeout.utilities import ScopeFinder
 from scopeout.models import *
 from scopeout.config import ScopeOutConfig as Config
 from scopeout.database import ScopeOutDatabase as Database
@@ -83,7 +83,7 @@ class ThreadedClient(QtWidgets.QApplication):
         # start in waveform display mode by default.
         self.hist_mode = False
 
-        # start in single-channel acquisiton mode by default.
+        # start in single-channel acquisition mode by default.
         self.multi_channel_acquisition = False
 
         # Create widgets.
@@ -110,12 +110,18 @@ class ThreadedClient(QtWidgets.QApplication):
         # Connect the various signals that shuttle data between widgets/threads.
         self.connect_signals()
 
-        # Start looking for oscilloscopes.
-        scope_finder_thread = threading.Thread(target=self.find_scope, name='ScopeFind')
-        scope_finder_thread.start()
-
         # Show the GUI
         self.main_window.show()
+
+        # Oscilloscope and scope finder
+        self.scopes = []
+        self.active_scope = None
+        self.scope_finder = ScopeFinder()
+
+        # Thread timers.
+        self.check_scope_timer = threading.Timer(5.0, self.check_scope)
+        self.find_scope_timer = threading.Timer(0.1, self.find_scope)
+        self.find_scope_timer.start()
 
     # noinspection PyUnresolvedReferences
     def connect_signals(self):
@@ -329,7 +335,7 @@ class ThreadedClient(QtWidgets.QApplication):
                     process_wave(wave)
             elif self.acquisition_stop_flag.isSet():
                 self.update_status('Acquisition terminated')
-                self.logger.info('Acquistion on trigger terminated.')
+                self.logger.info('Acquisition on trigger terminated.')
                 if mode == 'trig':
                     self.acquisition_stop_flag.clear()
                 self.wave_acquired_flag.set()  # have to set this for continuous acq to halt properly
@@ -357,6 +363,8 @@ class ThreadedClient(QtWidgets.QApplication):
             self.acquisition_stop_flag.clear()
             self.update_status("Continuous Acquisiton Halted.")
             enable_buttons(True)
+            self.check_scope_timer = threading.Timer(5.0, self.check_scope)
+            self.check_scope_timer.start()
 
         def enable_buttons(bool):
             """
@@ -387,8 +395,9 @@ class ThreadedClient(QtWidgets.QApplication):
             acquisition_thread = threading.Thread(target=acquire_on_trig_thread)
             acquisition_thread.start()
 
-        elif mode == 'cont':  # Continuous Acquisiton
+        elif mode == 'cont':  # Continuous Acquisition
             enable_buttons(False)
+            self.check_scope_timer.cancel()
             self.logger.info('Continuous Acquisition Event')
             self.update_status("Acquiring Continuously...")
             self.wave_acquired_flag.set()
@@ -400,44 +409,26 @@ class ThreadedClient(QtWidgets.QApplication):
         Continually checks for connected scopes, until one is found, then begins periodic checking.
         """
 
-        self.logger.info("Scope acquisition thread started")
+        if not self.stop_flag.is_set():
 
-        while not self.stop_flag.isSet():
+            self.scopes = self.scope_finder.refresh().get_scopes()
 
-            if self.continuous_flag.isSet():
+            while not self.scopes:  # Check for scopes and connect if possible
+                if self.stop_flag.isSet():
+                    self.scopes = []
+                    break
+                self.lock.acquire()
+                self.scopes = self.scope_finder.refresh().get_scopes()
+                self.lock.release()
 
-                with sf() as self.finder:
-
-                    self.logger.info("Entered continuous checking mode")
-
-                    while self.continuous_flag.isSet() and not self.stop_flag.isSet():
-
-                        showed_message = False
-
-                        self.scopes = self.finder.refresh().get_scopes()
-
-                        while not self.scopes:  # Check for scopes and connect if possible
-                            if self.stop_flag.isSet():
-                                self.scopes = []
-                                break
-                            if not showed_message:
-                                self.update_status('No Oscilloscopes detected.')
-                                showed_message = True
-                            self.lock.acquire()
-                            self.scopes = self.finder.refresh().get_scopes()
-                            self.lock.release()
-
-                        if not self.stop_flag.isSet():  # Scope Found!
-                            self.active_scope = self.scopes[0]
-                            self.logger.info("Set active scope to %s", str(self.active_scope))
-                            self.scope_change_signal.emit(self.active_scope)
-                            self.update_status('Found ' + str(self.active_scope))
-                            self.main_window.setEnabled(True)
-                            self.continuous_flag.clear()
-                            self.check_timer = threading.Timer(5.0, self.check_scope)
-                            self.check_timer.start()
-
-        self.logger.info("Scope acquisition thread ended")
+            if not self.stop_flag.isSet():  # Scope Found!
+                self.active_scope = self.scopes[0]
+                self.logger.info("Set active scope to %s", str(self.active_scope))
+                self.scope_change_signal.emit(self.active_scope)
+                self.update_status('Found ' + str(self.active_scope))
+                self.main_window.setEnabled(True)
+                self.check_scope_timer = threading.Timer(5.0, self.check_scope)
+                self.check_scope_timer.start()
 
     def check_scope(self):
         """
@@ -445,7 +436,7 @@ class ThreadedClient(QtWidgets.QApplication):
         """
         if not self.stop_flag.isSet():
             self.lock.acquire()
-            connected = self.finder.check_scope(0)
+            connected = self.scope_finder.check_scope(0)
             if self.lock.locked():
                 self.lock.release()
             if not connected:
@@ -453,11 +444,12 @@ class ThreadedClient(QtWidgets.QApplication):
                 self.logger.info("Lost Connection to Oscilloscope(s)")
                 self.update_status("Lost Connection to Oscilloscope(s)")
                 self.main_window.setEnabled(False)
-                self.continuous_flag.set()
-                self.check_timer.cancel()
+                self.check_scope_timer.cancel()
+                self.find_scope_timer = threading.Timer(0.1, self.find_scope)
+                self.find_scope_timer.start()
             elif not self.stop_flag.isSet():
-                self.check_timer = threading.Timer(5.0, self.check_scope)
-                self.check_timer.start()
+                self.check_scope_timer = threading.Timer(5.0, self.check_scope)
+                self.check_scope_timer.start()
 
     def close_event(self):
         """
@@ -467,7 +459,7 @@ class ThreadedClient(QtWidgets.QApplication):
         self.logger.info('Closing ScopeOut. \n')
         self.stop_flag.set()
         self.continuous_flag.clear()
-        self.check_timer.cancel()
+        self.check_scope_timer.cancel()
         self.quit()
 
     def reset(self):
@@ -544,36 +536,6 @@ class ThreadedClient(QtWidgets.QApplication):
         Parameters:
             :wave: a particular wave to save, if none is passed then all waves in memory are saved.
         """
-
-        def write_wave(out_file, wave):
-            """
-            Write contents of waveform dictionary to .csv file.
-
-            Parameters:
-                :outFile: Open file object to be written to.
-                :wave: full waveform dictionary.
-            """
-
-            try:
-                out_file.write('"Waveform captured ' + str(wave.capture_time) + '"\n')
-                out_file.write('\n')
-                wave_dict = sorted(wave.__dict__.items())
-                for key, value in wave_dict:
-                    if not isinstance(value, list) and not key.startswith('_'):
-                        out_file.write('{},{}\n'.format(key, value))
-
-                out_file.write('\n')
-                out_file.write('X,Y\n')
-                for i in range(0, len(wave.x_list)):
-                    try:
-                        out_file.write(str(wave.x_list[i]) + ',' + str(wave.y_list[i]) + '\n')
-                    except IndexError:
-                        self.logger.error('X and Y data incompatible.')
-
-                out_file.write('\n')
-
-            except Exception as e:
-                self.logger.error(e)
 
         if waveform:
             try:
