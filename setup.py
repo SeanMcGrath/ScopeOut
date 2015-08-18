@@ -13,7 +13,6 @@ setup(
     name='ScopeOut',
     version='1.1',
     packages=['scopeout'],
-    data_files=[('themes', ['themes/default.stylesheet'])],
     scripts=['ScopeOut.py'],
     install_requires =['visa',
                       'sqlalchemy',

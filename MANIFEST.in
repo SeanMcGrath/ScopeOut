@@ -1,0 +1,16 @@
+include README.txt
+include requirements.txt
+include license.txt
+include ScopeOut.py
+include setup.py
+include scopeout\__init__.py
+include scopeout\client.py
+include scopeout\config.py
+include scopeout\database.py
+include scopeout\filesystem.py
+include scopeout\models.py
+include scopeout\oscilloscopes.py
+include scopeout\utilities.py
+include scopeout\widgets.py
+recursive-include scopeout\themes *
+

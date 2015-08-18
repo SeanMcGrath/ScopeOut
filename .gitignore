@@ -5,6 +5,9 @@
 __pycache__/
 build
 
+# Source distribution
+dist
+
 # virtual environment
 env/
 
