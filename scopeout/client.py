@@ -472,8 +472,8 @@ class ThreadedClient(QtWidgets.QApplication):
         self.wave_column.reset()
         self.update_status('Data Reset.')
 
-        if self.db_session:
-            self.db_session.query(Waveform).delete()
+        self.db_session = None
+        self.database = None
 
     def set_channel(self, channel):
         """
@@ -641,8 +641,7 @@ class ThreadedClient(QtWidgets.QApplication):
                 properties_dialog.exec()
 
         else:
-            wave_count = self.db_session.query(Waveform).count()
-            if wave_count:
+            if self.db_session:
                 wave_list = self.db_session.query(Waveform).all()
                 properties_dialog = sw.SelectPropertiesDialog(wave_list[0])
                 properties_dialog.property_signal.connect(partial(write_properties, make_properties_file(), wave_list))
@@ -743,6 +742,10 @@ class ThreadedClient(QtWidgets.QApplication):
             default_file = Config.get('Database', 'database_dir')
             database_path = QtWidgets.QFileDialog.getOpenFileName(self.main_window, 'Open', default_file)[0]
 
+            # Occurs if user hits cancel
+            if database_path is '':
+                return
+
             self.update_status('Loading waves from ' + database_path)
             self.logger.info('Disconnecting from database')
 
@@ -754,7 +757,8 @@ class ThreadedClient(QtWidgets.QApplication):
             # reset GUI
             self.reset()
 
-            self.logger.info('Loading waves from' + database_path)
+            self.update_status('Loading waves from ' + database_path)
+            self.logger.info('Loading waves from ' + database_path)
 
             # make new connection
             self.database = Database(database_path)
@@ -769,9 +773,14 @@ class ThreadedClient(QtWidgets.QApplication):
             # display waves to user.
             [self.wave_column.add_wave(wave) for wave in loaded_waves]
             if not self.histogram_mode:
-                self.plot.show_plot(loaded_waves[-1])
+                try:
+                    self.plot.show_plot(loaded_waves[-1])
+                except ValueError as e:
+                    self.logger.info(e)
             else:
                 self.update_histogram()
+
+            self.update_status('Wave loading complete.')
 
         except Exception as e:
             self.logger.error(e)

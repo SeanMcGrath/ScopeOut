@@ -6,7 +6,7 @@ import os
 import logging
 from configparser import ConfigParser
 
-REQUIRED_SECTIONS = ['Themes', 'Database', 'Logging', 'Export']
+REQUIRED_SECTIONS = ['Themes', 'Database', 'Logging', 'Export', 'Peak Detection']
 
 
 class ScopeOutConfig:
@@ -22,7 +22,7 @@ class ScopeOutConfig:
         
         parser.read(['../config.cfg', './config.cfg', os.path.expanduser('~/.ScopeOut/config.cfg')])
 
-        # Check to make sure config file has all require sections
+        # Check to make sure config file has all required sections
         if not set(REQUIRED_SECTIONS).issubset(parser.sections()):
             return cls.create_new_config()
 
@@ -37,26 +37,29 @@ class ScopeOutConfig:
     def create_new_config(cls):
         """
         Write a new configuration file with default values.
-        :return:
         """
         parser = ConfigParser()
 
         parser.add_section('Themes')
-        parser.set('Themes', 'theme_dir', os.path.abspath('../themes'))
+        parser.set('Themes', 'theme_dir', os.path.abspath('./themes'))
 
         parser.add_section('Database')
-        parser.set('Database', 'database_dir', os.path.abspath('../data'))
+        parser.set('Database', 'database_dir', os.path.expanduser('~/.ScopeOut/data'))
         parser.set('Database', 'database_file', 'scopeout.db')
 
         parser.add_section('Logging')
-        parser.set('Logging', 'log_dir', os.path.abspath('../logs'))
+        parser.set('Logging', 'log_dir', os.path.expanduser('~/.ScopeOut/logs'))
         parser.set('Logging', 'log_file', 'ScopeOut.log')
 
         parser.add_section('Export')
-        parser.set('Export', 'plot_dir', os.path.abspath('../plots'))
-        parser.set('Export', 'waveform_dir', os.path.abspath('../waveforms'))
+        parser.set('Export', 'plot_dir', os.path.expanduser('~/.ScopeOut/plots'))
+        parser.set('Export', 'waveform_dir', os.path.expanduser('~/.ScopeOut/waveforms'))
 
-        with open(os.path.abspath('../config.cfg'), 'w+') as file:
+        parser.add_section('Peak Detection')
+
+        if not os.path.exists(os.path.expanduser('~/.ScopeOut')):
+            os.makedirs(os.path.expanduser('~/.ScopeOut'))
+        with open(os.path.expanduser('~/.ScopeOut/config.cfg'), 'w+') as file:
             parser.write(file)
 
         cls.logger.info('Wrote new configuration file')
