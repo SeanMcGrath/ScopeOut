@@ -1,19 +1,21 @@
-# log files
-**/*.log
-
-# compiled Python
-__pycache__/
+# Binaries
 build
+
+# cached python
+scopeout/__pycache__/
 
 # Source distribution
 dist
 
+# distutils manifest
+MANIFEST
+
 # virtual environment
-env/
+env
 
 #config files
 **/*.cfg
 
 #IDE cruft
-.idea/*
+.idea
 
