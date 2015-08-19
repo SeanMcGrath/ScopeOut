@@ -13,9 +13,6 @@ MANIFEST
 # virtual environment
 env
 
-#config files
-**/*.cfg
-
 #IDE cruft
 .idea
 

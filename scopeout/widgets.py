@@ -150,7 +150,8 @@ class ScopeOutPlotWidget(FigureCanvas):
             self.coords = self.axes.text(0.05, 0.95, event_string, ha='left', va='center', transform=self.axes.transAxes)
             self.fig.canvas.draw()
 
-    def autoset_units(self, axis_array):
+    @staticmethod
+    def autoset_units(axis_array):
         """
         Set the X units of the plot to the correct size based on the values in axisArray.
 
@@ -585,6 +586,8 @@ class AcquisitionControlWidget(ScopeOutWidget):
         self.stop_acquisition_button = QtWidgets.QPushButton('Stop Acquisition', self)
         self.stop_acquisition_button.setProperty('type', 'stop')
         self.hold_plot_checkbox = QtWidgets.QCheckBox('Hold plot', self)
+        self.show_peak_checkbox = QtWidgets.QCheckBox('Show Peak Window', self)
+        self.show_peak_checkbox.setChecked(True)
         self.channel_combobox_label = QtWidgets.QLabel('Data Channel', self)
         self.channel_combobox = QtWidgets.QComboBox(self)
         self.hold_plot_checkbox.setChecked(False)
@@ -596,21 +599,30 @@ class AcquisitionControlWidget(ScopeOutWidget):
         self.layout.setRowStretch(0, 1)
         self.layout.setRowMinimumHeight(2, 100)
         self.layout.setRowStretch(2, 1)
-        self.layout.setRowMinimumHeight(8, 100)
-        self.layout.setRowStretch(8, 1)
+        self.layout.setRowMinimumHeight(9, 150)
+        self.layout.setRowStretch(9, 1)
         self.layout.addWidget(self.autoset_button, 1, 0)
         self.layout.addWidget(self.acquire_button, 3, 0)
         self.layout.addWidget(self.acquire_on_trigger_button, 4, 0)
         self.layout.addWidget(self.continuous_acquire_button, 5, 0)
         self.layout.addWidget(self.stop_acquisition_button, 6, 0)
         self.layout.addWidget(self.hold_plot_checkbox, 7, 0)
-        self.layout.addWidget(self.channel_combobox_label, 9, 0)
-        self.layout.addWidget(self.channel_combobox, 10, 0)
-        self.layout.setRowStretch(11, 1)
+        self.layout.addWidget(self.show_peak_checkbox, 8, 0)
+        self.layout.addWidget(self.channel_combobox_label, 10, 0)
+        self.layout.addWidget(self.channel_combobox, 11, 0)
+        self.layout.setRowStretch(12, 1)
         self.setLayout(self.layout)
 
         for i in range(0, self.layout.count()):
             self.add_shadow(self.layout.itemAt(i).widget())
+
+    @property
+    def show_peak_window(self):
+        """
+        :Returns: the boolean value of "show peak start" checkbox.
+        """
+
+        return self.show_peak_checkbox.isChecked()
 
     def set_active_oscilloscope(self, scope):
         """
@@ -692,7 +704,7 @@ class AcquisitionControlWidget(ScopeOutWidget):
 
 class WaveOptionsTabWidget(ScopeOutWidget):
     """
-    Manages Tabbed display of wave options widgets. Also holds wave counter and peak window checkbox
+    Manages Tabbed display of wave options widgets.
     """
 
     class SmartPeakTab(ScopeOutWidget):
@@ -910,49 +922,25 @@ class WaveOptionsTabWidget(ScopeOutWidget):
         self.logger = logging.getLogger('ScopeOut.widgets.waveOptionsTabWidget')
         ScopeOutWidget.__init__(self, *args)
 
-        self.wave_counter = QtWidgets.QLabel("Waveforms acquired: 0", self)
-        self.show_peak_checkbox = QtWidgets.QCheckBox('Show Peak Window', self)
-        self.add_shadow(self.wave_counter)
-        self.add_shadow(self.show_peak_checkbox)
-
         self.tab_manager = QtWidgets.QTabWidget(self)
         self.smart = self.SmartPeakTab(None)
         self.fixed = self.FixedPeakTab(None)
         self.hybrid = self.HybridPeakTab(None)
 
-        self.tab_titles = ['Smart Peak Detection', 'Fixed Width Peak Detection', 'Hybrid Peak Detection']
+        self.tab_titles = ['Smart', 'Fixed Width', 'Hybrid', 'Voltage Threshold']
         self.tab_manager.addTab(self.smart, self.tab_titles[0])
         self.tab_manager.addTab(self.fixed, self.tab_titles[1])
         self.tab_manager.addTab(self.hybrid, self.tab_titles[2])
 
         self.layout = QtWidgets.QGridLayout(self)
 
-        self.layout.addWidget(self.wave_counter, 1, 1)
-        self.layout.addWidget(self.show_peak_checkbox, 2, 1)
-        self.layout.addWidget(self.tab_manager, 0, 2, 4, 1)
+        self.layout.addWidget(QtWidgets.QLabel('Peak Detection Mode', self), 0, 0)
+        self.layout.addWidget(self.tab_manager, 1, 0, 3, -1)
         self.layout.setRowMinimumHeight(0, 30)
         self.layout.setRowStretch(4, 1)
-        self.layout.setVerticalSpacing(0)
+        self.layout.setVerticalSpacing(10)
         self.layout.setHorizontalSpacing(15)
         self.show()
-
-    def update_wave_counter(self, waves):
-        """
-        Updates the displayed count of acquired waves.
-
-        Parameters:
-            :waves: the integer number of acquired waves.
-        """
-
-        self.wave_counter.setText("Waveforms acquired: " + str(waves))
-
-    @property
-    def show_peak_window(self):
-        """
-        :Returns: the boolean value of "show peak start" checkbox.
-        """
-
-        return self.show_peak_checkbox.isChecked()
 
     @property
     def current_widget(self):
@@ -1181,14 +1169,16 @@ class WaveColumnWidget(ScopeOutScrollArea):
         """
 
         QtWidgets.QScrollArea.__init__(self, *args)
-        self.logger = logging.getLogger('ScopeOut.widgets.waveColumnWidget')
 
         self.hold = False  # Governs whether multiple waves can be active at once
+        self.empty_label_showing = True
 
+        self.logger = logging.getLogger('ScopeOut.widgets.waveColumnWidget')
+        self.empty_label = QtWidgets.QLabel('No Waveforms Acquired', self)
         self.layout = QtWidgets.QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
-        self.layout.addStretch(0)
+        self.layout.insertWidget(0, self.empty_label, 0, QtCore.Qt.AlignCenter)
 
         container = ScopeOutWidget(self)
         container.setLayout(self.layout)
@@ -1207,6 +1197,12 @@ class WaveColumnWidget(ScopeOutScrollArea):
         """
 
         assert type(item) is self.WaveColumnItem
+
+        if self.empty_label_showing:
+            self.empty_label.hide()
+            self.layout.takeAt(0)
+            self.layout.addStretch(0)
+            self.empty_label_showing = False
 
         self.reset_colors()
         item.setProperty('state', 'active')
@@ -1230,6 +1226,7 @@ class WaveColumnWidget(ScopeOutScrollArea):
         """
 
         assert type(wave) is Waveform
+
         self.add_item(self.WaveColumnItem(self, wave))
 
     def delete_item(self, item):
@@ -1258,15 +1255,18 @@ class WaveColumnWidget(ScopeOutScrollArea):
         """
 
         self.logger.info("Resetting Wave Column")
-        while self.layout.count() > 1:
+        while self.layout.count() > 0:
             try:
                 item = self.layout.takeAt(0)
-                item.widget().hide()
-                del item
+                if item.widget() is not None:
+                    item.widget().hide()
             except Exception as e:
                 self.logger.error(e)
                 break
 
+        self.empty_label.show()
+        self.layout.insertWidget(0, self.empty_label, 0, QtCore.Qt.AlignCenter)
+        self.empty_label_showing = True
         self.repaint()
 
     def reset_colors(self):

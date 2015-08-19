@@ -178,8 +178,6 @@ class ThreadedClient(QtWidgets.QApplication):
 
             self.wave_added_to_db_signal.emit(wave)
 
-            self.update_wave_count(self.db_session.query(Waveform).count())
-
             data = zip(wave.x_list, wave.y_list)
             self.database.bulk_insert_data_points(data, wave.id)
 
@@ -195,7 +193,7 @@ class ThreadedClient(QtWidgets.QApplication):
         """
 
         if not self.histogram_mode:
-            self.plot.show_plot(wave, self.acquisition_control.plot_held(), self.wave_options.show_peak_window)
+            self.plot.show_plot(wave, self.acquisition_control.plot_held(), self.acquisition_control.show_peak_window)
 
     def update_histogram(self):
         """
@@ -467,7 +465,6 @@ class ThreadedClient(QtWidgets.QApplication):
         Called to reset waveform and plot.
         """
 
-        self.update_wave_count(0)
         self.plot.reset_plot()
         self.wave_column.reset()
         self.update_status('Data Reset.')
@@ -636,9 +633,9 @@ class ThreadedClient(QtWidgets.QApplication):
                 self.logger.error(e)
 
         if waveform:
-                properties_dialog = sw.SelectPropertiesDialog(waveform)
-                properties_dialog.property_signal.connect(partial(write_properties, make_properties_file(), [waveform]))
-                properties_dialog.exec()
+            properties_dialog = sw.SelectPropertiesDialog(waveform)
+            properties_dialog.property_signal.connect(partial(write_properties, make_properties_file(), [waveform]))
+            properties_dialog.exec()
 
         else:
             if self.db_session:
@@ -700,13 +697,6 @@ class ThreadedClient(QtWidgets.QApplication):
         self.update_status("Executing Auto-set. Ensure process is complete before continuing.")
         threading.Thread(target=do_autoset, name='AutoSetThread').start()
 
-    def update_wave_count(self, waves):
-        """
-        Updates the counter displaying the total number of acquired waveforms.
-        """
-
-        self.wave_options.update_wave_counter(waves)
-
     @property
     def histogram_mode(self):
         """
@@ -725,7 +715,6 @@ class ThreadedClient(QtWidgets.QApplication):
 
             self.db_session.delete(wave)
             self.db_session.commit()
-            self.update_wave_count(self.db_session.query(Waveform).count())
 
         try:
             del_thread = threading.Thread(target=delete_thread)

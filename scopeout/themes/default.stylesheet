@@ -1,5 +1,5 @@
 QMainWindow,
-__selectPropertiesPopup {
+SelectPropertiesPopup {
 	background-color: #424242;
 }
 
@@ -12,25 +12,49 @@ QPushButton {
   padding: 6px;
   height: 24px;
   font-weight: bold;
-}
-
-AcquisitionControlWidget QPushButton {
   border-radius: 2px;
   background-color: #673AB7;
   color: white;
-  margin-bottom: 4px;
+  margin-bottom: 5px;
 }
 
-AcquisitionControlWidget QPushButton:hover {
+QPushButton::disabled {
+  background-color: gray;
+  color: black;
+}
+
+QPushButton:hover {
   background-color: #5E35B1;
 }
 
-AcquisitionControlWidget QPushButton:pressed {
+QPushButton:pressed {
   background-color: #512DA8;
+}
+
+QPushButton[type='stop'] {
+  background-color: #F44336;
+}
+
+QPushButton[type='stop']::disabled {
+  background-color: gray;
+  color: black;
+}
+
+QPushButton[type='stop']::hover {
+  background-color: #E53935
+}
+
+QPushButton[type='stop']::pressed {
+  background-color: #D32F2F
 }
 
 QTabWidget::pane {
   border: 1px solid black;
+}
+
+AcquisitionControlWidget {
+  max-width: 200px;
+  background-color: #212121;
 }
 
 QTabBar::tab {
@@ -41,7 +65,8 @@ QTabBar::tab {
   margin-right: 4px;
 }
 
-QTabBar::tab:hover, QTabBar::tab:selected {
+QTabBar::tab:hover,
+QTabBar::tab:selected {
   background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #fafafa, stop: 0.4 #f4f4f4, stop: 0.5 #e7e7e7, stop: 1.0 #fafafa);
 }
 
@@ -101,32 +126,6 @@ QMenuBar::item {
    border-radius: 4px;
 }
 
-AcquisitionControlWidget {
-  max-width: 200px;
-  background-color: #212121;
-}
-
-AcquisitionControlWidget QPushButton {
-  margin-bottom: 5px;
-}
-
-AcquisitionControlWidget QPushButton[type='stop'] {
-  background-color: #F44336;
-}
-
-AcquisitionControlWidget QPushButton[type='stop']::hover {
-  background-color: #E53935
-}
-
-AcquisitionControlWidget QPushButton[type='stop']::pressed {
-  background-color: #D32F2F
-}
-
-AcquisitionControlWidget QPushButton::disabled {
-  background-color: gray;
-  color: black;
-}
-
 WaveColumnWidget {
   padding: 0px;
   margin: 0px;
@@ -142,6 +141,11 @@ WaveColumnWidget ScopeOutWidget {
   color: white;
   padding: 0px;
   margin: 0px;
+}
+
+WaveColumnWidget QLabel {
+    background: transparent;
+    color: white;
 }
 
 WaveColumnItem QPushButton {
