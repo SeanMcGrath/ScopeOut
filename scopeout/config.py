@@ -6,7 +6,7 @@ import os
 import logging
 from configparser import ConfigParser
 
-REQUIRED_SECTIONS = ['Themes', 'Database', 'Logging', 'Export', 'Peak Detection']
+REQUIRED_SECTIONS = ['Themes', 'Database', 'Logging', 'Export', 'Peak Detection', 'Histogram']
 
 
 class ScopeOutConfig:
@@ -56,6 +56,20 @@ class ScopeOutConfig:
         parser.set('Export', 'waveform_dir', os.path.expanduser('~/.ScopeOut/waveforms'))
 
         parser.add_section('Peak Detection')
+        parser.set('Peak Detection', 'Detection_method', 'Hybrid')
+        parser.set('Peak Detection', 'smart_start_threshold', '50')
+        parser.set('Peak Detection', 'smart_end_threshold', '50')
+        parser.set('Peak Detection', 'fixed_start_time', '10')
+        parser.set('Peak Detection', 'fixed_start_unit', 'ns')
+        parser.set('Peak Detection', 'fixed_width_time', '10')
+        parser.set('Peak Detection', 'fixed_width_unit', 'ns')
+        parser.set('Peak Detection', 'hybrid_start_threshold', '50')
+        parser.set('Peak Detection', 'hybrid_width_time', '10')
+        parser.set('Peak Detection', 'hybrid_width_unit', 'ns')
+
+        parser.add_section('Histogram')
+        parser.set('Histogram', 'default_property', 'peak_integral')
+        parser.set('Histogram', 'number_of_bins', '50')
 
         if not os.path.exists(os.path.expanduser('~/.ScopeOut')):
             os.makedirs(os.path.expanduser('~/.ScopeOut'))

@@ -43,7 +43,7 @@ class Waveform(ModelBase):
     y_unit = Column(String)
     y_multiplier = Column(Float)
     data_channel = Column(String)
-    integral = Column(Float)
+    peak_integral = Column(Float)
 
     # Attributes to be accessed during runtime, not saved
     _y_list = []
@@ -215,11 +215,11 @@ class Waveform(ModelBase):
                     for i in range(start, end):
                         result += y[i] * incr
 
-            self.integral = result
+            self.peak_integral = result
 
         except Exception as e:
             self.logger.error(e)
-            self.integral = 0
+            self.peak_integral = 0
 
     def detect_peak_and_integrate(self, detection_mode, detection_parameters):
         """

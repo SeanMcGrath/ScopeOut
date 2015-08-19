@@ -242,19 +242,21 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 
         self.layout.setSpacing(20)
         self.layout.setContentsMargins(0, 0, 0, 0)
-        self.layout.addWidget(self.widgets['column'], 0, 0, 4, 1)  # Column
-        self.layout.addWidget(self.widgets['plot'], 1, 2, 1, 1)  # plot
-        self.widgets['plot'].show()
-        self.layout.addWidget(self.widgets['acqControl'], 0, 4, 4, 1)  # acqControl
-        self.layout.addWidget(self.widgets['options'], 2, 2)  # waveOptions
-        self.layout.setColumnMinimumWidth(4, 180)
-        self.layout.setColumnMinimumWidth(2, 600)
+        self.layout.addWidget(self.widgets['column'], 0, 0, 4, 1)
+        self.layout.addWidget(self.widgets['plot'], 1, 2, 1, 1)
+        self.layout.addWidget(self.widgets['hist'], 1, 3, 1, 1)
+        self.layout.addWidget(self.widgets['acqControl'], 0, 5, 4, 1)
+        self.layout.addWidget(self.widgets['wave_options'], 2, 2)
+        self.layout.addWidget(self.widgets['hist_options'], 2, 3)
+        self.layout.setColumnMinimumWidth(5, 180)
+        self.layout.setColumnMinimumWidth(2, 500)
+        self.layout.setColumnMinimumWidth(3, 500)
         self.layout.setColumnStretch(0, 1)
         self.layout.setColumnStretch(2, 1)
         self.layout.setRowStretch(0, 1)
         self.layout.setRowStretch(1, 1)
-        self.layout.setRowStretch(3, 1)
-        self.layout.setRowMinimumHeight(3, 20)
+        self.layout.setRowStretch(4, 1)
+        self.layout.setRowMinimumHeight(4, 20)
         self.layout.setRowMinimumHeight(1, 500)
         self.central_widget.setLayout(self.layout)
         self.setCentralWidget(self.central_widget)
@@ -300,21 +302,6 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
         self.reset_action.setShortcut('Ctrl+R')
         self.reset_action.setStatusTip('Clear all waveforms in memory')
 
-        # Data->Mode
-        self.data_mode_action_group = QtWidgets.QActionGroup(self)
-
-        # Data->Mode->Wave Capture
-        self.capture_mode_action = QtWidgets.QAction('Wave Display', self.data_mode_action_group)
-        self.capture_mode_action.setStatusTip('Display acquired waveforms')
-        self.capture_mode_action.setCheckable(True)
-        self.capture_mode_action.setChecked(True)
-
-        # Data->Mode->Histogram
-        self.histogram_mode_action = QtWidgets.QAction('Histogram Display', self.data_mode_action_group)
-        self.histogram_mode_action.setStatusTip('Display wave integration histogram')
-        self.histogram_mode_action.setCheckable(True)
-        self.histogram_mode_action.toggled.connect(self.select_plot_type)
-
         # Put title on window
         self.setWindowTitle('ScopeOut')
 
@@ -333,8 +320,6 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
         # "Data" Menu
         self.data_menu = self.menubar.addMenu('&Data')
         self.data_menu.addAction(self.reset_action)
-        acquisition_mode_menu = self.data_menu.addMenu('Acquisition Mode')
-        acquisition_mode_menu.addActions(self.data_mode_action_group.findChildren(QtWidgets.QAction))
 
         # "View" Menu
         view_menu = self.menubar.addMenu('&View')
@@ -536,7 +521,7 @@ class HistogramPlotWidget(ScopeOutPlotWidget):
         self.fig.suptitle("Peak Histogram", color='white')
         self.logger.info("Histogram Plot initialized")
 
-    def show_histogram(self, x, bins=100):
+    def show_histogram(self, x, bins):
         """
         Plot the histogram of integrated wave values.
 
@@ -545,11 +530,12 @@ class HistogramPlotWidget(ScopeOutPlotWidget):
             :bins: the number of bins desired.
         """
 
-        self.reset_plot()
-        self.fig.suptitle("Peak Histogram", color='white')
-        self.axes.set_ylabel('Counts')
-        self.axes.hist(x, bins)
-        self.fig.canvas.draw()
+        if len(x) > 1:
+            self.reset_plot()
+            self.fig.suptitle("Peak Histogram", color='white')
+            self.axes.set_ylabel('Counts')
+            self.axes.hist(x, bins)
+            self.fig.canvas.draw()
 
 
 class AcquisitionControlWidget(ScopeOutWidget):
@@ -702,7 +688,7 @@ class AcquisitionControlWidget(ScopeOutWidget):
         self.stop_acquisition_button.setEnabled(not bool)
 
 
-class WaveOptionsTabWidget(ScopeOutWidget):
+class  WaveOptionsTabWidget(ScopeOutWidget):
     """
     Manages Tabbed display of wave options widgets.
     """
@@ -733,12 +719,23 @@ class WaveOptionsTabWidget(ScopeOutWidget):
             self.start_threshold_input.setMaximum(500)
             self.start_threshold_input.setMinimum(0)
             self.start_threshold_input.setSuffix('%')
-            self.start_threshold_input.setValue(10)
+
+            try:
+                start_threshold = int(Config.get('Peak Detection', 'smart_start_threshold'))
+                self.start_threshold_input.setValue(start_threshold)
+            except Exception as e:
+                self.logger.error(e)
+
             self.end_threshold_input = QtWidgets.QDoubleSpinBox(self)
             self.end_threshold_input.setMaximum(500.0)
             self.end_threshold_input.setMinimum(0.0)
             self.end_threshold_input.setSuffix('%')
-            self.end_threshold_input.setValue(100)
+
+            try:
+                end_threshold = int(Config.get('Peak Detection', 'smart_end_threshold'))
+                self.end_threshold_input.setValue(end_threshold)
+            except Exception as e:
+                self.logger.error(e)
 
             self.layout = QtWidgets.QGridLayout(self)
 
@@ -797,15 +794,42 @@ class WaveOptionsTabWidget(ScopeOutWidget):
             self.start_time_input = QtWidgets.QDoubleSpinBox(self)
             self.start_time_input.setMaximum(1000)
             self.start_time_input.setMinimum(0)
-            self.start_time_input.setValue(10)
+
+            try:
+                start_time = int(Config.get('Peak Detection', 'fixed_start_time'))
+                self.start_time_input.setValue(start_time)
+            except Exception as e:
+                self.logger.error(e)
+
             self.start_time_unit_combobox = QtWidgets.QComboBox(self)
             self.start_time_unit_combobox.addItems(self.units.keys())
+
+            try:
+                unit = Config.get('Peak Detection', 'fixed_start_unit')
+                index = self.start_time_unit_combobox.findText(unit)
+                self.start_time_unit_combobox.setCurrentIndex(index)
+            except Exception as e:
+                self.logger.error(e)
+
             self.peak_width_input = QtWidgets.QDoubleSpinBox(self)
             self.peak_width_input.setMaximum(1000)
             self.peak_width_input.setMinimum(0)
-            self.peak_width_input.setValue(10)
+
+            try:
+                width = int(Config.get('Peak Detection', 'fixed_width_time'))
+                self.peak_width_input.setValue(width)
+            except Exception as e:
+                self.logger.error(e)
+
             self.peak_width_unit_combobox = QtWidgets.QComboBox(self)
             self.peak_width_unit_combobox.addItems(self.units.keys())
+
+            try:
+                unit = Config.get('Peak Detection', 'fixed_width_unit')
+                index = self.peak_width_unit_combobox.findText(unit)
+                self.peak_width_unit_combobox.setCurrentIndex(index)
+            except Exception as e:
+                self.logger.error(e)
 
             self.layout = QtWidgets.QGridLayout(self)
             self.layout.setContentsMargins(20, 5, 20, 5)
@@ -870,13 +894,32 @@ class WaveOptionsTabWidget(ScopeOutWidget):
             self.start_threshold_input.setMaximum(500)
             self.start_threshold_input.setMinimum(0)
             self.start_threshold_input.setSuffix('%')
-            self.start_threshold_input.setValue(10)
+
+            try:
+                start_threshold = int(Config.get('Peak Detection', 'hybrid_start_threshold'))
+                self.start_threshold_input.setValue(start_threshold)
+            except Exception as e:
+                self.logger.error(e)
+
             self.peak_width_input = QtWidgets.QDoubleSpinBox(self)
             self.peak_width_input.setMaximum(1000)
             self.peak_width_input.setMinimum(0)
-            self.peak_width_input.setValue(10)
+
+            try:
+                width = int(Config.get('Peak Detection', 'hybrid_width_time'))
+                self.peak_width_input.setValue(width)
+            except Exception as e:
+                self.logger.error(e)
+
             self.peak_width_units = QtWidgets.QComboBox(self)
             self.peak_width_units.addItems(self.units.keys())
+
+            try:
+                unit = Config.get('Peak Detection', 'hybrid_width_unit')
+                index = self.peak_width_units.findText(unit)
+                self.peak_width_units.setCurrentIndex(index)
+            except Exception as e:
+                self.logger.error(e)
 
             self.layout = QtWidgets.QGridLayout(self)
             self.layout.setContentsMargins(20, 5, 20, 5)
@@ -931,6 +974,13 @@ class WaveOptionsTabWidget(ScopeOutWidget):
         self.tab_manager.addTab(self.smart, self.tab_titles[0])
         self.tab_manager.addTab(self.fixed, self.tab_titles[1])
         self.tab_manager.addTab(self.hybrid, self.tab_titles[2])
+
+        try:
+            selected_tab = Config.get('Peak Detection', 'detection_method')
+            tab_index = self.tab_titles.index(selected_tab)
+            self.tab_manager.setCurrentIndex(tab_index)
+        except Exception as e:
+            self.logger.error(e)
 
         self.layout = QtWidgets.QGridLayout(self)
 
@@ -1363,3 +1413,71 @@ class SelectPropertiesDialog(QtWidgets.QDialog):
         p = QtGui.QPainter(self)
         s = self.style()
         s.drawPrimitive(QtWidgets.QStyle.PE_Widget, opt, p, self)
+
+
+class HistogramOptionsWidget(ScopeOutWidget):
+    """
+    Displays options for manipulating the histogram display.
+    """
+
+    def __init__(self, *args):
+        """
+        Constructor.
+        :return:
+        """
+
+        self.logger = logging.getLogger('ScopeOut.widgets.HistogramOptionsWidget')
+        ScopeOutWidget.__init__(self, *args)
+
+        self.property_label = QtWidgets.QLabel('Property to histogram', self)
+        self.property_selector = QtWidgets.QComboBox(self)
+
+        self.bin_number_label = QtWidgets.QLabel('Number of Bins', self)
+        self.bin_number_selector = QtWidgets.QSpinBox(self)
+
+        try:
+            self.bin_number_selector.setValue(int(Config.get('Histogram', 'number_of_bins')))
+        except:
+            self.bin_number_selector.setValue(100)
+
+        self.layout = QtWidgets.QGridLayout(self)
+        self.layout.addWidget(self.property_label, 0, 0)
+        self.layout.addWidget(self.property_selector, 0, 1)
+        self.layout.addWidget(self.bin_number_label, 1, 0)
+        self.layout.addWidget(self.bin_number_selector, 1, 1)
+
+        self.setLayout(self.layout)
+
+        self.show()
+
+    def update_properties(self, waveform):
+        """
+        Update the list of available properties.
+        :param waveform: a Waveform.
+        """
+
+        if not self.property_selector.count():
+            assert isinstance(waveform, Waveform)
+            wave_dict = sorted(waveform.__dict__.items())
+            properties = [key.title().replace('_', ' ') for key, value in wave_dict
+                          if not key.startswith('_')
+                          and isinstance(value, (int, float))
+                          and value is not None]
+
+            self.property_selector.addItems(properties)
+
+            try:
+                default_property = Config.get('Histogram', 'default_property')
+                self.property_selector.setCurrentIndex(self.property_selector.findText(default_property))
+            except:
+                pass
+
+            self.setEnabled(True)
+
+    def reset(self):
+        """
+        Clear the list of properties and disable the widget.
+        """
+
+        self.property_selector.clear()
+        self.setEnabled(False)
