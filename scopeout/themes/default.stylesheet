@@ -49,12 +49,10 @@ QPushButton[type='stop']::pressed {
 }
 
 QTabWidget::pane {
-  border: 1px solid black;
-}
-
-AcquisitionControlWidget {
-  max-width: 200px;
-  background-color: #212121;
+  border-color: #212121;
+  border-width: 2px;
+  border-style: inset;
+  border-radius: 2px;
 }
 
 QTabBar::tab {
@@ -75,38 +73,49 @@ QTabBar::tab:!selected {
 }
 
 QLabel {
-    color: black;
-    background-color: #EEEEEE;
-    border-radius: 2px;
+    color: #E0E0E0;
+    background: transparent;
     padding: 8px;
     qproperty-alignment: AlignCenter;
     max-height: 1em;
     max-width: 10em;
 }
 
-QRadioButton {
-	color: white;
-	background-color: #212121;
-  border-radius: 5px;
-  padding: 8px;
-}
-
 QCheckBox {
-  color: black;
-  background-color: #EEEEEE;
-  border-radius: 2px;
-  padding: 8px;
-  margin-top: 10px;
+  color: #E0E0E0;
+  margin-top: 5px;
 }
 
-QSpinBox, QDoubleSpinBox {
-	background-color: white;
+QCheckBox::indicator {
+    background-color: #424242;
+    border: 1px black inset;
+    border-radius: 1px;
+}
+
+QCheckBox::indicator:checked {
+  background-color: #673AB7;
+}
+
+QSpinBox, QDoubleSpinBox, QComboBox {
+  background-color: #212121;
+  color: #E0E0E0;
+  border-radius: 2px;
+  border: 1px solid #242424;
   width: 10em;
   max-width: 10em;
 }
 
-QComboBox {
-    max-width: 10em;
+QComboBox::down-arrow {
+  color: #E0E0E0;
+}
+
+QComboBox::drop-down {
+  color: black;
+}
+
+QComboBox QListView {
+    outline: none;
+    color: black;
 }
 
 QStatusBar {
@@ -124,6 +133,15 @@ QMenuBar::item {
    padding: 1px 4px;
    background: transparent;
    border-radius: 4px;
+}
+
+AcquisitionControlWidget {
+  max-width: 200px;
+  background-color: #212121;
+}
+
+AcquisitionControlWidget QComboBox {
+    background-color: #424242;
 }
 
 WaveColumnWidget {

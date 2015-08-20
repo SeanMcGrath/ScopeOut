@@ -90,7 +90,6 @@ class ThreadedClient(QtWidgets.QApplication):
         self.wave_options = sw.WaveOptionsTabWidget()
         self.wave_column = sw.WaveColumnWidget()
         self.histogram_options = sw.HistogramOptionsWidget()
-        self.histogram_options.setEnabled(False)
 
         self.logger.info("All Widgets initialized")
 
@@ -207,6 +206,7 @@ class ThreadedClient(QtWidgets.QApplication):
         if wave_property:
             histogram_list = [val for (val,) in self.db_session.query(getattr(Waveform, wave_property)).all()]
             self.histogram.show_histogram(histogram_list, self.histogram_options.bin_number_selector.value())
+            self.histogram.set_title(wave_property)
 
     def acq_event(self, mode):
         """
@@ -470,7 +470,7 @@ class ThreadedClient(QtWidgets.QApplication):
 
         self.plot.reset_plot()
         self.wave_column.reset()
-        self.histogram.reset_plot()
+        self.histogram.reset()
         self.histogram_options.reset()
         self.update_status('Data Reset.')
 
@@ -760,13 +760,13 @@ class ThreadedClient(QtWidgets.QApplication):
             [self.wave_column.add_wave(wave) for wave in loaded_waves]
             try:
                 self.plot.show_plot(loaded_waves[-1])
-                self.histogram_options.update_properties(loaded_waves[-1])
-                self.update_histogram()
             except ValueError as e:
                 self.logger.info(e)
             except Exception as e:
                 self.logger.error(e)
 
+            self.histogram_options.update_properties(loaded_waves[-1])
+            self.update_histogram()
             self.update_status('Wave loading complete.')
 
         except Exception as e:

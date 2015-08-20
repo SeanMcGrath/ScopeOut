@@ -122,11 +122,9 @@ class ScopeOutPlotWidget(FigureCanvas):
         """
 
         self.logger = logging.getLogger("ScopeOut.widgets.ScopeOutPlotWidget")
+
         self.fig = Figure()
         FigureCanvas.__init__(self, self.fig)
-
-        self.setContentsMargins(5, 5, 5, 5)
-
         self.fig.patch.set_color(self.background_color)
         self.axes = self.fig.add_subplot(111)
         self.axes.xaxis.label.set_color('white')
@@ -134,6 +132,8 @@ class ScopeOutPlotWidget(FigureCanvas):
         self.coords = self.axes.text(0, 0, '')
         [t.set_color('white') for t in self.axes.yaxis.get_ticklabels()]
         [t.set_color('white') for t in self.axes.xaxis.get_ticklabels()]
+
+        self.setContentsMargins(5, 5, 5, 5)
 
     def display_coords(self, event):
         """
@@ -191,7 +191,7 @@ class ScopeOutPlotWidget(FigureCanvas):
         [t.set_color('white') for t in self.axes.yaxis.get_ticklabels()]
         [t.set_color('white') for t in self.axes.xaxis.get_ticklabels()]
         self.coords = self.axes.text(0, 0, '')
-        self.repaint()
+        self.fig.canvas.draw()
         self.logger.info("Plot Reset")
 
     def save_plot(self, filename):
@@ -210,6 +210,15 @@ class ScopeOutPlotWidget(FigureCanvas):
         except Exception as e:
             self.logger.error(e)
             return False
+
+    def set_title(self, title):
+        """
+        Set the title of the histogram.
+        :param title: a new title string.
+        """
+
+        assert isinstance(title, str)
+        self.fig.suptitle(title.title().replace('_', ' '), color='white')
 
 
 class ScopeOutMainWindow(QtWidgets.QMainWindow):
@@ -242,10 +251,10 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 
         self.layout.setSpacing(20)
         self.layout.setContentsMargins(0, 0, 0, 0)
-        self.layout.addWidget(self.widgets['column'], 0, 0, 4, 1)
+        self.layout.addWidget(self.widgets['column'], 0, 0, -1, 1)
         self.layout.addWidget(self.widgets['plot'], 1, 2, 1, 1)
         self.layout.addWidget(self.widgets['hist'], 1, 3, 1, 1)
-        self.layout.addWidget(self.widgets['acqControl'], 0, 5, 4, 1)
+        self.layout.addWidget(self.widgets['acqControl'], 0, 5, -1, 1)
         self.layout.addWidget(self.widgets['wave_options'], 2, 2)
         self.layout.addWidget(self.widgets['hist_options'], 2, 3)
         self.layout.setColumnMinimumWidth(5, 180)
@@ -518,7 +527,7 @@ class HistogramPlotWidget(ScopeOutPlotWidget):
 
         ScopeOutPlotWidget.__init__(self)
         self.logger = logging.getLogger("ScopeOut.widgets.HistogramPlotWidget")
-        self.fig.suptitle("Peak Histogram", color='white')
+        self.fig.suptitle("Histogram", color='white')
         self.logger.info("Histogram Plot initialized")
 
     def show_histogram(self, x, bins):
@@ -532,10 +541,17 @@ class HistogramPlotWidget(ScopeOutPlotWidget):
 
         if len(x) > 1:
             self.reset_plot()
-            self.fig.suptitle("Peak Histogram", color='white')
             self.axes.set_ylabel('Counts')
             self.axes.hist(x, bins)
             self.fig.canvas.draw()
+
+    def reset(self):
+        """
+        Reset the widget to its initial state.
+        """
+
+        self.set_title('Histogram')
+        self.reset_plot()
 
 
 class AcquisitionControlWidget(ScopeOutWidget):
@@ -571,7 +587,7 @@ class AcquisitionControlWidget(ScopeOutWidget):
         self.acquire_on_trigger_button = QtWidgets.QPushButton('Acquire on Trigger', self)
         self.stop_acquisition_button = QtWidgets.QPushButton('Stop Acquisition', self)
         self.stop_acquisition_button.setProperty('type', 'stop')
-        self.hold_plot_checkbox = QtWidgets.QCheckBox('Hold plot', self)
+        self.hold_plot_checkbox = QtWidgets.QCheckBox('Hold Plot', self)
         self.show_peak_checkbox = QtWidgets.QCheckBox('Show Peak Window', self)
         self.show_peak_checkbox.setChecked(True)
         self.channel_combobox_label = QtWidgets.QLabel('Data Channel', self)
@@ -690,7 +706,7 @@ class AcquisitionControlWidget(ScopeOutWidget):
 
 class  WaveOptionsTabWidget(ScopeOutWidget):
     """
-    Manages Tabbed display of wave options widgets.
+    Manages tabbed display of wave options widgets.
     """
 
     class SmartPeakTab(ScopeOutWidget):
@@ -744,9 +760,6 @@ class  WaveOptionsTabWidget(ScopeOutWidget):
             self.layout.addWidget(self.end_threshold_label, 1, 0)
             self.layout.addWidget(self.end_threshold_input, 1, 1)
             self.setLayout(self.layout)
-
-            for i in range(0, self.layout.count()):
-                self.add_shadow(self.layout.itemAt(i).widget())
 
         @property
         def peak_detection_parameters(self):
@@ -843,9 +856,6 @@ class  WaveOptionsTabWidget(ScopeOutWidget):
             self.layout.addWidget(self.peak_width_unit_combobox, 1, 2)
             self.setLayout(self.layout)
 
-            for i in range(0, self.layout.count()):
-                self.add_shadow(self.layout.itemAt(i).widget())
-
         @property
         def peak_detection_parameters(self):
             """
@@ -931,9 +941,6 @@ class  WaveOptionsTabWidget(ScopeOutWidget):
             self.layout.addWidget(self.peak_width_input, 1, 1)
             self.layout.addWidget(self.peak_width_units, 1, 2)
             self.setLayout(self.layout)
-
-            for i in range(0, self.layout.count()):
-                self.add_shadow(self.layout.itemAt(i).widget())
 
         @property
         def peak_detection_parameters(self):
@@ -1429,8 +1436,9 @@ class HistogramOptionsWidget(ScopeOutWidget):
         self.logger = logging.getLogger('ScopeOut.widgets.HistogramOptionsWidget')
         ScopeOutWidget.__init__(self, *args)
 
-        self.property_label = QtWidgets.QLabel('Property to histogram', self)
+        self.property_label = QtWidgets.QLabel('Property to Histogram', self)
         self.property_selector = QtWidgets.QComboBox(self)
+        self.property_selector.setEnabled(False)
 
         self.bin_number_label = QtWidgets.QLabel('Number of Bins', self)
         self.bin_number_selector = QtWidgets.QSpinBox(self)
@@ -1441,10 +1449,13 @@ class HistogramOptionsWidget(ScopeOutWidget):
             self.bin_number_selector.setValue(100)
 
         self.layout = QtWidgets.QGridLayout(self)
-        self.layout.addWidget(self.property_label, 0, 0)
-        self.layout.addWidget(self.property_selector, 0, 1)
-        self.layout.addWidget(self.bin_number_label, 1, 0)
-        self.layout.addWidget(self.bin_number_selector, 1, 1)
+        self.layout.addWidget(self.property_label, 0, 1)
+        self.layout.addWidget(self.property_selector, 0, 2)
+        self.layout.addWidget(self.bin_number_label, 1, 1)
+        self.layout.addWidget(self.bin_number_selector, 1, 2)
+        self.layout.setRowStretch(3, 1)
+        self.layout.setColumnStretch(0, 1)
+        self.layout.setColumnStretch(3, 1)
 
         self.setLayout(self.layout)
 
@@ -1468,11 +1479,13 @@ class HistogramOptionsWidget(ScopeOutWidget):
 
             try:
                 default_property = Config.get('Histogram', 'default_property')
-                self.property_selector.setCurrentIndex(self.property_selector.findText(default_property))
+                property_index = self.property_selector.findText(default_property)
+                if property_index >= 0:
+                    self.property_selector.setCurrentIndex(property_index)
             except:
                 pass
 
-            self.setEnabled(True)
+            self.property_selector.setEnabled(True)
 
     def reset(self):
         """
@@ -1480,4 +1493,4 @@ class HistogramOptionsWidget(ScopeOutWidget):
         """
 
         self.property_selector.clear()
-        self.setEnabled(False)
+        self.property_selector.setEnabled(False)
