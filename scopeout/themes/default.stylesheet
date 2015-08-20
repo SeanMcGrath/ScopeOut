@@ -72,6 +72,15 @@ QTabBar::tab:!selected {
   margin-top: 2px;
 }
 
+VoltageThresholdTab QComboBox,
+VoltageThresholdTab QDoubleSpinBox {
+    width: 5em;
+}
+
+VoltageThresholdTab QLabel {
+    max-width: 20em;
+}
+
 QLabel {
     color: #E0E0E0;
     background: transparent;

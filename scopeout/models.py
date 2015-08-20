@@ -188,6 +188,45 @@ class Waveform(ModelBase):
             self.peak_start = 0
             self.peak_end = index_width
 
+    def find_peak_voltage_threshold(self, parameters):
+        """
+        Detect waveform peak by checking when the voltage crosses certain thresholds.
+        """
+
+        start_edge = parameters[0]
+        start_val = parameters[1]
+        end_edge = parameters[2]
+        end_val = parameters[3]
+
+        start_index = -1
+        end_index = -1
+
+        for i in range(0, len(self.y_list) - 1):
+            if start_edge.lower() == 'below' and self.y_list[i] <= start_val:
+                start_index = i
+                break
+            elif start_edge.lower() == 'above' and self.y_list[i] >= start_val:
+                start_index = i
+                break
+
+        if start_index == -1:
+            self.peak_start, self.peak_end = -1, -1
+            return
+
+        for i in range(start_index, len(self.y_list) - 1):
+            if end_edge.lower() == 'below' and self.y_list[i] <= end_val:
+                end_index = i
+                break
+            elif end_edge.lower() == 'above' and self.y_list[i] >= end_val:
+                end_index = i
+                break
+
+        if end_index == -1:
+            end_index = len(self.y_list) - 1
+
+        self.peak_start = start_index
+        self.peak_end = end_index
+
     def integrate_peak(self):
         """
         Integrate numerically over a wave's peak window.
@@ -240,6 +279,8 @@ class Waveform(ModelBase):
             self.find_peak_fixed(detection_parameters)
         elif 'Hybrid' in detection_mode:
             self.find_peak_hybrid(detection_parameters)
+        elif 'Voltage' in detection_mode:
+            self.find_peak_voltage_threshold(detection_parameters)
 
         self.integrate_peak()
 

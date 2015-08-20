@@ -29,7 +29,8 @@ class ScopeOutWidget(QtWidgets.QWidget):
     Provides methods important to the consistent styling of the application.
     """
 
-    units = OrderedDict([('nS', 1e-9), ('uS', 1e-6), ('mS', 1e-3), ('S', 1)])
+    time_units = OrderedDict([('nS', 1e-9), ('uS', 1e-6), ('mS', 1e-3), ('S', 1)])
+    voltage_units = OrderedDict([('nV', 1e-9), ('uV', 1e-6), ('mV', 1e-3), ('V', 1)])
 
     def __init__(self, *args):
 
@@ -153,7 +154,7 @@ class ScopeOutPlotWidget(FigureCanvas):
     @staticmethod
     def autoset_units(axis_array):
         """
-        Set the X units of the plot to the correct size based on the values in axisArray.
+        Set the X time_units of the plot to the correct size based on the values in axisArray.
 
         Parameters:
             :axisArray: the array of values representing one dimension of the waveform.
@@ -704,7 +705,7 @@ class AcquisitionControlWidget(ScopeOutWidget):
         self.stop_acquisition_button.setEnabled(not bool)
 
 
-class  WaveOptionsTabWidget(ScopeOutWidget):
+class WaveOptionsTabWidget(ScopeOutWidget):
     """
     Manages tabbed display of wave options widgets.
     """
@@ -815,7 +816,7 @@ class  WaveOptionsTabWidget(ScopeOutWidget):
                 self.logger.error(e)
 
             self.start_time_unit_combobox = QtWidgets.QComboBox(self)
-            self.start_time_unit_combobox.addItems(self.units.keys())
+            self.start_time_unit_combobox.addItems(self.time_units.keys())
 
             try:
                 unit = Config.get('Peak Detection', 'fixed_start_unit')
@@ -835,7 +836,7 @@ class  WaveOptionsTabWidget(ScopeOutWidget):
                 self.logger.error(e)
 
             self.peak_width_unit_combobox = QtWidgets.QComboBox(self)
-            self.peak_width_unit_combobox.addItems(self.units.keys())
+            self.peak_width_unit_combobox.addItems(self.time_units.keys())
 
             try:
                 unit = Config.get('Peak Detection', 'fixed_width_unit')
@@ -864,8 +865,8 @@ class  WaveOptionsTabWidget(ScopeOutWidget):
             :Returns: An array containing the peak start time and the peak width in seconds
             """
 
-            return [self.start_time_input.value() * self.units[self.start_time_unit_combobox.currentText()],
-                    self.peak_width_input.value() * self.units[self.peak_width_unit_combobox.currentText()]]
+            return [self.start_time_input.value() * self.time_units[self.start_time_unit_combobox.currentText()],
+                    self.peak_width_input.value() * self.time_units[self.peak_width_unit_combobox.currentText()]]
 
         def setEnabled(self, bool):
             """
@@ -922,7 +923,7 @@ class  WaveOptionsTabWidget(ScopeOutWidget):
                 self.logger.error(e)
 
             self.peak_width_units = QtWidgets.QComboBox(self)
-            self.peak_width_units.addItems(self.units.keys())
+            self.peak_width_units.addItems(self.time_units.keys())
 
             try:
                 unit = Config.get('Peak Detection', 'hybrid_width_unit')
@@ -951,7 +952,7 @@ class  WaveOptionsTabWidget(ScopeOutWidget):
             """
 
             return [self.start_threshold_input.value() / 100.0,
-                    self.peak_width_input.value() * self.units[self.peak_width_units.currentText()]]
+                    self.peak_width_input.value() * self.time_units[self.peak_width_units.currentText()]]
 
         def setEnabled(self, bool):
             """
@@ -963,6 +964,59 @@ class  WaveOptionsTabWidget(ScopeOutWidget):
 
             self.start_threshold_input.setEnabled(bool)
             self.endThresholdInput.setEnabled(bool)
+
+    class VoltageThresholdTab(ScopeOutWidget):
+        """
+        Tab to manage the voltage  threshold peak detection method
+        """
+
+        def __init__(self, *args):
+            """
+            constructor.
+            """
+
+            self.logger = logging.getLogger('ScopeOut.widgets.VoltageThresholdTab')
+            ScopeOutWidget.__init__(self, *args)
+            self.initialize_subwidgets()
+            self.show()
+
+        def initialize_subwidgets(self):
+
+            self.peak_start_label = QtWidgets.QLabel('Peak starts when voltage goes', self)
+            self.start_above_below_combobox = QtWidgets.QComboBox(self)
+            self.start_above_below_combobox.addItems(['Above', 'Below'])
+            self.start_voltage_spinbox = QtWidgets.QDoubleSpinBox(self)
+            self.start_voltage_spinbox.setMinimum(-9999)
+            self.start_voltage_spinbox.setMaximum(9999)
+            self.start_voltage_unit_combobox = QtWidgets.QComboBox(self)
+            self.start_voltage_unit_combobox.addItems(self.voltage_units.keys())
+
+            self.peak_end_label = QtWidgets.QLabel('Peak ends when voltage goes', self)
+            self.end_above_below_combobox = QtWidgets.QComboBox(self)
+            self.end_above_below_combobox.addItems(['Above', 'Below'])
+            self.end_voltage_spinbox = QtWidgets.QDoubleSpinBox(self)
+            self.end_voltage_spinbox.setMinimum(-9999)
+            self.end_voltage_spinbox.setMaximum(9999)
+            self.end_voltage_unit_combobox = QtWidgets.QComboBox(self)
+            self.end_voltage_unit_combobox.addItems(self.voltage_units.keys())
+
+            self.layout = QtWidgets.QGridLayout(self)
+            self.layout.addWidget(self.peak_start_label, 0, 0)
+            self.layout.addWidget(self.start_above_below_combobox, 0, 1)
+            self.layout.addWidget(self.start_voltage_spinbox, 0, 2)
+            self.layout.addWidget(self.start_voltage_unit_combobox, 0, 3)
+            self.layout.addWidget(self.peak_end_label, 1, 0)
+            self.layout.addWidget(self.end_above_below_combobox, 1, 1)
+            self.layout.addWidget(self.end_voltage_spinbox, 1, 2)
+            self.layout.addWidget(self.end_voltage_unit_combobox, 1, 3)
+            self.setLayout(self.layout)
+
+        @property
+        def peak_detection_parameters(self):
+            return (self.start_above_below_combobox.currentText(),
+                    self.start_voltage_spinbox.value() * self.voltage_units[self.start_voltage_unit_combobox.currentText()],
+                    self.end_above_below_combobox.currentText(),
+                    self.end_voltage_spinbox.value() * self.voltage_units[self.end_voltage_unit_combobox.currentText()])
 
     def __init__(self, *args):
         """
@@ -976,11 +1030,13 @@ class  WaveOptionsTabWidget(ScopeOutWidget):
         self.smart = self.SmartPeakTab(None)
         self.fixed = self.FixedPeakTab(None)
         self.hybrid = self.HybridPeakTab(None)
+        self.voltage_threshold = self.VoltageThresholdTab(None)
 
         self.tab_titles = ['Smart', 'Fixed Width', 'Hybrid', 'Voltage Threshold']
         self.tab_manager.addTab(self.smart, self.tab_titles[0])
         self.tab_manager.addTab(self.fixed, self.tab_titles[1])
         self.tab_manager.addTab(self.hybrid, self.tab_titles[2])
+        self.tab_manager.addTab(self.voltage_threshold, self.tab_titles[3])
 
         try:
             selected_tab = Config.get('Peak Detection', 'detection_method')

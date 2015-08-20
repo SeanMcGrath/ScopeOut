@@ -158,7 +158,7 @@ class GenericOscilloscope:
 
     def autosetUnits(self, axisArray):
         """
-        Set the X units of the pyplot to the correct size based on the values in axisArray.
+        Set the X time_units of the pyplot to the correct size based on the values in axisArray.
 
         Parameters:
             :axisArray: the array of values representing one dimension of the waveform.
