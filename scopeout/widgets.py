@@ -984,21 +984,75 @@ class WaveOptionsTabWidget(ScopeOutWidget):
 
             self.peak_start_label = QtWidgets.QLabel('Peak starts when voltage goes', self)
             self.start_above_below_combobox = QtWidgets.QComboBox(self)
-            self.start_above_below_combobox.addItems(['Above', 'Below'])
+            self.start_above_below_combobox.addItems(['above', 'below'])
+
+            try:
+                default_edge = Config.get('Peak Detection', 'voltage_threshold_start_edge')
+                if default_edge:
+                    default_index = self.start_above_below_combobox.findText(default_edge)
+                    if default_index >= 0:
+                        self.start_above_below_combobox.setCurrentIndex(default_index)
+            except Exception as e:
+                self.logger.error(e)
+
             self.start_voltage_spinbox = QtWidgets.QDoubleSpinBox(self)
             self.start_voltage_spinbox.setMinimum(-9999)
             self.start_voltage_spinbox.setMaximum(9999)
+
+            try:
+                default_value = Config.get('Peak Detection', 'voltage_threshold_start_value')
+                if default_value:
+                    self.start_voltage_spinbox.setValue(float(default_value))
+            except Exception as e:
+                self.logger.error(e)
+
             self.start_voltage_unit_combobox = QtWidgets.QComboBox(self)
             self.start_voltage_unit_combobox.addItems(self.voltage_units.keys())
 
+            try:
+                default_unit = Config.get('Peak Detection', 'voltage_threshold_start_unit')
+                if default_unit:
+                    default_index = self.start_voltage_unit_combobox.findText(default_unit)
+                    if default_index >= 0:
+                        self.start_voltage_unit_combobox.setCurrentIndex(default_index)
+            except Exception as e:
+                self.logger.error(e)
+
             self.peak_end_label = QtWidgets.QLabel('Peak ends when voltage goes', self)
             self.end_above_below_combobox = QtWidgets.QComboBox(self)
-            self.end_above_below_combobox.addItems(['Above', 'Below'])
+            self.end_above_below_combobox.addItems(['above', 'below'])
+
+            try:
+                default_edge = Config.get('Peak Detection', 'voltage_threshold_end_edge')
+                if default_edge:
+                    default_index = self.end_above_below_combobox.findText(default_edge)
+                    if default_index >= 0:
+                        self.end_above_below_combobox.setCurrentIndex(default_index)
+            except:
+                pass
+
             self.end_voltage_spinbox = QtWidgets.QDoubleSpinBox(self)
             self.end_voltage_spinbox.setMinimum(-9999)
             self.end_voltage_spinbox.setMaximum(9999)
+
+            try:
+                default_value = Config.get('Peak Detection', 'voltage_threshold_end_value')
+                if default_value:
+                    self.end_voltage_spinbox.setValue(float(default_value))
+            except Exception as e:
+                self.logger.error(e)
+
             self.end_voltage_unit_combobox = QtWidgets.QComboBox(self)
             self.end_voltage_unit_combobox.addItems(self.voltage_units.keys())
+
+            try:
+                default_unit = Config.get('Peak Detection', 'voltage_threshold_end_unit')
+                if default_unit:
+                    default_index = self.end_voltage_unit_combobox.findText(default_unit)
+                    if default_index >= 0:
+                        self.end_voltage_unit_combobox.setCurrentIndex(default_index)
+            except Exception as e:
+                self.logger.error(e)
 
             self.layout = QtWidgets.QGridLayout(self)
             self.layout.addWidget(self.peak_start_label, 0, 0)
