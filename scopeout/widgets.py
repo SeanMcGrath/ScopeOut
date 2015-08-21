@@ -300,12 +300,20 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
 
         # File->Save Plot
         self.save_plot_action = QtWidgets.QAction(QtGui.QIcon('save.png'), 'Save Plot', self)
-        self.save_plot_action.setStatusTip('Save plot image to disk.')
+        self.save_plot_action.setStatusTip('Save plot image to a file.')
+
+        # File->Save Histogram
+        self.save_histogram_action = QtWidgets.QAction(QtGui.QIcon('save.png'), 'Save Histogram', self)
+        self.save_histogram_action.setStatusTip('Save histogram image to a file.')
 
         # File->Load Session
         self.load_session_action = QtWidgets.QAction(QtGui.QIcon('load.png'), '&Load Session', self)
         self.load_session_action.setShortcut('Ctrl+L')
         self.save_action.setStatusTip('Load waveforms from a past data acquisition session.')
+
+        # File->Save settings
+        self.save_settings_action = QtWidgets.QAction('Save Settings as Defaults', self)
+        self.save_settings_action.setStatusTip('Save the current application settings as the default configuration.')
 
         # Data->Reset
         self.reset_action = QtWidgets.QAction('&Reset and Clear Data', self)
@@ -325,7 +333,9 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
         self.file_menu.addAction(self.save_action)
         self.file_menu.addAction(self.save_properties_action)
         self.file_menu.addAction(self.save_plot_action)
+        self.file_menu.addAction(self.save_histogram_action)
         self.file_menu.addAction(self.load_session_action)
+        self.file_menu.addAction(self.save_settings_action)
 
         # "Data" Menu
         self.data_menu = self.menubar.addMenu('&Data')
@@ -529,6 +539,7 @@ class HistogramPlotWidget(ScopeOutPlotWidget):
         ScopeOutPlotWidget.__init__(self)
         self.logger = logging.getLogger("ScopeOut.widgets.HistogramPlotWidget")
         self.fig.suptitle("Histogram", color='white')
+        self.axes.set_ylabel('Counts')
         self.logger.info("Histogram Plot initialized")
 
     def show_histogram(self, x, bins):
@@ -542,7 +553,6 @@ class HistogramPlotWidget(ScopeOutPlotWidget):
 
         if len(x) > 1:
             self.reset_plot()
-            self.axes.set_ylabel('Counts')
             self.axes.hist(x, bins)
             self.fig.canvas.draw()
 
@@ -589,11 +599,23 @@ class AcquisitionControlWidget(ScopeOutWidget):
         self.stop_acquisition_button = QtWidgets.QPushButton('Stop Acquisition', self)
         self.stop_acquisition_button.setProperty('type', 'stop')
         self.hold_plot_checkbox = QtWidgets.QCheckBox('Hold Plot', self)
+
+        try:
+            plot_held = Config.get('Acquisition Control', 'hold_plot')
+            self.hold_plot_checkbox.setChecked(plot_held.lower() in ['true', 't', '1'])
+        except Exception as e:
+            self.logger.error(e)
+
         self.show_peak_checkbox = QtWidgets.QCheckBox('Show Peak Window', self)
-        self.show_peak_checkbox.setChecked(True)
+
+        try:
+            show_peak = Config.get('Acquisition Control', 'show_peak')
+            self.show_peak_checkbox.setChecked(show_peak.lower() in ['true', 't', '1'])
+        except Exception as e:
+            self.logger.error(e)
+
         self.channel_combobox_label = QtWidgets.QLabel('Data Channel', self)
         self.channel_combobox = QtWidgets.QComboBox(self)
-        self.hold_plot_checkbox.setChecked(False)
 
         if self.scope is not None:
             self.setEnabled(True)
@@ -662,7 +684,15 @@ class AcquisitionControlWidget(ScopeOutWidget):
             channels.append('All')
             channels.append('Math')
             self.channel_combobox.addItems(channels)
-            self.channel_combobox.setCurrentIndex(0)
+
+            try:
+                channel = Config.get('Acquisition Control', 'data_channel')
+                index = self.channel_combobox.findText(channel)
+                self.channel_combobox.setCurrentIndex(index)
+            except Exception as e:
+                self.logger.error(e)
+                self.channel_combobox.setCurrentIndex(0)
+
         elif bool:  # Wait for scope to become active
             while self.scope is None:
                 pass
@@ -674,6 +704,7 @@ class AcquisitionControlWidget(ScopeOutWidget):
         else:
             self.channel_combobox.clear()
 
+    @property
     def plot_held(self):
         """
         Check if 'plot hold' option is selected.
@@ -738,7 +769,7 @@ class WaveOptionsTabWidget(ScopeOutWidget):
             self.start_threshold_input.setSuffix('%')
 
             try:
-                start_threshold = int(Config.get('Peak Detection', 'smart_start_threshold'))
+                start_threshold = float(Config.get('Peak Detection', 'smart_start_threshold'))
                 self.start_threshold_input.setValue(start_threshold)
             except Exception as e:
                 self.logger.error(e)
@@ -749,7 +780,7 @@ class WaveOptionsTabWidget(ScopeOutWidget):
             self.end_threshold_input.setSuffix('%')
 
             try:
-                end_threshold = int(Config.get('Peak Detection', 'smart_end_threshold'))
+                end_threshold = float(Config.get('Peak Detection', 'smart_end_threshold'))
                 self.end_threshold_input.setValue(end_threshold)
             except Exception as e:
                 self.logger.error(e)
@@ -810,7 +841,7 @@ class WaveOptionsTabWidget(ScopeOutWidget):
             self.start_time_input.setMinimum(0)
 
             try:
-                start_time = int(Config.get('Peak Detection', 'fixed_start_time'))
+                start_time = float(Config.get('Peak Detection', 'fixed_start_time'))
                 self.start_time_input.setValue(start_time)
             except Exception as e:
                 self.logger.error(e)
@@ -830,7 +861,7 @@ class WaveOptionsTabWidget(ScopeOutWidget):
             self.peak_width_input.setMinimum(0)
 
             try:
-                width = int(Config.get('Peak Detection', 'fixed_width_time'))
+                width = float(Config.get('Peak Detection', 'fixed_width_time'))
                 self.peak_width_input.setValue(width)
             except Exception as e:
                 self.logger.error(e)
@@ -907,7 +938,7 @@ class WaveOptionsTabWidget(ScopeOutWidget):
             self.start_threshold_input.setSuffix('%')
 
             try:
-                start_threshold = int(Config.get('Peak Detection', 'hybrid_start_threshold'))
+                start_threshold = float(Config.get('Peak Detection', 'hybrid_start_threshold'))
                 self.start_threshold_input.setValue(start_threshold)
             except Exception as e:
                 self.logger.error(e)
@@ -917,7 +948,7 @@ class WaveOptionsTabWidget(ScopeOutWidget):
             self.peak_width_input.setMinimum(0)
 
             try:
-                width = int(Config.get('Peak Detection', 'hybrid_width_time'))
+                width = float(Config.get('Peak Detection', 'hybrid_width_time'))
                 self.peak_width_input.setValue(width)
             except Exception as e:
                 self.logger.error(e)

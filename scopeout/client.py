@@ -153,17 +153,20 @@ class ThreadedClient(QtWidgets.QApplication):
         self.main_window.save_action.triggered.connect(self.save_wave_to_disk)
         self.main_window.save_properties_action.triggered.connect(self.save_properties_to_disk)
         self.main_window.save_plot_action.triggered.connect(self.save_plot_to_disk)
+        self.main_window.save_histogram_action.triggered.connect(self.save_histogram_to_disk)
         self.main_window.load_session_action.triggered.connect(self.load_database)
+        self.main_window.save_settings_action.triggered.connect(self.save_configuration)
 
         #  Wave Column Signals
         self.wave_column.wave_signal.connect(self.plot_wave)
         self.wave_column.save_signal.connect(self.save_wave_to_disk)
         self.wave_column.save_properties_signal.connect(self.save_properties_to_disk)
         self.wave_column.delete_signal.connect(self.delete_wave)
-        self.wave_column.delete_signal.connect(self.wave_column.reset)
+        self.wave_column.delete_signal.connect(self.update_histogram)
 
         # Histogram Options signals
         self.histogram_options.property_selector.currentIndexChanged.connect(self.update_histogram)
+        self.histogram_options.bin_number_selector.valueChanged.connect(self.update_histogram)
 
         self.logger.info("Signals connected")
 
@@ -672,7 +675,30 @@ class ThreadedClient(QtWidgets.QApplication):
         if self.plot.save_plot(file_name):
             self.update_status("Plot saved successfully")
         else:
-            self.update_status("Error ")
+            self.update_status("Error occurred while saving plot. Check log for details.")
+
+    def save_histogram_to_disk(self):
+        """
+        Save an image of the active histogram.
+        :return:
+        """
+
+        plot_directory = Config.get('Export', 'plot_dir')
+        if not os.path.exists(plot_directory):
+            os.makedirs(plot_directory)
+
+        day_directory = os.path.join(plot_directory, date.today().isoformat())
+        if not os.path.exists(day_directory):
+            os.makedirs(day_directory)
+
+        default_file = 'Histogram' + datetime.now().strftime('%m-%d-%H-%M-%S') + '.png'
+        default_file = os.path.join(day_directory, default_file).replace('\\', '/')
+
+        file_name = QtWidgets.QFileDialog.getSaveFileName(self.main_window, 'Save As', default_file)[0]
+        if self.histogram.save_plot(file_name):
+            self.update_status("Plot saved successfully")
+        else:
+            self.update_status("Error occurred while saving plot. Check log for details.")
 
     def update_status(self, message):
         """
@@ -708,16 +734,12 @@ class ThreadedClient(QtWidgets.QApplication):
         :param wave: the waveform to delete.
         """
 
-        def delete_thread():
-
+        try:
             self.db_session.delete(wave)
             self.db_session.commit()
-
-        try:
-            del_thread = threading.Thread(target=delete_thread)
-            del_thread.start()
         except Exception as e:
             self.logger.error(e)
+            self.db_session.rollback()
 
     def load_database(self):
         """
@@ -773,3 +795,56 @@ class ThreadedClient(QtWidgets.QApplication):
             self.logger.error(e)
             self.update_status('Failed to load waves from ' + database_path)
 
+    def save_configuration(self):
+        """
+        Save the current settings to the configuration file.
+        :return:
+        """
+
+        self.logger.info('Saving configuration')
+
+        settings = [('Peak Detection', 'detection_method',
+                     self.wave_options.peak_detection_mode),
+                    ('Peak Detection', 'smart_start_threshold',
+                     self.wave_options.smart.start_threshold_input.value()),
+                    ('Peak Detection', 'smart_end_threshold',
+                     self.wave_options.smart.end_threshold_input.value()),
+                    ('Peak Detection', 'fixed_start_time',
+                     self.wave_options.fixed.start_time_input.value()),
+                    ('Peak Detection', 'fixed_start_unit',
+                     self.wave_options.fixed.start_time_unit_combobox.currentText()),
+                    ('Peak Detection', 'fixed_width_time',
+                     self.wave_options.fixed.peak_width_input.value()),
+                    ('Peak Detection', 'fixed_width_unit',
+                     self.wave_options.fixed.peak_width_unit_combobox.currentText()),
+                    ('Peak Detection', 'hybrid_start_threshold',
+                     self.wave_options.hybrid.start_threshold_input.value()),
+                    ('Peak Detection', 'hybrid_width_time',
+                     self.wave_options.hybrid.peak_width_input.value()),
+                    ('Peak Detection', 'hybrid_width_unit',
+                     self.wave_options.hybrid.peak_width_units.currentText()),
+                    ('Peak Detection', 'voltage_threshold_start_edge',
+                     self.wave_options.voltage_threshold.start_above_below_combobox.currentText()),
+                    ('Peak Detection', 'voltage_threshold_start_value',
+                     self.wave_options.voltage_threshold.start_voltage_spinbox.value()),
+                    ('Peak Detection', 'voltage_threshold_start_unit',
+                     self.wave_options.voltage_threshold.start_voltage_unit_combobox.currentText()),
+                    ('Peak Detection', 'voltage_threshold_end_edge',
+                     self.wave_options.voltage_threshold.end_above_below_combobox.currentText()),
+                    ('Peak Detection', 'voltage_threshold_end_value',
+                     self.wave_options.voltage_threshold.end_voltage_spinbox.value()),
+                    ('Peak Detection', 'voltage_threshold_end_unit',
+                     self.wave_options.voltage_threshold.end_voltage_unit_combobox.currentText()),
+                    ('Histogram', 'default_property',
+                     self.histogram_options.property_selector.currentText().lower().replace(' ', '_')),
+                    ('Histogram', 'number_of_bins',
+                     self.histogram_options.bin_number_selector.value()),
+                    ('Acquisition Control', 'hold_plot',
+                     self.acquisition_control.plot_held),
+                    ('Acquisition Control', 'show_peak',
+                     self.acquisition_control.show_peak_window),
+                    ('Acquisition Control', 'data_channel',
+                     self.acquisition_control.channel_combobox.currentText())]
+
+        Config.set_multiple(settings)
+        self.update_status('Configuration saved.')
