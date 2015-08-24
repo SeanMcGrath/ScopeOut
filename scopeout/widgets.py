@@ -14,7 +14,7 @@ from numpy import multiply, amax
 from PyQt5 import QtGui, QtWidgets, QtCore
 from matplotlib.figure import Figure
 from matplotlib.widgets import Cursor
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT as NavigationToolbar
 from collections import OrderedDict
 from functools import partial
 
@@ -134,7 +134,10 @@ class ScopeOutPlotWidget(FigureCanvas):
         [t.set_color('white') for t in self.axes.yaxis.get_ticklabels()]
         [t.set_color('white') for t in self.axes.xaxis.get_ticklabels()]
 
+        self.nav_toolbar = NavigationToolbar(self, self, False)
+
         self.setContentsMargins(5, 5, 5, 5)
+        self.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
 
     def display_coords(self, event):
         """
@@ -250,24 +253,25 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
         self.central_widget = QtWidgets.QWidget(self)
         self.layout = QtWidgets.QGridLayout(self.central_widget)
 
-        self.layout.setSpacing(20)
         self.layout.setContentsMargins(0, 0, 0, 0)
-        self.layout.addWidget(self.widgets['column'], 0, 0, -1, 1)
-        self.layout.addWidget(self.widgets['plot'], 1, 2, 1, 1)
-        self.layout.addWidget(self.widgets['hist'], 1, 3, 1, 1)
+        self.layout.setSpacing(0)
+        self.layout.addWidget(WaveColumnHeader(), 0, 0)
+        self.layout.addWidget(self.widgets['column'], 1, 0, -1, 1)
+        self.layout.addWidget(self.widgets['plot'], 2, 2, 1, 1)
+        self.layout.addWidget(self.widgets['hist'], 2, 3, 1, 1)
         self.layout.addWidget(self.widgets['acqControl'], 0, 5, -1, 1)
-        self.layout.addWidget(self.widgets['wave_options'], 2, 2)
-        self.layout.addWidget(self.widgets['hist_options'], 2, 3)
-        self.layout.setColumnMinimumWidth(5, 180)
+        self.layout.addWidget(self.widgets['wave_options'], 3, 2)
+        self.layout.addWidget(self.widgets['hist_options'], 3, 3)
+        self.layout.setColumnMinimumWidth(1, 20)
         self.layout.setColumnMinimumWidth(2, 500)
         self.layout.setColumnMinimumWidth(3, 500)
-        self.layout.setColumnStretch(0, 1)
-        self.layout.setColumnStretch(2, 1)
-        self.layout.setRowStretch(0, 1)
+        self.layout.setColumnMinimumWidth(4, 20)
+        self.layout.setColumnMinimumWidth(5, 180)
+        self.layout.setColumnStretch(1, 1)
         self.layout.setRowStretch(1, 1)
         self.layout.setRowStretch(4, 1)
         self.layout.setRowMinimumHeight(4, 20)
-        self.layout.setRowMinimumHeight(1, 500)
+        self.layout.setRowMinimumHeight(2, 500)
         self.central_widget.setLayout(self.layout)
         self.setCentralWidget(self.central_widget)
 
@@ -469,7 +473,7 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
             self.widgets['plot'].show()
 
 
-class WavePlotWidget(ScopeOutPlotWidget):
+class WavePlotWidget(ScopeOutWidget):
     """
     Class to hold matplotlib Figures for display.
     """
@@ -479,10 +483,19 @@ class WavePlotWidget(ScopeOutPlotWidget):
         Constructor
         """
 
-        ScopeOutPlotWidget.__init__(self)
+        ScopeOutWidget.__init__(self)
         self.logger = logging.getLogger("ScopeOut.widgets.WavePlotWidget")
-        self.fig.suptitle("Waveform Capture", color='white')
+        self.plot = ScopeOutPlotWidget()
+        self.plot.fig.suptitle("Waveform Capture", color='white')
+        self.layout = QtWidgets.QVBoxLayout(self)
+        self.layout.addWidget(self.plot)
+        self.layout.addWidget(self.plot.nav_toolbar)
+        self.layout.setAlignment(self.plot.nav_toolbar, QtCore.Qt.AlignCenter)
+        self.setLayout(self.layout)
         self.logger.info("Wave Plot initialized")
+
+        self.save_plot_action = QtWidgets.QAction('Save Plot', self)
+        self.addAction(self.save_plot_action)
 
     def show_plot(self, wave, hold=False, show_peak=False):
         """
@@ -493,20 +506,20 @@ class WavePlotWidget(ScopeOutPlotWidget):
         """
 
         if not hold:
-            self.reset_plot()
+            self.plot.reset_plot()
 
-        self.fig.suptitle("Waveform Capture", color='white')
+        self.plot.fig.suptitle("Waveform Capture", color='white')
 
-        x_data, x_prefix = self.autoset_units(wave.x_list)
-        y_data, y_prefix = self.autoset_units(wave.y_list)
-        self.axes.set_ylabel(y_prefix + wave.y_unit)
-        self.axes.set_xlabel(x_prefix + wave.x_unit)
-        self.axes.plot(x_data, y_data)
+        x_data, x_prefix = self.plot.autoset_units(wave.x_list)
+        y_data, y_prefix = self.plot.autoset_units(wave.y_list)
+        self.plot.axes.set_ylabel(y_prefix + wave.y_unit)
+        self.plot.axes.set_xlabel(x_prefix + wave.x_unit)
+        self.plot.axes.plot(x_data, y_data)
         if show_peak and wave.peak_start >= 0:
             self.plot_vertical_lines([wave.x_list[wave.peak_start], wave.x_list[wave.peak_end]])
-        cursor = Cursor(self.axes, useblit=True, color='black', linewidth=1)
-        cursor.connect_event('motion_notify_event', self.display_coords)
-        self.fig.canvas.draw()
+        cursor = Cursor(self.plot.axes, useblit=True, color='black', linewidth=1)
+        cursor.connect_event('motion_notify_event', self.plot.display_coords)
+        self.plot.fig.canvas.draw()
 
         self.logger.info('plotting completed')
 
@@ -521,12 +534,12 @@ class WavePlotWidget(ScopeOutPlotWidget):
         x_array, prefix = self.autoset_units(x_array)
         for x in x_array:
             if x >= 0:
-                self.axes.axvline(x)
+                self.plot.axes.axvline(x)
 
         self.logger.info("drew vertical lines")
 
 
-class HistogramPlotWidget(ScopeOutPlotWidget):
+class HistogramPlotWidget(ScopeOutWidget):
     """
     Widget holding a matplotlib histogram.
     """
@@ -536,11 +549,20 @@ class HistogramPlotWidget(ScopeOutPlotWidget):
         Constructor
         """
 
-        ScopeOutPlotWidget.__init__(self)
+        ScopeOutWidget.__init__(self)
         self.logger = logging.getLogger("ScopeOut.widgets.HistogramPlotWidget")
-        self.fig.suptitle("Histogram", color='white')
-        self.axes.set_ylabel('Counts')
+        self.histogram = ScopeOutPlotWidget()
+        self.histogram.fig.suptitle("Histogram", color='white')
+        self.histogram.axes.set_ylabel('Counts')
+
+        self.layout = QtWidgets.QVBoxLayout(self)
+        self.layout.addWidget(self.histogram)
+        self.layout.addWidget(self.histogram.nav_toolbar)
+        self.layout.setAlignment(self.histogram.nav_toolbar, QtCore.Qt.AlignCenter)
         self.logger.info("Histogram Plot initialized")
+
+        self.save_histogram_action = QtWidgets.QAction('Save Histogram', self)
+        self.addAction(self.save_histogram_action)
 
     def show_histogram(self, x, bins):
         """
@@ -552,17 +574,17 @@ class HistogramPlotWidget(ScopeOutPlotWidget):
         """
 
         if len(x) > 1:
-            self.reset_plot()
-            self.axes.hist(x, bins)
-            self.fig.canvas.draw()
+            self.histogram.reset_plot()
+            self.histogram.axes.hist(x, bins)
+            self.histogram.fig.canvas.draw()
 
     def reset(self):
         """
         Reset the widget to its initial state.
         """
 
-        self.set_title('Histogram')
-        self.reset_plot()
+        self.histogram.set_title('Histogram')
+        self.histogram.reset_plot()
 
 
 class AcquisitionControlWidget(ScopeOutWidget):
@@ -620,22 +642,23 @@ class AcquisitionControlWidget(ScopeOutWidget):
         if self.scope is not None:
             self.setEnabled(True)
 
-        self.layout = QtWidgets.QGridLayout(self)
-        self.layout.setRowStretch(0, 1)
-        self.layout.setRowMinimumHeight(2, 100)
-        self.layout.setRowStretch(2, 1)
-        self.layout.setRowMinimumHeight(9, 150)
-        self.layout.setRowStretch(9, 1)
-        self.layout.addWidget(self.autoset_button, 1, 0)
-        self.layout.addWidget(self.acquire_button, 3, 0)
-        self.layout.addWidget(self.acquire_on_trigger_button, 4, 0)
-        self.layout.addWidget(self.continuous_acquire_button, 5, 0)
-        self.layout.addWidget(self.stop_acquisition_button, 6, 0)
-        self.layout.addWidget(self.hold_plot_checkbox, 7, 0)
-        self.layout.addWidget(self.show_peak_checkbox, 8, 0)
-        self.layout.addWidget(self.channel_combobox_label, 10, 0)
-        self.layout.addWidget(self.channel_combobox, 11, 0)
-        self.layout.setRowStretch(12, 1)
+        self.layout = QtWidgets.QVBoxLayout(self)
+        self.layout.addStretch(1)
+        self.layout.addWidget(self.autoset_button)
+        self.layout.addStretch(1)
+        self.layout.addWidget(self.acquire_button)
+        self.layout.addWidget(self.acquire_on_trigger_button)
+        self.layout.addWidget(self.continuous_acquire_button)
+        self.layout.addWidget(self.stop_acquisition_button)
+        self.layout.addSpacing(15)
+        self.layout.addWidget(self.hold_plot_checkbox)
+        self.layout.addWidget(self.show_peak_checkbox)
+        self.layout.addStretch(1)
+        self.layout.addWidget(self.channel_combobox_label)
+        self.layout.addWidget(self.channel_combobox)
+        self.layout.setAlignment(self.channel_combobox, QtCore.Qt.AlignCenter)
+        self.layout.setAlignment(self.channel_combobox_label, QtCore.Qt.AlignCenter)
+        self.layout.addStretch(1)
         self.setLayout(self.layout)
 
         for i in range(0, self.layout.count()):
@@ -1235,7 +1258,7 @@ class WaveColumnWidget(ScopeOutScrollArea):
             self.wave = wave
             time = str(wave.capture_time)
             display_time = self.make_display_time(time)
-            self.wave_time = QtWidgets.QLabel('Time: ' + display_time, self)
+            self.wave_time = QtWidgets.QLabel(display_time, self)
             self.wave_id = QtWidgets.QLabel(str(wave.id), self)
             self.delete_button = QtWidgets.QPushButton('X', self)
             self.delete_button.clicked.connect(lambda: self.delete_signal.emit(self))
@@ -1246,13 +1269,12 @@ class WaveColumnWidget(ScopeOutScrollArea):
             self.layout.setSpacing(2)
             self.layout.addWidget(self.wave_id, 0, 0)
             self.layout.addWidget(self.wave_time, 0, 1)
+            self.layout.setColumnMinimumWidth(0, 50)
+            self.layout.setColumnMinimumWidth(1, 60)
             if self.peak_detected:
                 self.layout.addWidget(QtWidgets.QLabel('^', self), 0, 2)
-                self.layout.addWidget(self.delete_button, 0, 4)
-                self.layout.setColumnStretch(3, 1)
-            else:
-                self.layout.setColumnStretch(2, 1)
-                self.layout.addWidget(self.delete_button, 0, 3)
+            self.layout.setColumnStretch(2, 1)
+            self.layout.addWidget(self.delete_button, 0, 3)
             self.setLayout(self.layout)
 
         def make_display_time(self, datetime):
@@ -1489,6 +1511,32 @@ class WaveColumnWidget(ScopeOutScrollArea):
         """
 
         self.hold = bool
+
+
+class WaveColumnHeader(ScopeOutWidget):
+
+    def __init__(self, *args):
+
+        ScopeOutWidget.__init__(self, *args)
+
+        self.id_label = QtWidgets.QLabel('ID', self)
+        self.time_label = QtWidgets.QLabel('Time', self)
+        self.peak_label = QtWidgets.QLabel('Peak', self)
+
+        self.layout = QtWidgets.QHBoxLayout(self)
+
+        self.layout.addWidget(self.id_label)
+        self.layout.addSpacing(30)
+        self.layout.addWidget(self.time_label)
+        self.layout.addSpacing(30)
+        self.layout.addWidget(self.peak_label)
+        self.layout.addStretch(1)
+        self.layout.setSpacing(0)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(self.layout)
+
+        self.add_shadow()
+        self.show()
 
 
 class SelectPropertiesDialog(QtWidgets.QDialog):

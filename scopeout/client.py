@@ -164,6 +164,12 @@ class ThreadedClient(QtWidgets.QApplication):
         self.wave_column.delete_signal.connect(self.delete_wave)
         self.wave_column.delete_signal.connect(self.update_histogram)
 
+        # Plot signals
+        self.plot.save_plot_action.triggered.connect(self.save_plot_to_disk)
+
+        # Histogram signals
+        self.histogram.save_histogram_action.triggered.connect(self.save_histogram_to_disk)
+
         # Histogram Options signals
         self.histogram_options.property_selector.currentIndexChanged.connect(self.update_histogram)
         self.histogram_options.bin_number_selector.valueChanged.connect(self.update_histogram)
@@ -198,7 +204,7 @@ class ThreadedClient(QtWidgets.QApplication):
         :param wave: a Waveform, with its data contained in the x_list and y_list attributes.
         """
 
-        self.plot.show_plot(wave, self.acquisition_control.plot_held(), self.acquisition_control.show_peak_window)
+        self.plot.show_plot(wave, self.acquisition_control.plot_held, self.acquisition_control.show_peak_window)
 
     def update_histogram(self):
         """
@@ -209,7 +215,7 @@ class ThreadedClient(QtWidgets.QApplication):
         if wave_property:
             histogram_list = [val for (val,) in self.db_session.query(getattr(Waveform, wave_property)).all()]
             self.histogram.show_histogram(histogram_list, self.histogram_options.bin_number_selector.value())
-            self.histogram.set_title(wave_property)
+            self.histogram.histogram.set_title(wave_property)
 
     def acq_event(self, mode):
         """
@@ -282,7 +288,7 @@ class ThreadedClient(QtWidgets.QApplication):
                 else:
                     self.logger.info("Multichannel acquisition")
 
-                    self.plot.reset_plot()
+                    self.plot.plot.reset_plot()
 
                     for i in range(0, self.active_scope.numChannels):
 
@@ -471,7 +477,7 @@ class ThreadedClient(QtWidgets.QApplication):
         Called to reset waveform and plot.
         """
 
-        self.plot.reset_plot()
+        self.plot.plot.reset_plot()
         self.wave_column.reset()
         self.histogram.reset()
         self.histogram_options.reset()

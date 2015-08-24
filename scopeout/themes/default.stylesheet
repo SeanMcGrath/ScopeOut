@@ -1,11 +1,74 @@
 QMainWindow,
-SelectPropertiesPopup {
+SelectPropertiesPopup,
+QDialog {
 	background-color: #424242;
 }
 
 QWidget:disabled {
     color: gray;
     opacity: 30%;
+}
+
+QLabel {
+    color: #E0E0E0;
+    background: transparent;
+    padding: 8px;
+    qproperty-alignment: AlignCenter;
+    max-height: 1em;
+}
+
+QCheckBox {
+  color: #E0E0E0;
+  margin-top: 5px;
+}
+
+QCheckBox::indicator {
+    background-color: #424242;
+    border: 1px black inset;
+    border-radius: 1px;
+}
+
+QCheckBox::indicator:checked {
+  background-color: #673AB7;
+}
+
+QSpinBox, QDoubleSpinBox, QComboBox {
+  background-color: #212121;
+  color: #E0E0E0;
+  border-radius: 2px;
+  border: 1px solid #242424;
+  width: 10em;
+  max-width: 10em;
+}
+
+QComboBox::down-arrow {
+  color: #E0E0E0;
+}
+
+QComboBox::drop-down {
+  color: black;
+}
+
+QComboBox QListView {
+    outline: none;
+    color: black;
+}
+
+QStatusBar {
+	color: white;
+}
+
+QMenuBar {
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                  stop: 0 #E1E1E1, stop: 0.4 #DDDDDD,
+                                  stop: 0.5 #D8D8D8, stop: 1.0 #D3D3D3);
+}
+
+QMenuBar::item {
+   spacing: 3px; /* spacing between menu bar items */
+   padding: 1px 4px;
+   background: transparent;
+   border-radius: 4px;
 }
 
 QPushButton {
@@ -77,80 +140,33 @@ VoltageThresholdTab QDoubleSpinBox {
     width: 5em;
 }
 
-VoltageThresholdTab QLabel {
-    max-width: 20em;
-}
-
-QLabel {
-    color: #E0E0E0;
-    background: transparent;
-    padding: 8px;
-    qproperty-alignment: AlignCenter;
-    max-height: 1em;
-    max-width: 10em;
-}
-
-QCheckBox {
-  color: #E0E0E0;
-  margin-top: 5px;
-}
-
-QCheckBox::indicator {
-    background-color: #424242;
-    border: 1px black inset;
-    border-radius: 1px;
-}
-
-QCheckBox::indicator:checked {
-  background-color: #673AB7;
-}
-
-QSpinBox, QDoubleSpinBox, QComboBox {
-  background-color: #212121;
-  color: #E0E0E0;
-  border-radius: 2px;
-  border: 1px solid #242424;
-  width: 10em;
-  max-width: 10em;
-}
-
-QComboBox::down-arrow {
-  color: #E0E0E0;
-}
-
-QComboBox::drop-down {
-  color: black;
-}
-
-QComboBox QListView {
-    outline: none;
-    color: black;
-}
-
-QStatusBar {
-	color: white;
-}
-
-QMenuBar {
-    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                  stop: 0 #E1E1E1, stop: 0.4 #DDDDDD,
-                                  stop: 0.5 #D8D8D8, stop: 1.0 #D3D3D3);
-}
-
-QMenuBar::item {
-   spacing: 3px; /* spacing between menu bar items */
-   padding: 1px 4px;
-   background: transparent;
-   border-radius: 4px;
-}
-
 AcquisitionControlWidget {
   max-width: 200px;
   background-color: #212121;
 }
 
+AcquisitionControlWidget QPushButton {
+    margin: 2px 10px;
+}
+
+AcquisitionControlWidget QCheckBox {
+    margin: 4px 16px;
+}
+
 AcquisitionControlWidget QComboBox {
     background-color: #424242;
+}
+
+WaveColumnHeader {
+  padding: 0;
+  margin: 0;
+  min-width: 250px;
+  max-width: 400px;
+  background-color: black;
+}
+
+WaveColumnHeader QLabel {
+  height: 2em;
 }
 
 WaveColumnWidget {
@@ -158,7 +174,7 @@ WaveColumnWidget {
   margin: 0px;
   height: 100%;
   min-width: 250px;
-  max-width: 350px;
+  max-width: 400px;
   min-height: 200px;
   border: none;
 }
@@ -180,6 +196,9 @@ WaveColumnItem QPushButton {
   color: white;
   font-size: 14px;
   border-radius: 0px;
+  max-width: 1em;
+  margin-right: 10px;
+  margin-top: 2px;
 }
 
 WaveColumnItem QPushButton::hover {
@@ -191,13 +210,14 @@ WaveColumnItem QPushButton::pressed {
 }
 
 WaveColumnWidget QScrollBar {
+  width: 10px;
   background-color: #212121;
   color: white;
 }
 
 WaveColumnItem {
   min-height: 3em;
-  max-height: 50px;
+  max-height: 30px;
   min-width: 250px;
   width: 250px;
   border-top: 2px solid #3C3C3C;
@@ -224,6 +244,14 @@ WaveColumnItem[state="inactive"]:hover {
   background-color: #424242;
 }
 
+WaveColumnItem[state="inactive"] QPushButton:hover {
+  background-color: #424242;
+}
+
+WaveColumnItem[state="active"] QPushButton:hover {
+  background-color: #5E35B1;
+}
+
 WaveColumnItem QLabel {
   min-width: 1em;
   max-width: 250px;
@@ -241,4 +269,10 @@ PropertiesPopup {
 
 waveOptionsTabWidget {
   max-width: 600px;
+}
+
+NavigationToolbar2QT {
+    background-color: gray;
+    border-radius: 2px;
+    padding: 5px;
 }

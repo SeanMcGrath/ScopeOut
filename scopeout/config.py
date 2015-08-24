@@ -10,11 +10,11 @@ REQUIRED_SECTIONS = ['Themes', 'Database', 'Logging', 'Export', 'Peak Detection'
 
 logger = logging.getLogger('ScopeOut.config.ScopeOutConfig')
 
+
 class ScopeOutConfig:
     """
     Reads and writes to ScopeOut's configuration files
     """
-
 
     @staticmethod
     def get(section, option):
