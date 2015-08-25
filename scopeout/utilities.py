@@ -104,7 +104,7 @@ class ScopeFinder:
                         self.logger.info("Found %s", str(scope))
 
                     # Support for other scopes to be implemented here!
-                except VisaIOError:
+                except VisaIOError or IndexError:
                     self.logger.error('{} could not be converted to an oscilloscope'.format(ins))
         return self
 

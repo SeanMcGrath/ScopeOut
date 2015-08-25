@@ -271,6 +271,10 @@ waveOptionsTabWidget {
   max-width: 600px;
 }
 
+ScopeOutPlotWidget {
+    background: transparent;
+}
+
 NavigationToolbar2QT {
     background-color: gray;
     border-radius: 2px;

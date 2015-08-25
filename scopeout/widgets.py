@@ -112,8 +112,6 @@ class ScopeOutPlotWidget(FigureCanvas):
     Base class for matplotlib figure widgets.
     """
 
-    background_color = '#424242'
-
     def __init__(self):
         """
         Constructor
@@ -125,8 +123,10 @@ class ScopeOutPlotWidget(FigureCanvas):
         self.logger = logging.getLogger("ScopeOut.widgets.ScopeOutPlotWidget")
 
         self.fig = Figure()
+        self.fig.patch.set_alpha(0.0)
+
         FigureCanvas.__init__(self, self.fig)
-        self.fig.patch.set_color(self.background_color)
+
         self.axes = self.fig.add_subplot(111)
         self.axes.xaxis.label.set_color('white')
         self.axes.yaxis.label.set_color('white')
@@ -224,6 +224,9 @@ class ScopeOutPlotWidget(FigureCanvas):
         assert isinstance(title, str)
         self.fig.suptitle(title.title().replace('_', ' '), color='white')
 
+    def set_patch_color(self, color):
+        self.fig.patch.set_color(color)
+
 
 class ScopeOutMainWindow(QtWidgets.QMainWindow):
     """
@@ -260,8 +263,8 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
         self.layout.addWidget(self.widgets['plot'], 2, 2, 1, 1)
         self.layout.addWidget(self.widgets['hist'], 2, 3, 1, 1)
         self.layout.addWidget(self.widgets['acqControl'], 0, 5, -1, 1)
-        self.layout.addWidget(self.widgets['wave_options'], 3, 2)
-        self.layout.addWidget(self.widgets['hist_options'], 3, 3)
+        self.layout.addWidget(self.widgets['wave_options'], 4, 2)
+        self.layout.addWidget(self.widgets['hist_options'], 4, 3)
         self.layout.setColumnMinimumWidth(1, 20)
         self.layout.setColumnMinimumWidth(2, 500)
         self.layout.setColumnMinimumWidth(3, 500)
@@ -269,8 +272,10 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
         self.layout.setColumnMinimumWidth(5, 180)
         self.layout.setColumnStretch(1, 1)
         self.layout.setRowStretch(1, 1)
-        self.layout.setRowStretch(4, 1)
-        self.layout.setRowMinimumHeight(4, 20)
+        self.layout.setRowStretch(3, 1)
+        self.layout.setRowStretch(5, 1)
+        self.layout.setRowMinimumHeight(3, 20)
+        self.layout.setRowMinimumHeight(5, 20)
         self.layout.setRowMinimumHeight(2, 500)
         self.central_widget.setLayout(self.layout)
         self.setCentralWidget(self.central_widget)
@@ -531,7 +536,7 @@ class WavePlotWidget(ScopeOutWidget):
             :x_array: the list of x values at which to add vertical lines
         """
 
-        x_array, prefix = self.autoset_units(x_array)
+        x_array, prefix = self.plot.autoset_units(x_array)
         for x in x_array:
             if x >= 0:
                 self.plot.axes.axvline(x)
