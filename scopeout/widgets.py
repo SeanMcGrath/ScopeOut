@@ -329,6 +329,16 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
         self.reset_action.setShortcut('Ctrl+R')
         self.reset_action.setStatusTip('Clear all waveforms in memory')
 
+        # View->Show Waveform Plot
+        self.show_plot_action = QtWidgets.QAction('Show waveform plot', self)
+        self.show_plot_action.setCheckable(True)
+        self.show_plot_action.setChecked(Config.get_bool('View', 'show_plot'))
+
+        # View->Show Histogram
+        self.show_histogram_action = QtWidgets.QAction('Show histogram', self)
+        self.show_histogram_action.setCheckable(True)
+        self.show_histogram_action.setChecked(Config.get_bool('View', 'show_histogram'))
+
         # Put title on window
         self.setWindowTitle('ScopeOut')
 
@@ -361,6 +371,10 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
                 theme_menu.addAction(theme_action)
         else:
             theme_menu.setEnabled(False)
+
+        view_menu.addSeparator()
+        view_menu.addAction(self.show_plot_action)
+        view_menu.addAction(self.show_histogram_action)
 
     def initialize_theme(self):
         """
@@ -502,6 +516,8 @@ class WavePlotWidget(ScopeOutWidget):
         self.save_plot_action = QtWidgets.QAction('Save Plot', self)
         self.addAction(self.save_plot_action)
 
+        self.setEnabled(Config.get_bool('View', 'show_plot'))
+
     def show_plot(self, wave, hold=False, show_peak=False):
         """
         Plot a waveform to the screen.
@@ -543,6 +559,16 @@ class WavePlotWidget(ScopeOutWidget):
 
         self.logger.info("drew vertical lines")
 
+    def setEnabled(self, bool):
+
+        self.plot.reset_plot()
+        super().setEnabled(bool)
+        if not bool:
+            self.plot.axes.patch.set_facecolor('gray')
+        elif bool:
+            self.plot.axes.patch.set_facecolor('white')
+        self.plot.draw()
+
 
 class HistogramPlotWidget(ScopeOutWidget):
     """
@@ -558,7 +584,6 @@ class HistogramPlotWidget(ScopeOutWidget):
         self.logger = logging.getLogger("ScopeOut.widgets.HistogramPlotWidget")
         self.histogram = ScopeOutPlotWidget()
         self.histogram.fig.suptitle("Histogram", color='white')
-        self.histogram.axes.set_ylabel('Counts')
 
         self.layout = QtWidgets.QVBoxLayout(self)
         self.layout.addWidget(self.histogram)
@@ -568,6 +593,8 @@ class HistogramPlotWidget(ScopeOutWidget):
 
         self.save_histogram_action = QtWidgets.QAction('Save Histogram', self)
         self.addAction(self.save_histogram_action)
+
+        self.setEnabled(Config.get_bool('View', 'show_histogram'))
 
     def show_histogram(self, x, bins):
         """
@@ -581,6 +608,7 @@ class HistogramPlotWidget(ScopeOutWidget):
         if len(x) > 1:
             self.histogram.reset_plot()
             self.histogram.axes.hist(x, bins)
+            self.histogram.axes.set_ylabel('Counts')
             self.histogram.fig.canvas.draw()
 
     def reset(self):
@@ -590,6 +618,16 @@ class HistogramPlotWidget(ScopeOutWidget):
 
         self.histogram.set_title('Histogram')
         self.histogram.reset_plot()
+
+    def setEnabled(self, bool):
+
+        self.histogram.reset_plot()
+        super().setEnabled(bool)
+        if not bool:
+            self.histogram.axes.patch.set_facecolor('gray')
+        elif bool:
+            self.histogram.axes.patch.set_facecolor('white')
+        self.histogram.draw()
 
 
 class AcquisitionControlWidget(ScopeOutWidget):

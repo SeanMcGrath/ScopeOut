@@ -156,6 +156,8 @@ class ThreadedClient(QtWidgets.QApplication):
         self.main_window.save_histogram_action.triggered.connect(self.save_histogram_to_disk)
         self.main_window.load_session_action.triggered.connect(self.load_database)
         self.main_window.save_settings_action.triggered.connect(self.save_configuration)
+        self.main_window.show_plot_action.toggled.connect(self.plot.setEnabled)
+        self.main_window.show_histogram_action.toggled.connect(self.histogram.setEnabled)
 
         #  Wave Column Signals
         self.wave_column.wave_signal.connect(self.plot_wave)
@@ -204,18 +206,20 @@ class ThreadedClient(QtWidgets.QApplication):
         :param wave: a Waveform, with its data contained in the x_list and y_list attributes.
         """
 
-        self.plot.show_plot(wave, self.acquisition_control.plot_held, self.acquisition_control.show_peak_window)
+        if self.plot.isEnabled():
+            self.plot.show_plot(wave, self.acquisition_control.plot_held, self.acquisition_control.show_peak_window)
 
     def update_histogram(self):
         """
         Update the histogram widget if the app is in histogram mode.
         """
 
-        wave_property = self.histogram_options.property_selector.currentText().lower().replace(' ', '_')
-        if wave_property:
-            histogram_list = [val for (val,) in self.db_session.query(getattr(Waveform, wave_property)).all()]
-            self.histogram.show_histogram(histogram_list, self.histogram_options.bin_number_selector.value())
-            self.histogram.histogram.set_title(wave_property)
+        if self.histogram.isEnabled():
+            wave_property = self.histogram_options.property_selector.currentText().lower().replace(' ', '_')
+            if wave_property:
+                histogram_list = [val for (val,) in self.db_session.query(getattr(Waveform, wave_property)).all()]
+                self.histogram.show_histogram(histogram_list, self.histogram_options.bin_number_selector.value())
+                self.histogram.histogram.set_title(wave_property)
 
     def acq_event(self, mode):
         """
@@ -477,9 +481,12 @@ class ThreadedClient(QtWidgets.QApplication):
         Called to reset waveform and plot.
         """
 
-        self.plot.plot.reset_plot()
+        if self.plot.isEnabled():
+            self.plot.plot.reset_plot()
+        if self.histogram.isEnabled():
+            self.histogram.reset()
+
         self.wave_column.reset()
-        self.histogram.reset()
         self.histogram_options.reset()
         self.update_status('Data Reset.')
 
@@ -787,7 +794,7 @@ class ThreadedClient(QtWidgets.QApplication):
             # display waves to user.
             [self.wave_column.add_wave(wave) for wave in loaded_waves]
             try:
-                self.plot.show_plot(loaded_waves[-1])
+                self.plot_wave(loaded_waves[-1])
             except ValueError as e:
                 self.logger.info(e)
             except Exception as e:
@@ -850,7 +857,11 @@ class ThreadedClient(QtWidgets.QApplication):
                     ('Acquisition Control', 'show_peak',
                      self.acquisition_control.show_peak_window),
                     ('Acquisition Control', 'data_channel',
-                     self.acquisition_control.channel_combobox.currentText())]
+                     self.acquisition_control.channel_combobox.currentText()),
+                    ('View', 'show_plot',
+                     self.main_window.show_plot_action.isChecked()),
+                    ('View', 'show_histogram',
+                     self.main_window.save_histogram_action.isChecked())]
 
         Config.set_multiple(settings)
         self.update_status('Configuration saved.')

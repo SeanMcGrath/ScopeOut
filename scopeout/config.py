@@ -6,8 +6,16 @@ import os
 import logging
 from configparser import ConfigParser
 
-REQUIRED_SECTIONS = ['Themes', 'Database', 'Logging', 'Export', 'Peak Detection', 'Histogram', 'Acquisition Control']
+REQUIRED_SECTIONS = ['Themes',
+                     'Database',
+                     'Logging',
+                     'Export',
+                     'Peak Detection',
+                     'Histogram',
+                     'Acquisition Control',
+                     'View']
 
+TRUE_STRINGS = ['true', 't' '1']
 logger = logging.getLogger('ScopeOut.config.ScopeOutConfig')
 
 
@@ -18,8 +26,24 @@ class ScopeOutConfig:
 
     @staticmethod
     def get(section, option):
+        """
+        Get the configuration string for a configuration seciton and option.
+        :param section: The configuration section name.
+        :param option: The configuration option name.
+        :return: the string matching section and option.
+        """
         parser = get_configuration()
         return parser.get(section, option)
+
+    @staticmethod
+    def get_bool(section, options):
+        """
+        Get a boolean value from the configuration.
+        :param section: the desired config section.
+        :param options: the desired config option.
+        :return: the boolean value matching section and option.
+        """
+        return ScopeOutConfig.get(section, options).lower() in TRUE_STRINGS
 
     @staticmethod
     def set(cls, section, option):
@@ -57,6 +81,10 @@ def create_new_config():
     Write a new configuration file with default values.
     """
     parser = ConfigParser()
+
+    parser.add_section('View')
+    parser.set('View', 'show_plot', 'True')
+    parser.set('View', 'show_histogram', 'True')
 
     parser.add_section('Themes')
     parser.set('Themes', 'theme_dir', os.path.abspath('./themes'))
