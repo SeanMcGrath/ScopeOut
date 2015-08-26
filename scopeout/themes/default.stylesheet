@@ -191,24 +191,6 @@ WaveColumnWidget QLabel {
     color: white;
 }
 
-WaveColumnItem QPushButton {
-  background: transparent;
-  color: white;
-  font-size: 14px;
-  border-radius: 0px;
-  max-width: 1em;
-  margin-right: 10px;
-  margin-top: 2px;
-}
-
-WaveColumnItem QPushButton::hover {
-  color: #F44336;
-}
-
-WaveColumnItem QPushButton::pressed {
-  color: #D32F2F;
-}
-
 WaveColumnWidget QScrollBar {
   width: 10px;
   background-color: #212121;
@@ -228,6 +210,24 @@ WaveColumnItem QLabel {
   color: white;
 }
 
+WaveColumnItem QPushButton {
+  background: transparent;
+  color: white;
+  font-size: 14px;
+  border-radius: 0px;
+  max-width: 1em;
+  margin-right: 10px;
+  margin-top: 2px;
+}
+
+WaveColumnItem QPushButton::hover {
+  color: #F44336;
+}
+
+WaveColumnItem QPushButton::pressed {
+  color: #D32F2F;
+}
+
 WaveColumnItem[state="active"] {
   background-color: #673AB7;
 }
@@ -244,12 +244,12 @@ WaveColumnItem[state="inactive"]:hover {
   background-color: #424242;
 }
 
-WaveColumnItem[state="inactive"] QPushButton:hover {
-  background-color: #424242;
+WaveColumnItem[state="inactive"] QPushButton::hover {
+  background: transparent;
 }
 
-WaveColumnItem[state="active"] QPushButton:hover {
-  background-color: #5E35B1;
+WaveColumnItem[state="active"] QPushButton::hover {
+  background: transparent;
 }
 
 WaveColumnItem QLabel {
