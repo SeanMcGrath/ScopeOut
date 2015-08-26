@@ -119,20 +119,22 @@ QTabWidget::pane {
 }
 
 QTabBar::tab {
+  min-width: 60px;
+  background-color: #212121;
+  color: white;
   border-top-left-radius: 2px;
   border-top-right-radius: 2px;
-  background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #E1E1E1, stop: 0.4 #DDDDDD, stop: 0.5 #D8D8D8, stop: 1.0 #D3D3D3);
-  padding: 4px;
-  margin-right: 4px;
+  padding: 6px 8px;
+  margin-right: 2px;
 }
 
 QTabBar::tab:hover,
 QTabBar::tab:selected {
-  background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #fafafa, stop: 0.4 #f4f4f4, stop: 0.5 #e7e7e7, stop: 1.0 #fafafa);
+  background: #673AB7;
 }
 
 QTabBar::tab:!selected {
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
 VoltageThresholdTab QComboBox,
