@@ -11,7 +11,7 @@ if sys.platform == "win32":
 
 setup(
     name='ScopeOut',
-    version='1.1',
+    version='0.1',
     packages=['scopeout'],
     scripts=['ScopeOut.py'],
     install_requires =['visa',
@@ -28,3 +28,5 @@ setup(
     options={"build_exe": build_exe_options},
     executables=[Executable("Scopeout.py", base=base)]
 )
+
+

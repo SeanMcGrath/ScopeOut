@@ -366,7 +366,8 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
         if self.themes:
             for theme in self.themes:
                 theme_action = QtWidgets.QAction(theme.split('\\')[-1].split('.')[0], self)
-                theme_action.setStatusTip('Change active theme to ' + theme.split('\\')[-1].split('.')[0])
+                theme_action.setStatusTip('Change active theme to ' +
+                                          theme.split('\\')[-1].split('.')[0] + ' (' + theme + ')')
                 theme_action.triggered.connect(partial(self.load_theme, theme))
                 theme_menu.addAction(theme_action)
         else:
@@ -389,17 +390,20 @@ class ScopeOutMainWindow(QtWidgets.QMainWindow):
             :Returns: themes, the array of theme paths, for convenience.
             """
 
-            path = Config.get('Themes', 'theme_dir')
+            config_path = Config.get('Themes', 'theme_dir')
+            local_path = os.path.join(os.getcwd(), 'themes')
+            paths = [config_path, local_path, os.getcwd()]
             themes = []
 
-            try:
-                theme_files = os.listdir(path)
-                themes = [os.path.join(path, theme)
-                          for theme in theme_files if re.match('.*stylesheet', theme)]
-            except Exception as e:
-                self.logger.error(e)
+            for path in paths:
+                try:
+                    theme_files = os.listdir(path)
+                    themes += [os.path.join(path, theme)
+                              for theme in theme_files if re.match('.*stylesheet', theme)]
+                except Exception as e:
+                    self.logger.error(e)
 
-            return themes
+            return list(set(themes))
 
         self.themes = find_themes()
         if self.themes:
