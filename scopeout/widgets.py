@@ -853,10 +853,12 @@ class WaveOptionsTabWidget(ScopeOutWidget):
 
             self.layout = QtWidgets.QGridLayout(self)
 
-            self.layout.addWidget(self.start_threshold_label, 0, 0)
-            self.layout.addWidget(self.start_threshold_input, 0, 1)
-            self.layout.addWidget(self.end_threshold_label, 1, 0)
-            self.layout.addWidget(self.end_threshold_input, 1, 1)
+            self.layout.addWidget(self.start_threshold_label, 0, 1)
+            self.layout.addWidget(self.start_threshold_input, 0, 2)
+            self.layout.addWidget(self.end_threshold_label, 1, 1)
+            self.layout.addWidget(self.end_threshold_input, 1, 2)
+            self.layout.setColumnStretch(0, 1)
+            self.layout.setColumnStretch(3, 1)
             self.setLayout(self.layout)
 
         @property
@@ -946,12 +948,14 @@ class WaveOptionsTabWidget(ScopeOutWidget):
             self.layout.setContentsMargins(20, 5, 20, 5)
             self.layout.setHorizontalSpacing(20)
 
-            self.layout.addWidget(self.start_time_label, 0, 0)
-            self.layout.addWidget(self.start_time_input, 0, 1)
-            self.layout.addWidget(self.start_time_unit_combobox, 0, 2)
-            self.layout.addWidget(self.peak_width_label, 1, 0)
-            self.layout.addWidget(self.peak_width_input, 1, 1)
-            self.layout.addWidget(self.peak_width_unit_combobox, 1, 2)
+            self.layout.addWidget(self.start_time_label, 0, 1)
+            self.layout.addWidget(self.start_time_input, 0, 2)
+            self.layout.addWidget(self.start_time_unit_combobox, 0, 3)
+            self.layout.addWidget(self.peak_width_label, 1, 1)
+            self.layout.addWidget(self.peak_width_input, 1, 2)
+            self.layout.addWidget(self.peak_width_unit_combobox, 1, 3)
+            self.layout.setColumnStretch(0, 1)
+            self.layout.setColumnStretch(4, 1)
             self.setLayout(self.layout)
 
         @property
@@ -1033,11 +1037,13 @@ class WaveOptionsTabWidget(ScopeOutWidget):
             self.layout.setContentsMargins(20, 5, 20, 5)
             self.layout.setHorizontalSpacing(20)
 
-            self.layout.addWidget(self.start_threshold_label, 0, 0)
-            self.layout.addWidget(self.start_threshold_input, 0, 1)
-            self.layout.addWidget(self.peak_width_label, 1, 0)
-            self.layout.addWidget(self.peak_width_input, 1, 1)
-            self.layout.addWidget(self.peak_width_units, 1, 2)
+            self.layout.addWidget(self.start_threshold_label, 0, 1)
+            self.layout.addWidget(self.start_threshold_input, 0, 2)
+            self.layout.addWidget(self.peak_width_label, 1, 1)
+            self.layout.addWidget(self.peak_width_input, 1, 2)
+            self.layout.addWidget(self.peak_width_units, 1, 3)
+            self.layout.setColumnStretch(0, 1)
+            self.layout.setColumnStretch(0, 4)
             self.setLayout(self.layout)
 
         @property
@@ -1152,14 +1158,16 @@ class WaveOptionsTabWidget(ScopeOutWidget):
                 self.logger.error(e)
 
             self.layout = QtWidgets.QGridLayout(self)
-            self.layout.addWidget(self.peak_start_label, 0, 0)
-            self.layout.addWidget(self.start_above_below_combobox, 0, 1)
-            self.layout.addWidget(self.start_voltage_spinbox, 0, 2)
-            self.layout.addWidget(self.start_voltage_unit_combobox, 0, 3)
-            self.layout.addWidget(self.peak_end_label, 1, 0)
-            self.layout.addWidget(self.end_above_below_combobox, 1, 1)
-            self.layout.addWidget(self.end_voltage_spinbox, 1, 2)
-            self.layout.addWidget(self.end_voltage_unit_combobox, 1, 3)
+            self.layout.addWidget(self.peak_start_label, 0, 1)
+            self.layout.addWidget(self.start_above_below_combobox, 0, 2)
+            self.layout.addWidget(self.start_voltage_spinbox, 0, 3)
+            self.layout.addWidget(self.start_voltage_unit_combobox, 0, 4)
+            self.layout.addWidget(self.peak_end_label, 1, 1)
+            self.layout.addWidget(self.end_above_below_combobox, 1, 2)
+            self.layout.addWidget(self.end_voltage_spinbox, 1, 3)
+            self.layout.addWidget(self.end_voltage_unit_combobox, 1, 4)
+            self.layout.setColumnStretch(0, 1)
+            self.layout.setColumnStretch(5, 1)
             self.setLayout(self.layout)
 
         @property
