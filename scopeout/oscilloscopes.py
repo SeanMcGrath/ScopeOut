@@ -839,6 +839,7 @@ class GDS2000A(GenericOscilloscope):
     def make_waveform(self):
 
         waveform = self.setup_waveform()
+        y_multiplier = waveform.y_scale/256
         raw = self.read()[9:]
 
         try:
@@ -847,7 +848,7 @@ class GDS2000A(GenericOscilloscope):
         except:
             pass
 
-        raw = [fix_negatives(num) for num in list(raw) if num not in [0, 255]]
+        raw = [y_multiplier * fix_negatives(num) for num in list(raw) if num not in [0, 255]]
         waveform._y_list = raw
         self.waveform_queue.put(waveform)
 
