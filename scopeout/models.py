@@ -27,21 +27,17 @@ class Waveform(ModelBase):
     peak_detection_mode = Column(String)
     peak_start = Column(Integer)
     peak_end = Column(Integer)
-    data_width = Column(Integer)
-    bits_per_point = Column(Integer)
-    encoding = Column(String)
-    binary_format = Column(String)
-    significant_bit = Column(String)
     number_of_points = Column(Integer)
-    point_format = Column(String)
     x_increment = Column(Float)
     x_offset = Column(Float)
     x_zero = Column(Float)
     x_unit = Column(String)
+    x_scale = Column(Float)
     y_offset = Column(Float)
     y_zero = Column(Float)
     y_unit = Column(String)
     y_multiplier = Column(Float)
+    y_scale = Column(Float)
     data_channel = Column(String)
     peak_integral = Column(Float)
 
@@ -57,8 +53,11 @@ class Waveform(ModelBase):
         :return: the x array needed to plot a waveform.
         """
         if not self._x_list:
-            self._x_list = list(np.arange(0, self.number_of_points * self.x_increment,
+            if self.x_increment:
+                self._x_list = list(np.arange(0, len(self.y_list) * self.x_increment,
                          self.x_increment))
+            elif self.x_scale:
+                self._x_list = list(np.arange(0, self.x_scale, self.x_scale/len(self.y_list)))
         return self._x_list
 
     @property

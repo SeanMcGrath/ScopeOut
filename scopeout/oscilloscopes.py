@@ -6,7 +6,6 @@ Classes to represent, control, and read out VISA Oscilloscopes.
 """
 
 import visa
-import numpy as np
 import queue
 import logging
 import datetime
@@ -34,11 +33,11 @@ class GenericOscilloscope:
         """
         self.scope = VISA
         self.logger = logging.getLogger("ScopeOut.oscilloscopes.GenericOscilloscope")
-        self.waveformQueue = queue.Queue()
+        self.waveform_queue = queue.Queue()
 
         self.make = "Generic"
         self.model = "Generic Oscilloscope"
-        self.serialNumber = '0'
+        self.serial_number = '0'
         self.commands = {}
 
     def __str__(self):
@@ -47,16 +46,16 @@ class GenericOscilloscope:
 
         :Returns: A string containing the make, model and serial number of the scope.
         """
-        return "{:s} {:s} Oscilloscope. Serial Number: {:s}.".format(self.make, self.model, self.serialNumber)
+        return "{:s} {:s} Oscilloscope. Serial Number: {:s}.".format(self.make, self.model, self.serial_number)
 
-    def write(self, toWrite):
+    def write(self, command):
         """
         Writes argument to scope.
 
         Parameters:
-            :toWrite: command to be issued to scope.
+            :command: command to be issued to scope.
         """
-        self.scope.write(toWrite)
+        self.scope.write(command)
 
     def read(self):
         """
@@ -65,7 +64,7 @@ class GenericOscilloscope:
         :Returns: string of scope output
         """
         try:
-            return self.scope.read().strip()
+            return self.scope.read_raw().strip()
         except visa.VisaIOError:
             self.logger.error("VISA Error: Command timed out.")
         except Exception as e:
@@ -82,13 +81,13 @@ class GenericOscilloscope:
         """
 
         try:
-            result = self.scope.ask(command).strip()
+            result = self.scope.query(command).strip()
             return result
         except Exception as e:
             self.logger.error(e)
-            raise e
+            return
 
-    def setParam(self, command):
+    def set_parameter(self, command):
         """
         Set a scope parameter by issuing a command.
 
@@ -109,7 +108,7 @@ class GenericOscilloscope:
             self.logger.error(e)
             return False
 
-    def getParam(self, command):
+    def get_parameter(self, command):
         """
         get a scope parameter by issuing a command.
 
@@ -125,7 +124,7 @@ class GenericOscilloscope:
             self.logger.error(err)
             return False
 
-    def execCommand(self, command, args=[]):
+    def exec_command(self, command, *args):
         """
         Searches the command dictionary for a command key, and executes the command if it is supported.
 
@@ -138,16 +137,16 @@ class GenericOscilloscope:
 
         try:
             if self.commands[command][-1] == '?':
-                return self.getParam(self.commands[command])
+                return self.get_parameter(self.commands[command])
             else:
-                argString = ''
+                arg_string = ''
 
                 if args:
-                    argString = ' '
+                    arg_string = ' '
                     for arg in args:
-                        argString += str(arg) + ' '
+                        arg_string += str(arg) + ' '
 
-                return self.setParam(self.commands[command] + argString)
+                return self.set_parameter(self.commands[command] + arg_string)
 
         except KeyError:
             self.logger.error("Command '{:s}' not supported".format(command))
@@ -155,36 +154,6 @@ class GenericOscilloscope:
         except Exception as e:
             self.logger.error(e)
             return False
-
-    def autosetUnits(self, axisArray):
-        """
-        Set the X time_units of the pyplot to the correct size based on the values in axisArray.
-
-        Parameters:
-            :axisArray: the array of values representing one dimension of the waveform.
-        """
-        xMax = np.amax(axisArray)
-        if xMax > 1e-9:
-            if xMax > 1e-6:
-                if xMax > 1e-3:
-                    if xMax > 1:
-                        prefix = ''
-                        return [axisArray, prefix]
-
-                    prefix = 'milli'
-                    axisArray = np.multiply(axisArray, 1000)
-                    return [axisArray, prefix]
-
-                prefix = 'micro'
-                axisArray = np.multiply(axisArray, 1e6)
-                return [axisArray, prefix]
-
-            prefix = 'nano'
-            axisArray = np.multiply(axisArray, 1e9)
-            return [axisArray, prefix]
-
-        prefix = ''
-        return [axisArray, prefix]
 
     """
     AUTOSET COMMAND
@@ -195,7 +164,7 @@ class GenericOscilloscope:
         Executes automatic setup of scope window.
         """
 
-        return self.execCommand('autoSet')
+        return self.exec_command('autoSet')
 
     """
     ACQUISITION COMMANDS
@@ -206,7 +175,7 @@ class GenericOscilloscope:
         :Returns: scope acquisition parameters as a string.
         """
 
-        return self.execCommand('getAcquisitionParams')
+        return self.exec_command('getAcquisitionParams')
 
     def setAcquisitionMode(self, mode):
         """
@@ -218,21 +187,21 @@ class GenericOscilloscope:
         :Returns: True if setting is successful, false otherwise.
         """
 
-        return self.execCommand('setAcquisitionMode', [str(mode)])
+        return self.exec_command('setAcquisitionMode', [str(mode)])
 
     def getAcquisitionMode(self):
         """
         :Returns: String naming current acquisition mode.
         """
 
-        return self.execCommand('getAcquisitionMode')
+        return self.exec_command('getAcquisitionMode')
 
     def getNumberOfAcquisitions(self):
         """
         :Returns: the number of acquisitions made.
         """
 
-        return self.execCommand('getNumberOfAcquisitions')
+        return self.exec_command('getNumberOfAcquisitions')
 
     def setAcqsForAverage(self, acqs):
         """
@@ -244,14 +213,14 @@ class GenericOscilloscope:
         :Returns: True if setting is successful, false otherwise.
         """
 
-        return self.execCommand('setAcqsForAverage', [str(acqs)])
+        return self.exec_command('setAcqsForAverage', [str(acqs)])
 
     def getAcqsForAverage(self):
         """
         :Returns: the current number of acquisitions taken to find an average waveform in AVERAGE mode.
         """
 
-        return self.execCommand('getAcqsForAverage')
+        return self.exec_command('getAcqsForAverage')
 
     def setAcqState(self, state):
         """
@@ -263,14 +232,14 @@ class GenericOscilloscope:
         :Returns: True if setting is successful, false otherwise.
         """
 
-        return self.execCommand('setAcqState', [str(state)])
+        return self.exec_command('setAcqState', [str(state)])
 
     def getAcqState(self):
         """
         :Returns: '0' for off, '1' for on.
         """
 
-        return self.execCommand('getAcqState')
+        return self.exec_command('getAcqState')
 
     def setAcqStop(self, stop):
         """
@@ -279,14 +248,14 @@ class GenericOscilloscope:
         :Returns: True if setting is successful, False otherwise.
         """
 
-        return self.execCommand('setAcqStop', [str(stop)])
+        return self.exec_command('setAcqStop', [str(stop)])
 
     def getAcqStop(self):
         """
         :Returns: string describing when the scope stops taking acquisitions, or False if this fails.
         """
 
-        return self.execCommand('getAcqStop')
+        return self.exec_command('getAcqStop')
 
     """
     END ACQUISITON COMMANDS
@@ -303,7 +272,7 @@ class GenericOscilloscope:
         :Returns: string describing result of calibration.
         """
 
-        return self.execCommand('calibrate')
+        return self.exec_command('calibrate')
 
     def abortCalibrate(self):
         """
@@ -312,7 +281,7 @@ class GenericOscilloscope:
         :Returns: True if setting is successful, False otherwise.
         """
 
-        return self.execCommand('abortCalibrate')
+        return self.exec_command('abortCalibrate')
 
     def continueCalibrate(self):
         """
@@ -321,7 +290,7 @@ class GenericOscilloscope:
         :Returns: True if command is successful, False otherwise.
         """
 
-        return self.execCommand('continueCalibrate')
+        return self.exec_command('continueCalibrate')
 
     def factoryCalibrate(self):
         """
@@ -330,7 +299,7 @@ class GenericOscilloscope:
         :Returns: True if command is successful, False otherwise.
         """
 
-        return self.execCommand('factoryCalibrate')
+        return self.exec_command('factoryCalibrate')
 
     def internalCalibrate(self):
         """
@@ -339,7 +308,7 @@ class GenericOscilloscope:
         :Returns: True if command is successful, False otherwise.
         """
 
-        return self.execCommand('internalCalibrate')
+        return self.exec_command('internalCalibrate')
 
     def getCalStatus(self):
         """
@@ -348,7 +317,7 @@ class GenericOscilloscope:
         :Returns: "PASS" if last calibration was successful, "FAIL" otherwise.
         """
 
-        return self.execCommand('getCalStatus')
+        return self.exec_command('getCalStatus')
 
     def getDiagnosticResult(self):
         """
@@ -357,7 +326,7 @@ class GenericOscilloscope:
         :Returns: "PASS" if scope passes all diagnostic tests, "FAIL" otherwise.
         """
 
-        return self.execCommand('getDiagnosticResult')
+        return self.exec_command('getDiagnosticResult')
 
     def getDiagnosticLog(self):
         """
@@ -366,7 +335,7 @@ class GenericOscilloscope:
         :Returns: A comma-separated string containing the results of internal diagnostic routines.
         """
 
-        return self.execCommand('getDiagnosticLog').strip()
+        return self.exec_command('getDiagnosticLog').strip()
 
     """
     END CALIBRATION COMMANDS
@@ -383,7 +352,7 @@ class GenericOscilloscope:
         :Returns: comma-separated string containing cursor settings.
         """
 
-        return self.execCommand('getCursor')
+        return self.exec_command('getCursor')
 
     """
     END CURSOR COMMANDS
@@ -398,7 +367,7 @@ class GenericOscilloscope:
         :Returns: all events in the event queue in string format.
         """
 
-        return self.execCommand('getAllEvents')
+        return self.exec_command('getAllEvents')
 
     def isBusy(self):
         """
@@ -407,7 +376,7 @@ class GenericOscilloscope:
         :Returns: 0 for not busy, 1 for busy.
         """
 
-        return int(self.execCommand('isBusy'))
+        return int(self.exec_command('isBusy'))
 
     def clearStatus(self):
         """
@@ -416,7 +385,7 @@ class GenericOscilloscope:
         :Returns: True if command is successful, False otherwise.
         """
 
-        return self.execCommand('clearStatus')
+        return self.exec_command('clearStatus')
 
     def eventStatus(self):
         """
@@ -425,7 +394,7 @@ class GenericOscilloscope:
         :Returns: the integer value held in the ESR.
         """
 
-        status = self.execCommand('eventStatus')
+        status = self.exec_command('eventStatus')
         if status:
             return int(status)
         else:
@@ -438,7 +407,7 @@ class GenericOscilloscope:
         :Returns: integer error code.
         """
 
-        return self.execCommand('eventCode')
+        return self.exec_command('eventCode')
 
     def eventMessage(self):
         """
@@ -447,7 +416,7 @@ class GenericOscilloscope:
         :Returns: event code and event message string, separated by a comma.
         """
 
-        return self.execCommand('eventMessage')
+        return self.exec_command('eventMessage')
 
     def getFirstError(self):
         """
@@ -456,7 +425,7 @@ class GenericOscilloscope:
         :Returns: a string describing an internal scope error, empty string if error queue is empty.
         """
 
-        return self.execCommand('getFirstError')
+        return self.exec_command('getFirstError')
 
     def getNextError(self):
         """
@@ -465,7 +434,7 @@ class GenericOscilloscope:
         :Returns: a string describing an internal scope error, empty string if error queue is empty.
         """
 
-        return self.getParam('getNextError')
+        return self.get_parameter('getNextError')
 
     """
     END STATUS AND ERROR COMMANDS
@@ -482,14 +451,14 @@ class GenericOscilloscope:
         :Returns: a string describing trigger status: {AUTO | READY | TRIGGER | ARMED}
         """
 
-        return self.execCommand('getTriggerStatus')
+        return self.exec_command('getTriggerStatus')
 
     def getTrigFrequency(self):
         """
         Read the trigger frequency.
         """
 
-        return self.execCommand('getTrigFrequency')
+        return self.exec_command('getTrigFrequency')
 
     """
     END TRIGGER COMMANDS
@@ -504,7 +473,7 @@ class GenericOscilloscope:
         :Returns: The name of the active data channel.
         """
 
-        return self.execCommand('getDataChannel')
+        return self.exec_command('getDataChannel')
 
     def setDataChannel(self, channel):
         """
@@ -514,11 +483,22 @@ class GenericOscilloscope:
             :channel: the desired data channel.
         """
 
-        return self.execCommand('setDataChannel', [str(channel)])
+        return self.exec_command('setDataChannel', str(channel))
 
     """
     END DATA COMMANDS
     """
+
+    @property
+    def next_waveform(self):
+        """
+        :Returns: The next waveform object in the queue, or None if it is empty
+        """
+
+        if self.waveform_queue.qsize():
+            return self.waveform_queue.get()
+        else:
+            return None
 
 
 class TDS2024B(GenericOscilloscope):
@@ -529,7 +509,7 @@ class TDS2024B(GenericOscilloscope):
     And defines how to handle waveforms that this scope generates.
     """
 
-    def __init__(self, VISA, make, model, serialNum, firmware):
+    def __init__(self, VISA, model, serial_number, firmware):
         """
         Constructor.
 
@@ -543,7 +523,11 @@ class TDS2024B(GenericOscilloscope):
 
         GenericOscilloscope.__init__(self, VISA)
         self.logger = logging.getLogger("ScopeOut.oscilloscopes.TDS2024B")
-
+        self.model = model
+        self.serial_number = serial_number
+        self.firmwareVersion = firmware
+        self.make = 'Tektronix'
+        self.numChannels = 4  # 4-channel oscilloscope
         self.commands = {'autoSet': 'AUTOS EXEC',
                          'getAcquisitionParams': 'ACQ?',
                          'setAcquisitionMode': 'ACQ:MOD',
@@ -579,14 +563,8 @@ class TDS2024B(GenericOscilloscope):
                          'getTrigFrequency': 'TRIG:MAIN:FREQ?',
 
                          'getDataChannel': 'DAT:SOU?',
+                         'setDataChannel': 'DAT:SOU'
                          }
-
-        self.make = make
-        self.model = model
-        self.serialNumber = serialNum
-        self.firmwareVersion = firmware
-
-        self.numChannels = 4  # 4-channel oscilloscope
 
         if self.eventStatus:
             self.logger.info(self.getAllEvents())
@@ -609,14 +587,8 @@ class TDS2024B(GenericOscilloscope):
         try:
             preamble = self.query("WFMP?").split(';')  # get waveform preamble and parse it
 
-            waveform.data_width = int(preamble[0])
-            waveform.bits_per_point = int(preamble[1])
-            waveform.encoding = preamble[2]
-            waveform.binary_format = preamble[3]
-            waveform.significant_bit = preamble[4]
             if len(preamble) > 5:  # normal operation
                 waveform.number_of_points = int(preamble[5])
-                waveform.point_format = preamble[7].strip('"')
                 waveform.x_increment = float(preamble[8])
                 waveform.x_offset = float(preamble[9])
                 waveform.x_zero = float(preamble[10])
@@ -665,19 +637,8 @@ class TDS2024B(GenericOscilloscope):
 
         wave = self.setup_waveform()
         wave._y_list = self.get_curve(wave)
-        self.waveformQueue.put(wave)
+        self.waveform_queue.put(wave)
         self.logger.info("Waveform made successfully")
-
-    @property
-    def next_waveform(self):
-        """
-        :Returns: The next waveform object in the queue, or None if it is empty
-        """
-
-        if self.waveformQueue.qsize():
-            return self.waveformQueue.get()
-        else:
-            return None
 
     """
     END WAVEFORM COMMANDS
@@ -701,14 +662,14 @@ class TDS2024B(GenericOscilloscope):
         try:
             if int(channel) in range(1, self.numChannels + 1):
                 ch_string = "CH" + channel
-                return self.setParam("DAT:SOU " + ch_string)
+                return self.set_parameter("DAT:SOU " + ch_string)
             else:
                 self.logger.error('Invalid data channel: %d', int(channel))
                 return False
         except:
             if channel.lower() == 'math':
                 ch_string = "MATH"
-                return self.setParam("DAT:SOU " + ch_string)
+                return self.set_parameter("DAT:SOU " + ch_string)
             else:
                 self.logger.error('Invalid data channel: %s', channel)
                 return False
@@ -726,7 +687,7 @@ class GDS1000A(GenericOscilloscope):
     And defines how to handle waveforms that this scope generates.
     """
 
-    def __init__(self, VISA, make, model, serialNum, firmware):
+    def __init__(self, VISA, model, serial_number, firmware):
         """
         Constructor.
 
@@ -739,8 +700,12 @@ class GDS1000A(GenericOscilloscope):
         """
 
         GenericOscilloscope.__init__(self, VISA)
-        self.logger = logging.getLogger("oscilloscopes.GSA-1000A")
-
+        self.logger = logging.getLogger("oscilloscopes.GDS-1000A")
+        self.model = model
+        self.serial_number = serial_number
+        self.firmwareVersion = firmware
+        self.make = 'Gwinstek'
+        self.numChannels = 2
         self.commands = {'autoSet': 'AUTOS EXEC',
                          'getAcquisitionParams': 'ACQ?',
                          'setAcquisitionMode': 'ACQ:MOD',
@@ -778,8 +743,87 @@ class GDS1000A(GenericOscilloscope):
                          'getDataChannel': 'DAT:SOU?',
                          }
 
-        self.make = make
+
+class GDS2000A(GenericOscilloscope):
+    """
+    Gwinstek GDS-2000A Series Oscilloscope
+    """
+
+    def __init__(self, VISA, model, serial_number, firmware):
+
+        GenericOscilloscope.__init__(self, VISA)
+        self.logger = logging.getLogger("oscilloscopes.GDS-2000A")
         self.model = model
-        self.serialNumber = serialNum
+        self.serial_number = serial_number
         self.firmwareVersion = firmware
-        self.numChannels = 2  # 4-channel oscilloscope
+        self.make = 'Gwinstek'
+        self.numChannels = 4
+        self.commands = {'autoSet': 'AUTOS EXEC',
+                         'getAcquisitionParams': 'ACQ?',
+                         'setAcquisitionMode': 'ACQ:MOD',
+                         'getAcquisitionMode': 'ACQ:MOD?',
+                         'getNumberOfAcquisitions': 'ACQ:NUMAC?',
+                         'setAcqsForAverage': 'ACQ:NUMAV',
+                         'getAcqsForAverage': 'ACQ:NUMAV?',
+                         'setAcqState': 'ACQ:STATE',
+                         'getAcqState': 'ACQ:STATE?',
+                         'setAcqStop': 'ACQ:STOPA',
+                         'getAcqStop': 'ACQ:STOPA?',
+
+                         'calibrate': '*CAL?',
+                         'abortCalibrate:': 'CAL:ABO',
+                         'continueCalibrate': 'CAL:CONTINUE',
+                         'factoryCalibrate': 'CAL:FAC',
+                         'internalCalibrate': 'CAL:INTERNAL',
+                         'getCalStatus': 'CAL:STATUS?',
+                         'getDiagnosticResult': 'DIA:RESUL:FLA?',
+                         'getDiagnosticLog': 'DIA:RESUL:LOG?',
+
+                         'getCursor': 'CURS?',
+
+                         'getAllEvents': 'ALLE?',
+                         'isBusy': 'BUSY?',
+                         'clearStatus': '*CLS?',
+                         'eventStatus': '*ESR?',
+                         'eventCode': 'EVENT?',
+                         'eventMessage': 'EVMSG?',
+                         'getFirstError': 'ERRLOG:FIRST?',
+                         'getNextError': 'ERRLOG:NEXT?',
+                         'getTriggerStatus': ':TRIG:STATE?',
+                         'getTrigFrequency': 'TRIG:MAIN:FREQ?',
+
+                         'getDataChannel': 'DAT:SOU?',
+                         'setDataChannel': 'DAT:SOU'
+                         }
+
+    def setup_waveform(self):
+
+        waveform = Waveform()
+
+        preamble = self.query('ACQ1:MEM?').strip().split(';')
+        wave_header = {}
+        for entry in preamble:
+            entry_parts = entry.split(',')
+            if len(entry_parts) == 2:
+                wave_header[entry_parts[0]] = entry_parts[1]
+
+        waveform.capture_time = waveform.capture_time = datetime.datetime.utcnow()
+        waveform.data_channel = wave_header['Source']
+        waveform.number_of_points = int(wave_header['Memory Length'])
+        waveform.x_unit = wave_header['Horizontal Units']
+        if waveform.x_unit.lower() == 's':
+            waveform.x_unit = 'Seconds'
+        waveform.x_scale = float(wave_header['Horizontal Scale'])
+        waveform.y_unit = wave_header['Vertical Units']
+        if waveform.y_unit.lower() == 'V':
+            waveform.y_unit = 'Volts'
+        waveform.y_scale = float(wave_header['Vertical Scale'])
+
+        return waveform
+
+    def make_waveform(self):
+
+        waveform = self.setup_waveform()
+        waveform._y_list = list(self.read())[9:]
+        self.waveform_queue.put(waveform)
+
