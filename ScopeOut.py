@@ -43,14 +43,14 @@ def main():
 
     logger.info("Initializing ScopeOut...")
 
-    gui = ThreadedClient(sys.argv)
+    app = ThreadedClient(sys.argv)
 
     logger.info("ScopeOut initialization completed")
 
     # Enable keyboard shortcuts to kill from command line
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-    return gui.exec_()
+    return app.exec_()
 
 if __name__ == "__main__":
     sys.exit(main())

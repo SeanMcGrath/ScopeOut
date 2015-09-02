@@ -13,6 +13,21 @@ import datetime
 from scopeout.models import Waveform
 
 
+def fix_negatives(num):
+    """
+    Some scopes represent negative numbers as being between 128-256,
+    this makes shifts those to the correct negative scale.
+    :param num: an integer
+    :return: the same number, shifted negative as necessary.
+    """
+
+    if num > 128:
+        return num - 255
+    else:
+        return num
+
+
+
 class GenericOscilloscope:
     """
     Object representation of scope of unknown make.
@@ -824,6 +839,15 @@ class GDS2000A(GenericOscilloscope):
     def make_waveform(self):
 
         waveform = self.setup_waveform()
-        waveform._y_list = list(self.read())[9:]
+        raw = self.read()[9:]
+
+        try:
+            while True:
+                raw += self.read()
+        except:
+            pass
+
+        raw = [fix_negatives(num) for num in list(raw) if num not in [0, 255]]
+        waveform._y_list = raw
         self.waveform_queue.put(waveform)
 

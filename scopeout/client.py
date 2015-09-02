@@ -41,14 +41,6 @@ class ThreadedClient(QtWidgets.QApplication):
         Creation of the widgets that make up the actual interface is done in the constructor of this
         class. All Qt Signals that facilitate the interaction of the client with these widgets are
         connected in the connect_signals method.
-
-        The actions of GUI components that interact with scopes and their data occur in the "event"
-        methods of this client.
-
-        It is essential that the Qt "signaling" mechanism be used to interact between threads
-        (The GUI is considered a thread independent of this client). Directly modifying the
-        appearance or contents of a GUI widget can cause a program crash; instead, emit the data
-        you wish to send as a signal which the widget will receive safely.
     """
 
     lock = threading.Lock()  # Lock for scope resource
@@ -118,7 +110,7 @@ class ThreadedClient(QtWidgets.QApplication):
         self.active_scope = None
         self.scope_finder = ScopeFinder()
 
-        # Thread timers.
+        # Thread timers
         self.check_scope_timer = threading.Timer(5.0, self.check_scope)
         self.find_scope_timer = threading.Timer(0.1, self.find_scope)
         self.find_scope_timer.start()

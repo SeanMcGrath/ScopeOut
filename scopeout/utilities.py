@@ -29,6 +29,7 @@ class ScopeFinder:
         self.resources = []
         self.instruments = []
         self.scopes = []
+        self.blacklist = set()
 
         self.refresh()
 
@@ -80,15 +81,14 @@ class ScopeFinder:
         if self.resources:
             self.logger.info("%d VISA Resource(s) found", len(self.resources))
             self.instruments = []
-            for resource in self.resources:
+            for resource in set(self.resources) - self.blacklist:
                 try:
                     inst = self.resource_manager.open_resource(resource)
                     self.instruments.append(inst)
                     self.logger.info('Resource {} converted to instrument'.format(resource))
                 except Exception as e:
                     self.logger.error(e)
-                    print(e)
-                    del resource
+                    self.blacklist.add(resource)
 
             for ins in self.instruments:
                 try:
