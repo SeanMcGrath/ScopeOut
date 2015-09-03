@@ -750,7 +750,7 @@ class AcquisitionControlWidget(ScopeOutWidget):
         self.continuous_acquire_button.setEnabled(bool)
         self.stop_acquisition_button.setEnabled(False)
         if bool and self.scope is not None:
-            channels = list(map(str, range(1, self.scope.numChannels + 1)))
+            channels = list(map(str, range(1, self.scope.number_of_channels + 1)))
             channels.append('All')
             channels.append('Math')
             self.channel_combobox.addItems(channels)
@@ -766,7 +766,7 @@ class AcquisitionControlWidget(ScopeOutWidget):
         elif bool:  # Wait for scope to become active
             while self.scope is None:
                 pass
-            channels = list(map(str, range(1, self.scope.numChannels + 1)))
+            channels = list(map(str, range(1, self.scope.number_of_channels + 1)))
             channels.append('All')
             channels.append('Math')
             self.channel_combobox.addItems(channels)

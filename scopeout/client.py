@@ -286,7 +286,7 @@ class ThreadedClient(QtWidgets.QApplication):
 
                     self.plot.plot.reset_plot()
 
-                    for i in range(0, self.active_scope.numChannels):
+                    for i in range(0, self.active_scope.number_of_channels):
 
                         try:
                             self.logger.info("Acquiring data from channel %d", i + 1)
@@ -520,7 +520,7 @@ class ThreadedClient(QtWidgets.QApplication):
         self.acquisition_control.continuous_acquire_button.setEnabled(True)
         self.acquisition_control.acquire_on_trigger_button.setEnabled(True)
 
-        if channel in range(0, self.acquisition_control.scope.numChannels):
+        if channel in range(0, self.acquisition_control.scope.number_of_channels):
             self.multi_channel_acquisition = False
             set_channel_thread = threading.Thread(target=channel_thread)
             set_channel_thread.start()

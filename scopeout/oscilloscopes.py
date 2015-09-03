@@ -13,19 +13,16 @@ import datetime
 from scopeout.models import Waveform
 
 
-def fix_negatives(num):
+def twos_comp(val, bits=8):
     """
-    Some scopes represent negative numbers as being between 128-256,
-    this makes shifts those to the correct negative scale.
-    :param num: an integer
-    :return: the same number, shifted negative as necessary.
+    Compute the twos complement of a number.
+    :param val: The value for which to compute the complement.
+    :param bits: The length of the number in bits.
+    :return: the twos complement of val
     """
-
-    if num > 128:
-        return num - 255
-    else:
-        return num
-
+    if (val & (1 << (bits - 1))) != 0:
+        val -= 1 << bits
+    return val
 
 
 class GenericOscilloscope:
@@ -542,7 +539,7 @@ class TDS2024B(GenericOscilloscope):
         self.serial_number = serial_number
         self.firmwareVersion = firmware
         self.make = 'Tektronix'
-        self.numChannels = 4  # 4-channel oscilloscope
+        self.number_of_channels = 4  # 4-channel oscilloscope
         self.commands = {'autoSet': 'AUTOS EXEC',
                          'getAcquisitionParams': 'ACQ?',
                          'setAcquisitionMode': 'ACQ:MOD',
@@ -588,7 +585,7 @@ class TDS2024B(GenericOscilloscope):
     WAVEFORM COMMANDS
     """
 
-    def setup_waveform(self):
+    def setup_waveform(self, channel=0):
         """
         Fetch all the parameters needed to parse the wave data.
         will be passed the waveform object.
@@ -675,7 +672,7 @@ class TDS2024B(GenericOscilloscope):
 
         self.logger.info('Received request to set data channel ' + channel)
         try:
-            if int(channel) in range(1, self.numChannels + 1):
+            if int(channel) in range(1, self.number_of_channels + 1):
                 ch_string = "CH" + channel
                 return self.set_parameter("DAT:SOU " + ch_string)
             else:
@@ -720,7 +717,7 @@ class GDS1000A(GenericOscilloscope):
         self.serial_number = serial_number
         self.firmwareVersion = firmware
         self.make = 'Gwinstek'
-        self.numChannels = 2
+        self.number_of_channels = 2
         self.commands = {'autoSet': 'AUTOS EXEC',
                          'getAcquisitionParams': 'ACQ?',
                          'setAcquisitionMode': 'ACQ:MOD',
@@ -772,7 +769,7 @@ class GDS2000A(GenericOscilloscope):
         self.serial_number = serial_number
         self.firmwareVersion = firmware
         self.make = 'Gwinstek'
-        self.numChannels = 4
+        self.number_of_channels = 4
         self.commands = {'autoSet': 'AUTOS EXEC',
                          'getAcquisitionParams': 'ACQ?',
                          'setAcquisitionMode': 'ACQ:MOD',
@@ -822,7 +819,7 @@ class GDS2000A(GenericOscilloscope):
             if len(entry_parts) == 2:
                 wave_header[entry_parts[0]] = entry_parts[1]
 
-        waveform.capture_time = waveform.capture_time = datetime.datetime.utcnow()
+        waveform.capture_time = datetime.datetime.utcnow()
         waveform.data_channel = wave_header['Source']
         waveform.number_of_points = int(wave_header['Memory Length'])
         waveform.x_unit = wave_header['Horizontal Units']
@@ -839,16 +836,23 @@ class GDS2000A(GenericOscilloscope):
     def make_waveform(self):
 
         waveform = self.setup_waveform()
-        y_multiplier = waveform.y_scale/256
-        raw = self.read()[9:]
 
         try:
-            while True:
-                raw += self.read()
-        except:
-            pass
-
-        raw = [y_multiplier * fix_negatives(num) for num in list(raw) if num not in [0, 255]]
-        waveform._y_list = raw
+            
+            raw_data = self.read()[9:]
+            
+            # Read serial port until timeout to get all data
+            try:
+                while True:
+                    raw_data += self.read()
+            except:
+                pass
+            
+            y_multiplier = waveform.y_scale/256
+            waveform._y_list = [y_multiplier * twos_comp(num) for num in raw_data if num not in [0, 255]]
+        
+        except Exception as e:
+            waveform.error = str(e)
+        
         self.waveform_queue.put(waveform)
 
