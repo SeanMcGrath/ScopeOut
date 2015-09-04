@@ -18,7 +18,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from collections import OrderedDict
 from functools import partial
 
-from scopeout.oscilloscopes import GenericOscilloscope
+from scopeout.oscilloscopes import Oscilloscope
 from scopeout.config import ScopeOutConfig as Config
 from scopeout.models import *
 
@@ -732,7 +732,7 @@ class AcquisitionControlWidget(ScopeOutWidget):
 
         if scope is None:
             self.setEnabled(False)
-        elif scope is GenericOscilloscope:
+        elif scope is Oscilloscope:
             self.setEnabled(True)
 
     def setEnabled(self, bool):

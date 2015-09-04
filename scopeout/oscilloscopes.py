@@ -25,7 +25,7 @@ def twos_comp(val, bits=8):
     return val
 
 
-class GenericOscilloscope:
+class Oscilloscope:
     """
     Object representation of scope of unknown make.
 
@@ -75,12 +75,8 @@ class GenericOscilloscope:
 
         :Returns: string of scope output
         """
-        try:
-            return self.scope.read_raw().strip()
-        except visa.VisaIOError:
-            self.logger.error("VISA Error: Command timed out.")
-        except Exception as e:
-            self.logger.error(e)
+
+        return self.scope.read_raw().strip()
 
     def query(self, command):
         """
@@ -513,9 +509,9 @@ class GenericOscilloscope:
             return None
 
 
-class TDS2024B(GenericOscilloscope):
+class TDS2000B(Oscilloscope):
     """
-    Class representing Tektronix 2024B.
+    Class representing Tektronix 2000B series oscilloscope.
 
     Contains the command dictionary specifying the correct VISA commands for this oscilloscope,
     And defines how to handle waveforms that this scope generates.
@@ -533,7 +529,7 @@ class TDS2024B(GenericOscilloscope):
             :firmware: scope firmware version
         """
 
-        GenericOscilloscope.__init__(self, VISA)
+        Oscilloscope.__init__(self, VISA)
         self.logger = logging.getLogger("ScopeOut.oscilloscopes.TDS2024B")
         self.model = model
         self.serial_number = serial_number
@@ -580,10 +576,6 @@ class TDS2024B(GenericOscilloscope):
 
         if self.eventStatus:
             self.logger.info(self.getAllEvents())
-
-    """
-    WAVEFORM COMMANDS
-    """
 
     def setup_waveform(self, channel=0):
         """
@@ -652,14 +644,6 @@ class TDS2024B(GenericOscilloscope):
         self.waveform_queue.put(wave)
         self.logger.info("Waveform made successfully")
 
-    """
-    END WAVEFORM COMMANDS
-    """
-
-    """
-    DATA CHANNEL COMMANDS
-    """
-
     def setDataChannel(self, channel):
         """
         Set data channel of TDS2024B.
@@ -686,12 +670,8 @@ class TDS2024B(GenericOscilloscope):
                 self.logger.error('Invalid data channel: %s', channel)
                 return False
 
-    """
-    END DATA CHANNEL COMMANDS
-    """
 
-
-class GDS1000A(GenericOscilloscope):
+class GDS1000A(Oscilloscope):
     """
     Class representing Gwinstek GDS-1000A series oscilloscope.
 
@@ -711,13 +691,14 @@ class GDS1000A(GenericOscilloscope):
             :firmware: scope firmware version
         """
 
-        GenericOscilloscope.__init__(self, VISA)
+        Oscilloscope.__init__(self, VISA)
         self.logger = logging.getLogger("oscilloscopes.GDS-1000A")
         self.model = model
         self.serial_number = serial_number
         self.firmwareVersion = firmware
         self.make = 'Gwinstek'
         self.number_of_channels = 2
+        self.active_channel = 1
         self.commands = {'autoSet': 'AUTOS EXEC',
                          'getAcquisitionParams': 'ACQ?',
                          'setAcquisitionMode': 'ACQ:MOD',
@@ -756,20 +737,21 @@ class GDS1000A(GenericOscilloscope):
                          }
 
 
-class GDS2000A(GenericOscilloscope):
+class GDS2000A(Oscilloscope):
     """
     Gwinstek GDS-2000A Series Oscilloscope
     """
 
     def __init__(self, VISA, model, serial_number, firmware):
 
-        GenericOscilloscope.__init__(self, VISA)
+        Oscilloscope.__init__(self, VISA)
         self.logger = logging.getLogger("oscilloscopes.GDS-2000A")
         self.model = model
         self.serial_number = serial_number
         self.firmwareVersion = firmware
         self.make = 'Gwinstek'
         self.number_of_channels = 4
+        self.active_channel = 1
         self.commands = {'autoSet': 'AUTOS EXEC',
                          'getAcquisitionParams': 'ACQ?',
                          'setAcquisitionMode': 'ACQ:MOD',
@@ -812,7 +794,7 @@ class GDS2000A(GenericOscilloscope):
 
         waveform = Waveform()
 
-        preamble = self.query('ACQ1:MEM?').strip().split(';')
+        preamble = self.query('ACQ' + str(self.active_channel) + ':MEM?').strip().split(';')
         wave_header = {}
         for entry in preamble:
             entry_parts = entry.split(',')
@@ -827,7 +809,7 @@ class GDS2000A(GenericOscilloscope):
             waveform.x_unit = 'Seconds'
         waveform.x_scale = float(wave_header['Horizontal Scale'])
         waveform.y_unit = wave_header['Vertical Units']
-        if waveform.y_unit.lower() == 'V':
+        if waveform.y_unit.lower() == 'v':
             waveform.y_unit = 'Volts'
         waveform.y_scale = float(wave_header['Vertical Scale'])
 
@@ -840,8 +822,9 @@ class GDS2000A(GenericOscilloscope):
         try:
             
             raw_data = self.read()[9:]
-            
+
             # Read serial port until timeout to get all data
+            self.scope.timeout = 100
             try:
                 while True:
                     raw_data += self.read()
@@ -856,3 +839,20 @@ class GDS2000A(GenericOscilloscope):
         
         self.waveform_queue.put(waveform)
 
+    def setDataChannel(self, channel):
+        """
+        Set data channel of TDS2024B.
+
+        Parameters:
+            :channel: a string or int representing the desired data channel
+
+        :Returns: True if a valid channel is passed, False otherwise
+        """
+
+        self.logger.info('Received request to set data channel ' + channel)
+        if int(channel) in range(1, self.number_of_channels + 1):
+            self.active_channel = channel
+            return True
+        else:
+            self.logger.error('Invalid data channel: ' + channel)
+            return False

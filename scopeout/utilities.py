@@ -15,30 +15,54 @@ from visa import ResourceManager, VisaIOError
 from scopeout import oscilloscopes
 
 
+class OscilloscopeCreationError(Exception):
+    """
+    Raised when an Oscilloscope cannot be instantiated.
+    """
+    pass
+
+
+def make_scope(instrument, idn_result):
+    """
+    Factory for Oscilloscope objects. Takes the result of the *IDN? query and
+    instantiates the correct Oscilloscope.
+    :param instrument: the VISA instrument for the oscilloscope.
+    :param idn_result: the string result of the *IDN? query
+    :return: A new Oscilloscope.
+    :raises: an OscilloscopeCreationError if scope creation fails.
+    """
+
+    try:
+        scope_info = tuple(idn_result.split(','))
+        assert len(scope_info) >= 4
+        scope_model = scope_info[1]
+
+        if re.match('TDS 2.*B', scope_model):
+            return oscilloscopes.TDS2000B(instrument, *scope_info[1:])
+        elif re.match('GDS-1.*A', scope_model):
+            return oscilloscopes.GDS1000A(instrument, *scope_info[1:])
+        elif re.match('GDS-2.*A', scope_model):
+            return oscilloscopes.GDS2000A(instrument, *scope_info[1:])
+
+    except Exception as e:
+        raise OscilloscopeCreationError(e)
+
+
 class ScopeFinder:
 
     def __init__(self):
-        """
-        Constructor
-        """
 
         self.logger = logging.getLogger('scopeout.utilities.ScopeFinder')
         self.logger.info('ScopeFinder Initialized')
 
         self.resource_manager = ResourceManager()
-        self.resources = []
-        self.instruments = []
         self.scopes = []
-        self.blacklist = set()
-
         self.refresh()
 
     def __enter__(self):
-        # Entry point for the *with* statement, which allows this object to close properly on program exit.
         return self
 
     def __exit__(self, type, value, traceback):
-        # Exit point for with statement
         pass
 
     def query(self, inst, command):
@@ -54,15 +78,6 @@ class ScopeFinder:
 
         return inst.query(command).strip()  # strip newline
 
-    def get_scopes(self):
-        """
-        Getter for array of connected oscilloscopes.
-
-        :Returns: an array of PyVisa instrument objects representing USB oscilloscopes connected to the computer.
-        """
-
-        return self.scopes
-
     def refresh(self):
         """
         Re-run scope acquisition to update scope array.
@@ -71,45 +86,48 @@ class ScopeFinder:
         """
 
         self.scopes = []
-        self.resources = []
 
         try:
-            self.resources = self.resource_manager.list_resources()
-        except VisaIOError as e:
-            self.resources = []
+            resources = self.resource_manager.list_resources()
+        except VisaIOError:
+            resources = []
 
-        if self.resources:
-            self.logger.info("%d VISA Resource(s) found", len(self.resources))
-            self.instruments = []
-            for resource in set(self.resources) - self.blacklist:
+        if resources:
+            self.logger.info("%d VISA Resource(s) found", len(resources))
+            instruments = []
+            for resource in resources:
                 try:
                     inst = self.resource_manager.open_resource(resource)
-                    self.instruments.append(inst)
+                    instruments.append(inst)
                     self.logger.info('Resource {} converted to instrument'.format(resource))
                 except Exception as e:
                     self.logger.error(e)
-                    self.blacklist.add(resource)
 
-            for ins in self.instruments:
+            for instrument in instruments:
                 try:
-                    info = self.query(ins, '*IDN?').split(',')  # Parse identification string
-                    if info[1] == 'TDS 2024B':  # TDS 2024B oscilloscope
-                        info.append(info.pop().split()[1][3:])  # get our identification string into array format
-                        scope = oscilloscopes.TDS2024B(ins, info[1], info[2], info[3])
-                        self.scopes.append(scope)
-                        self.logger.info("Found %s", str(scope))
-                    elif re.match('GDS-1.*A', info[1]):
-                        scope = oscilloscopes.GDS1000A(ins, info[1], info[2], info[3])
-                        self.scopes.append(scope)
-                        self.logger.info("Found %s", str(scope))
-                    elif re.match('GDS-2.*A', info[1]):
-                        scope = oscilloscopes.GDS2000A(ins, info[1], info[2], info[3])
-                        self.scopes.append(scope)
-                        self.logger.info("Found %s", str(scope))
+                    # Get the ID information
+                    info = self.query(instrument, '*IDN?')
+                    read_attempts = 0
+                    while read_attempts < 100 and not len(info.split(',')) == 4:
+                        # We didn't get the ID, read until we do
+                        info = instrument.read_raw().strip()
+                        read_attempts += 1
+                        # Stop after 100 attempts, something is wrong
+                        if read_attempts is 100:
+                            raise OscilloscopeCreationError('Failed to read ID information from ' + str(instrument))
 
-                    # Support for other scopes to be implemented here!
-                except VisaIOError or IndexError:
-                    self.logger.error('{} could not be converted to an oscilloscope'.format(ins))
+                    self.scopes.append(make_scope(instrument, info))
+
+                except VisaIOError as e:
+                    if 'VI_ERROR_CONN_LOST' in str(e):
+                        self.resource_manager = ResourceManager()
+                    elif 'VI_ERROR_TMO' not in str(e):
+                        self.logger.error(e)
+                except OscilloscopeCreationError as e:
+                    self.logger.error('Oscilloscope connection error: ' + str(e))
+                except Exception as e:
+                    self.logger.error(e)
+
         return self
 
     def check_scope(self, scope_index):
@@ -129,3 +147,5 @@ class ScopeFinder:
                 return False
         except:
             return False
+
+

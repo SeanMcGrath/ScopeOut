@@ -417,17 +417,20 @@ class ThreadedClient(QtWidgets.QApplication):
 
         if not self.stop_flag.is_set():
 
-            self.scopes = self.scope_finder.refresh().get_scopes()
-
-            while not self.scopes:  # Check for scopes and connect if possible
+            # Check for scopes and connect if possible
+            self.scopes = self.scope_finder.refresh().scopes
+            self.update_status('No oscilloscopes detected.')
+            if not self.scopes:
                 if self.stop_flag.isSet():
                     self.scopes = []
-                    break
-                self.lock.acquire()
-                self.scopes = self.scope_finder.refresh().get_scopes()
-                self.lock.release()
+                else:
+                    # set up timer to check again
+                    self.find_scope_timer = threading.Timer(0.1, self.find_scope)
+                    self.find_scope_timer.start()
+                return
 
-            if not self.stop_flag.isSet():  # Scope Found!
+            # Scope Found
+            if not self.stop_flag.isSet():
                 self.active_scope = self.scopes[0]
                 self.logger.info("Set active scope to %s", str(self.active_scope))
                 self.scope_change_signal.emit(self.active_scope)
