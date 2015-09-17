@@ -1,5 +1,7 @@
+#!/usr/bin/python
+
 """
-ScopeOut
+ScopeOut GUI initialization script
 """
 
 import sys

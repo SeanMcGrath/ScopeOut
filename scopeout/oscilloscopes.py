@@ -88,12 +88,7 @@ class Oscilloscope:
         :Returns: the output of the scope given in response to command, False if command fails.
         """
 
-        try:
-            result = self.scope.query(command).strip()
-            return result
-        except Exception as e:
-            self.logger.error(e)
-            return
+        return self.scope.query(command).strip()
 
     def set_parameter(self, command):
         """
@@ -577,7 +572,7 @@ class TDS2000B(Oscilloscope):
         if self.eventStatus:
             self.logger.info(self.getAllEvents())
 
-    def setup_waveform(self, channel=0):
+    def setup_waveform(self):
         """
         Fetch all the parameters needed to parse the wave data.
         will be passed the waveform object.
@@ -585,10 +580,10 @@ class TDS2000B(Oscilloscope):
         """
 
         waveform = Waveform()
-        waveform.data_channel = self.getDataChannel()  # get active channel
-        waveform.capture_time = datetime.datetime.utcnow()
 
         try:
+            waveform.data_channel = self.getDataChannel()  # get active channel
+            waveform.capture_time = datetime.datetime.utcnow()
             preamble = self.query("WFMP?").split(';')  # get waveform preamble and parse it
 
             if len(preamble) > 5:  # normal operation
@@ -608,10 +603,10 @@ class TDS2000B(Oscilloscope):
                 waveform.error = waveform.data_channel \
                                  + ' is not active. Please select an active channel.'
 
-            return waveform
-
         except Exception as e:
-            self.logger.error(e)
+            waveform.error = str(e)
+        finally:
+            return waveform
 
     def get_curve(self, wave):
         """
@@ -794,28 +789,36 @@ class GDS2000A(Oscilloscope):
 
         waveform = Waveform()
 
-        preamble = self.query('ACQ' + str(self.active_channel) + ':MEM?').strip().split(';')
-        wave_header = {}
-        for entry in preamble:
-            entry_parts = entry.split(',')
-            if len(entry_parts) == 2:
-                wave_header[entry_parts[0]] = entry_parts[1]
+        try:
+            preamble = self.query('ACQ' + str(self.active_channel) + ':MEM?').strip().split(';')
+            wave_header = {}
+            for entry in preamble:
+                entry_parts = entry.split(',')
+                if len(entry_parts) == 2:
+                    wave_header[entry_parts[0]] = entry_parts[1]
 
-        waveform.capture_time = datetime.datetime.utcnow()
-        waveform.data_channel = wave_header['Source']
-        waveform.number_of_points = int(wave_header['Memory Length'])
-        waveform.x_unit = wave_header['Horizontal Units']
-        if waveform.x_unit.lower() == 's':
-            waveform.x_unit = 'Seconds'
-        waveform.x_scale = float(wave_header['Horizontal Scale'])
-        waveform.y_unit = wave_header['Vertical Units']
-        if waveform.y_unit.lower() == 'v':
-            waveform.y_unit = 'Volts'
-        waveform.y_scale = float(wave_header['Vertical Scale'])
-
-        return waveform
+            waveform.data_channel = wave_header['Source']
+            waveform.number_of_points = int(wave_header['Memory Length'])
+            waveform.x_unit = wave_header['Horizontal Units']
+            if waveform.x_unit.lower() == 's':
+                waveform.x_unit = 'Seconds'
+            waveform.x_scale = float(wave_header['Horizontal Scale'])
+            waveform.y_unit = wave_header['Vertical Units']
+            if waveform.y_unit.lower() == 'v':
+                waveform.y_unit = 'Volts'
+            waveform.y_scale = float(wave_header['Vertical Scale'])
+        except Exception as e:
+            waveform.error = str(e)
+        finally:
+            waveform.capture_time = datetime.datetime.utcnow()
+            return waveform
 
     def make_waveform(self):
+        """
+        Read the raw waveform data from the serial port, convert it from binary to decimal,
+        and scale it properly.
+        :return:
+        """
 
         waveform = self.setup_waveform()
 
@@ -824,14 +827,21 @@ class GDS2000A(Oscilloscope):
             raw_data = self.read()[9:]
 
             # Read serial port until timeout to get all data
-            self.scope.timeout = 100
-            try:
-                while True:
+            self.scope.timeout = 50
+            read_attempts = 0
+            while read_attempts < 100:
+                try:
                     raw_data += self.read()
-            except:
-                pass
-            
+                    read_attempts += 1
+                except Exception as e:
+                    if 'VI_ERROR_TMO' not in str(e) and 'VI_ERROR_CONN_LOST' not in str(e):
+                        raise e
+                    break
+
+            # 8 bit scope = 256 ADC levels over full scale
             y_multiplier = waveform.y_scale/256
+
+            # Take twos complement to handle negative numbers and scale each.
             waveform._y_list = [y_multiplier * twos_comp(num) for num in raw_data if num not in [0, 255]]
         
         except Exception as e:
@@ -856,3 +866,4 @@ class GDS2000A(Oscilloscope):
         else:
             self.logger.error('Invalid data channel: ' + channel)
             return False
+

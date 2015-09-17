@@ -4,17 +4,18 @@ ScopeOut GUI
 Defines GUI client that instantiates and controls widgets and threads.
 """
 
-# Set matplotlib to call PyQt5
-from matplotlib import rcParams
-rcParams['backend'] = 'Qt5Agg'
-
 import threading
 import os
 import logging
 
+# Set matplotlib to call PyQt5
+from matplotlib import rcParams
+rcParams['backend'] = 'Qt5Agg'
+
 from datetime import date, datetime
 from functools import partial
 from PyQt5 import QtWidgets, QtCore
+from visa import VisaIOError
 
 from scopeout.utilities import ScopeFinder
 from scopeout.models import *
@@ -236,6 +237,8 @@ class ThreadedClient(QtWidgets.QApplication):
                 if wave.error is not None:
                     self.logger.error("Wave error: %s", wave.error)
                     self.update_status(wave.error)
+                    if 'CONN_LOST' in wave.error:
+                        self.acquisition_stop_flag.set()
                     return
 
                 wave.detect_peak_and_integrate(
@@ -329,8 +332,9 @@ class ThreadedClient(QtWidgets.QApplication):
                 try:
                     self.active_scope.make_waveform()
                     wave = self.active_scope.next_waveform
-                except AttributeError:
+                except Exception:
                     wave = None
+                    self.acquisition_stop_flag.set()
                 finally:
                     self.wave_acquired_flag.set()
                     if self.lock.locked():
@@ -367,7 +371,7 @@ class ThreadedClient(QtWidgets.QApplication):
                 self.wave_acquired_flag.clear()
 
             self.acquisition_stop_flag.clear()
-            self.update_status("Continuous Acquisiton Halted.")
+            self.update_status("Continuous Acquisition Halted.")
             enable_buttons(True)
             self.check_scope_timer = threading.Timer(5.0, self.check_scope)
             self.check_scope_timer.start()

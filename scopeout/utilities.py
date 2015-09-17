@@ -12,6 +12,7 @@ import re
 
 from visa import ResourceManager, VisaIOError
 
+from scopeout.config import ScopeOutConfig as Config
 from scopeout import oscilloscopes
 
 
@@ -48,6 +49,25 @@ def make_scope(instrument, idn_result):
         raise OscilloscopeCreationError(e)
 
 
+def flush_buffer(instrument):
+    """
+    Clear the output buffer of an oscilloscope
+    :param instrument: a VISA instrument.
+    """
+
+    timeout = instrument.timeout
+    instrument.timeout = 50
+    read_count = 0
+    while read_count < 1000:
+        try:
+            instrument.read_raw()
+            read_count += 1
+        except VisaIOError:
+            break
+
+    instrument.timeout = timeout
+
+
 class ScopeFinder:
 
     def __init__(self):
@@ -55,7 +75,17 @@ class ScopeFinder:
         self.logger = logging.getLogger('scopeout.utilities.ScopeFinder')
         self.logger.info('ScopeFinder Initialized')
 
-        self.resource_manager = ResourceManager()
+        visa_path = Config.get('VISA', 'library_path')
+
+        if visa_path is not '':
+            try:
+                self.resource_manager = ResourceManager(visa_path)
+            except:
+                self.logger.error(visa_path + ' is not a valid path to the VISA library. Trying default path')
+                self.resource_manager = ResourceManager()
+        else:
+            self.resource_manager = ResourceManager()
+
         self.scopes = []
         self.refresh()
 
@@ -101,11 +131,14 @@ class ScopeFinder:
                     instruments.append(inst)
                     self.logger.info('Resource {} converted to instrument'.format(resource))
                 except Exception as e:
-                    self.logger.error(e)
+                    if 'VI_ERROR_CONN_LOST' in str(e):
+                        self.resource_manager = ResourceManager()
+                    elif 'VI_ERROR_TMO' not in str(e):
+                        self.logger.error(e)
 
             for instrument in instruments:
                 try:
-                    # Get the ID information
+                    # flush_buffer(instrument)
                     info = self.query(instrument, '*IDN?')
                     read_attempts = 0
                     while read_attempts < 100 and not len(info.split(',')) == 4:
@@ -117,16 +150,13 @@ class ScopeFinder:
                             raise OscilloscopeCreationError('Failed to read ID information from ' + str(instrument))
 
                     self.scopes.append(make_scope(instrument, info))
-
-                except VisaIOError as e:
+                except OscilloscopeCreationError as e:
+                    self.logger.error('Oscilloscope connection error: ' + str(e))
+                except Exception as e:
                     if 'VI_ERROR_CONN_LOST' in str(e):
                         self.resource_manager = ResourceManager()
                     elif 'VI_ERROR_TMO' not in str(e):
                         self.logger.error(e)
-                except OscilloscopeCreationError as e:
-                    self.logger.error('Oscilloscope connection error: ' + str(e))
-                except Exception as e:
-                    self.logger.error(e)
 
         return self
 

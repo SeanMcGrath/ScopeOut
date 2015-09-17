@@ -6,7 +6,8 @@ import os
 import logging
 from configparser import ConfigParser
 
-REQUIRED_SECTIONS = ['Themes',
+REQUIRED_SECTIONS = ['VISA',
+                     'Themes',
                      'Database',
                      'Logging',
                      'Export',
@@ -15,7 +16,7 @@ REQUIRED_SECTIONS = ['Themes',
                      'Acquisition Control',
                      'View']
 
-TRUE_STRINGS = ['true', 't' '1']
+TRUE_STRINGS = ['true', 't', '1']
 logger = logging.getLogger('ScopeOut.config.ScopeOutConfig')
 
 
@@ -81,6 +82,9 @@ def create_new_config():
     Write a new configuration file with default values.
     """
     parser = ConfigParser()
+
+    parser.add_section('VISA')
+    parser.set('VISA', 'library_path', '')
 
     parser.add_section('View')
     parser.set('View', 'show_plot', 'True')
