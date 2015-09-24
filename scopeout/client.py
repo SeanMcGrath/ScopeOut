@@ -109,7 +109,11 @@ class ThreadedClient(QtWidgets.QApplication):
         # Oscilloscope and scope finder
         self.scopes = []
         self.active_scope = None
-        self.scope_finder = ScopeFinder()
+
+        try:
+            self.scope_finder = ScopeFinder()
+        except OSError as e:
+            self.logger.error(e)
 
         # Thread timers
         self.check_scope_timer = threading.Timer(5.0, self.check_scope)
